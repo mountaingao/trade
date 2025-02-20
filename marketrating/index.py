@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 
 # 初始化tushare
-ts.set_token('your_token')  # 替换为你的tushare token
+ts.set_token('296cdbdc3ad507506ec8785465785f5ea065c81e8ec5b38b8b4e35ba')  # 替换为你的tushare token  密码 mountain
 pro = ts.pro_api()
 
 # 定义评级函数
