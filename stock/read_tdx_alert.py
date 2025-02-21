@@ -23,10 +23,11 @@ def monitor_file():
     global last_modified_time, last_content
     while True:
         # 获取文件的当前修改时间和内容
+
         current_modified_time = os.path.getmtime(file_path)
         print(current_modified_time)
         print(last_modified_time)
-        print(last_content)
+        # print(last_content)
         with open(file_path, 'r', encoding='GBK') as file:
             current_content = file.read()
 
