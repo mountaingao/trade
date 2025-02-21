@@ -17,7 +17,7 @@ def show_alert(new_content):
     root.withdraw()  # 隐藏主窗口
     messagebox.showinfo("提醒", f"文件内容已更新！\n\n新增内容：\n{new_content}")
     # 播放声音
-    playsound("D:/project/trades/mp3/alert.mp3")
+    # playsound("D:/project/trades/mp3/Alarm03.wav")
 
 def monitor_file():
     global last_modified_time, last_content
