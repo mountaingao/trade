@@ -1,14 +1,36 @@
-
 import tkinter as tk
-from tkinter import messagebox
 from playsound import playsound
-
-# 创建提示框
+import os
 def show_alert():
     root = tk.Tk()
-    root.withdraw()  # 隐藏主窗口
-    messagebox.showinfo("提醒", "这是一个提示框！")
+    root.title("提醒")  # 设置窗口标题
+    root.attributes('-topmost', True)  # 确保窗口始终在最前面
+    root.geometry("300x150")  # 设置窗口大小
+
+    # 显示消息内容
+    message = "这是一个提示框！"
+    label = tk.Label(root, text=message, wraplength=280, justify="center")
+    label.pack(expand=True)
+
+
+    # 获取脚本所在目录的上一级目录
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # 构造音频文件的完整路径
+    mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
+    print(mp3_path)
     # 播放声音
-    playsound("D:/project/trades/mp3/alert.mp3")
+    playsound(mp3_path)
+    # 播放声音
+    # playsound("../mp3/alert.mp3", block=False)
+
+    # 设置定时器，5秒后关闭窗口
+    root.after(5000, root.destroy)
+
+    # 阻止窗口关闭按钮关闭窗口
+    # root.protocol('WM_DELETE_WINDOW', lambda: None)
+
+    # 运行主循环
+    root.mainloop()
+
 # 调用函数
 show_alert()

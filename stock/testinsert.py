@@ -2,7 +2,7 @@ import datetime
 import time
 
 
-file_path = r"D:\BaiduSyncdisk\个人\通达信\ALERT\ALERT.txt"
+file_path = r"ALERT.txt"
 # 读取文件并解析时间
 rows = []
 with open(file_path, 'r', encoding='GB2312') as f:
