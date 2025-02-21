@@ -1,13 +1,7 @@
-
-
-
-
-
-
-
-
-
-
+Observer
+watchdog
+playsound
+plyer
 pandas
 tushare
 matplotlib
