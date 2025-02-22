@@ -7,3 +7,8 @@ tushare
 matplotlib
 baostock
 akshare
+pywencai
+streamlit
+chinese_calendar
+plotly
+pymysql

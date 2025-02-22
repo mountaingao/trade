@@ -6,6 +6,8 @@ conda activate trade
 pip install -r requirements.txt
 
 ---
+https://github.com/zsrl/pywencai
+
 
 deepseek key
 sk-a44e4ee6903e4a92aab99ace6a034186

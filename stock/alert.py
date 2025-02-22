@@ -12,7 +12,6 @@ def show_alert():
     label = tk.Label(root, text=message, wraplength=280, justify="center")
     label.pack(expand=True)
 
-
     # 获取脚本所在目录的上一级目录
     script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # 构造音频文件的完整路径
