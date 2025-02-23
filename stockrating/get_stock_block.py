@@ -1,6 +1,7 @@
 import pywencai
 # 导入 a.py 和 b.py 中的函数
 from get_date_status_stockcode import query_stock_codes_by_date_and_status
+from ak_stock_block_ths import stock_profit_forecast_ths
 from stock_block import get_stock_concept
 import mysql.connector
 from datetime import date
@@ -73,36 +74,15 @@ if __name__ == "__main__":
     print(stock_codes)  # 输出：300256,300383,300450
     stock_codes = "300718和300513、300870"  # 示例股票代码
     df = get_stock_concept(stock_codes)
-    stock_df = df[['代码', '名称', '所属概念']]
-    print(stock_df)
+    stock_code = "300513"
+    concept_data = stock_profit_forecast_ths(symbol=stock_code)
+    # stock_df = df[['代码', '名称', '所属概念']]
+    print(concept_data)
 
     # 循环遍历字典列表
-    for item in stock_df:
+    for item in concept_data:
         print(f"股票代码: {item[0]}, 概念: {item[1]}")
     exit
-
-    # 将字符串数据转换为 DataFrame
-    from io import StringIO
-    data = concept_data
-    # 获取字符串数据
-    data_str = data[list(data.keys())[0]]
-
-    # 使用 StringIO 将字符串转换为类似文件对象
-    data_io = StringIO(data_str.to_string())
-
-    # 读取为 DataFrame
-    df = pd.read_csv(data_io, sep=";", header=None, names=["所属概念", "代码", "名称"])
-
-    # 转换为数组（列表）
-    result_array = df.values.tolist()
-
-    # 打印结果
-    for item in result_array:
-        print(item)
-    exit
-    if isinstance(concept_data, dict):
-        # 将字典转换为 DataFrame
-        concept_data = pd.DataFrame.from_dict(concept_data)
 
     # 连接数据库
     conn = mysql.connector.connect(**db_config)
@@ -112,12 +92,10 @@ if __name__ == "__main__":
     current_time = datetime.now()
 
     # 遍历查询结果
-    for index, row in concept_data.iterrows():
-        stock_code = row['股票代码'].split('.')[0]  # 提取股票代码
-        sectors = set(row['概念板块'].split(';'))  # 提取板块数据
 
-        # 处理单个股票的板块数据
-        process_stock_sectors(cursor, stock_code, sectors, current_time)
+
+    # 处理单个股票的板块数据
+    process_stock_sectors(cursor, stock_code, concept_data, current_time)
 
     # 提交事务
     conn.commit()

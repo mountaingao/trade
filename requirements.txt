@@ -12,3 +12,4 @@ streamlit
 chinese_calendar
 plotly
 pymysql
+xlsxwriter
