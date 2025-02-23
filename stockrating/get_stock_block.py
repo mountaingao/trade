@@ -72,8 +72,14 @@ if __name__ == "__main__":
 
     print(stock_codes)  # 输出：300256,300383,300450
     stock_codes = "300718和300513、300870"  # 示例股票代码
-    concept_data = get_stock_concept(stock_codes)
-    print(concept_data)
+    df = get_stock_concept(stock_codes)
+    stock_df = df[['代码', '名称', '所属概念']]
+    print(stock_df)
+
+    # 循环遍历字典列表
+    for item in stock_df:
+        print(f"股票代码: {item[0]}, 概念: {item[1]}")
+    exit
 
     # 将字符串数据转换为 DataFrame
     from io import StringIO
@@ -82,7 +88,7 @@ if __name__ == "__main__":
     data_str = data[list(data.keys())[0]]
 
     # 使用 StringIO 将字符串转换为类似文件对象
-    data_io = StringIO(data_str)
+    data_io = StringIO(data_str.to_string())
 
     # 读取为 DataFrame
     df = pd.read_csv(data_io, sep=";", header=None, names=["所属概念", "代码", "名称"])
