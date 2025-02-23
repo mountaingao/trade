@@ -12,16 +12,31 @@ db_config = {
 }
 
 # 目标目录路径
-directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202502"  # 替换为你的 Excel 文件所在目录
+directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202502"  # 替换为你的文件所在目录
 
-# 读取目录下的所有 Excel 文件
-def get_excel_files(directory):
+# 读取目录下的所有 CSV 文件
+def get_csv_files(directory):
     return [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith(('.xls', '.xlsx'))]
 
-# 读取 Excel 文件内容
-def read_excel(file_path):
+# 从文件名中提取日期信息
+def extract_date_from_filename(file_name):
+    # 假设文件名格式为 "20250223_alert_data.csv"，提取日期部分
+    date_str = os.path.splitext(file_name)[0].split('_')[0]  # 提取文件名中的日期部分并去除扩展名
     try:
-        df = pd.read_csv(file_path, encoding='GBK')  # 读取 Excel 文件，确保编码为 UTF-8
+        # 将日期字符串转换为日期对象
+        date_obj = datetime.strptime(date_str, "%m%d").date()
+        current_year = datetime.now().year
+        final_date = date_obj.replace(year=current_year)
+        return final_date
+    except ValueError:
+        print(f"无法从文件名中提取日期：{file_name}")
+        return None
+
+# 读取 CSV 文件内容
+def read_csv(file_path):
+    try:
+        # 读取 CSV 文件，假设文件编码为 GBK，且没有标题行
+        df = pd.read_csv(file_path, encoding='GBK', header=None, sep='\t')  # 使用制表符作为分隔符
         print(f"成功读取文件：{file_path}")
         return df
     except Exception as e:
@@ -29,7 +44,7 @@ def read_excel(file_path):
         return None
 
 # 将数据导入数据库
-def import_to_database(df, db_config):
+def import_to_database(df, file_date, db_config):
     try:
         # 连接数据库
         conn = mysql.connector.connect(**db_config)
@@ -38,20 +53,24 @@ def import_to_database(df, db_config):
         # 遍历 DataFrame 并插入数据
         for _, row in df.iterrows():
             print(row)
-            stock_name = row.iloc[0]  # 使用 .iloc[] 访问数据
-            stock_code = row.iloc[1]
-            alert_time = datetime.strptime(row.iloc[2], "%H:%M").time()  # 假设时间格式为 "HH:MM"
-            current_price = row.iloc[3]
-            price_change = float(row.iloc[4].strip('%'))  # 去掉百分号并转换为浮点数
-            status = row.iloc[5]
-            print(stock_name)
+            stock_name = row.iloc[0].strip()  # 股票名称
+            stock_code = str(row.iloc[1]).strip()  # 股票代码
+            print(stock_code)
+
+            alert_time_str = row.iloc[2].strip()  # 预警时间（仅时间部分）
+            current_price = float(str(row.iloc[3]).strip())  # 当前价格，确保转换为字符串
+            price_change = float(str(row.iloc[4]).strip().rstrip('%'))  # 涨跌幅（去掉百分号）
+            status = row.iloc[5].strip()  # 状态
+            # 解析预警时间（仅时间部分）
+            alert_time = datetime.strptime(alert_time_str, "%H:%M").time()
+            print(alert_time)
             # 构造 SQL 插入语句
             insert_query = """
-            INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            values = (stock_code, stock_name, alert_time, current_price, price_change, status)
-
+            values = (stock_code, stock_name, alert_time, current_price, price_change, status, file_date)
+            print(insert_query, values)
             # 执行插入操作
             cursor.execute(insert_query, values)
 
@@ -67,14 +86,21 @@ def import_to_database(df, db_config):
 
 # 主程序
 if __name__ == "__main__":
-    # 获取目录下的所有 Excel 文件
-    excel_files = get_excel_files(directory_path)
-    if not excel_files:
-        print("未找到任何 Excel 文件，请检查目录路径！")
+    # 获取目录下的所有 CSV 文件
+    csv_files = get_csv_files(directory_path)
+    if not csv_files:
+        print("未找到任何 CSV 文件，请检查目录路径！")
     else:
-        for file_path in excel_files:
-            # 读取 Excel 文件
-            df = read_excel(file_path)
+        for file_path in csv_files:
+            # 提取文件名中的日期信息
+            file_name = os.path.basename(file_path)
+            file_date = extract_date_from_filename(file_name)
+            if file_date is None:
+                print(f"跳过文件：{file_name}，无法提取日期信息")
+                continue
+
+            # 读取 CSV 文件
+            df = read_csv(file_path)
             if df is not None:
                 # 导入数据到数据库
-                import_to_database(df, db_config)
+                import_to_database(df, file_date, db_config)
