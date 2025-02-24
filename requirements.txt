@@ -13,3 +13,4 @@ chinese_calendar
 plotly
 pymysql
 xlsxwriter
+selenium
