@@ -5,6 +5,7 @@ from tkinter import messagebox
 from playsound import playsound
 import mysql.connector
 import datetime
+import pandas as pd
 
 # 文件路径
 file_path = r"alert1.txt"
@@ -42,7 +43,7 @@ def show_alert(new_content, mp3_path):
     # 运行主循环
     root.mainloop()
 
-def import_to_database(df, db_config):
+def import_to_database(df, file_date, db_config):
     try:
         # 连接数据库
         conn = mysql.connector.connect(**db_config)
@@ -64,9 +65,9 @@ def import_to_database(df, db_config):
             print(alert_time)
             # 构造 SQL 插入语句
             insert_query = """
-            INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
+        INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
             values = (stock_code, stock_name, alert_time, current_price, price_change, status, file_date)
             print(insert_query, values)
             # 执行插入操作
@@ -101,12 +102,23 @@ def monitor_file(mp3_path,db_config):
             # 计算新增的内容
             added_content = current_content[len(last_content):].strip()
             last_content = current_content  # 更新记录的内容
+            # 301396	宏景科技	2025-02-21 09:20	55.20	 0.00%	    0	开盘
             print(added_content)
+
             # 如果有新增内容，显示提醒
             if added_content:
                 # 插入到数据库中
-                df = ""
-                file_date = datetime.now().strftime("%Y-%m-%d")
+                # 定义列名
+                columns = ['code', 'name', 'date_time', 'price', 'change_rate', 'volume', 'status']
+
+                # 将数据转换为 DataFrame
+                df = pd.DataFrame([row.split('\t') for row in added_content], columns=columns)
+
+                # 打印 DataFrame
+                print(df)
+                # df = pd.read_csv(added_content)
+                # print(df)
+                file_date = df[2]
                 import_to_database(df, file_date, db_config)
 
                 # 弹出提示信息
