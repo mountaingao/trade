@@ -42,7 +42,7 @@ def show_alert(new_content, mp3_path):
     # 运行主循环
     root.mainloop()
 
-def import_to_database(df, file_date, db_config):
+def import_to_database(df, db_config):
     try:
         # 连接数据库
         conn = mysql.connector.connect(**db_config)

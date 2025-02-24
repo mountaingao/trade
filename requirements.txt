@@ -14,3 +14,4 @@ plotly
 pymysql
 xlsxwriter
 selenium
+mysql-connector-python

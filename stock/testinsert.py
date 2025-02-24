@@ -34,4 +34,4 @@ if rows:
             target_file.write(line)  # 写入当前行
             target_file.write('\n')  # 写入换行符（如果需要）
             print(f"写入一行：{line.strip()}")
-        time.sleep(3)  # 暂停1分钟
+        time.sleep(5)  # 暂停1分钟
