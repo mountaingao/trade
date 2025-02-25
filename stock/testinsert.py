@@ -2,7 +2,9 @@ import datetime
 import time
 
 
-file_path = r"ALERT.txt"
+# file_path = r"ALERT.txt"
+file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+
 # 读取文件并解析时间
 rows = []
 with open(file_path, 'r', encoding='GB2312') as f:
@@ -34,4 +36,4 @@ if rows:
             target_file.write(line)  # 写入当前行
             target_file.write('\n')  # 写入换行符（如果需要）
             print(f"写入一行：{line.strip()}")
-        time.sleep(5)  # 暂停1分钟
+        time.sleep(10)  # 暂停1分钟

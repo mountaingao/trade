@@ -1,5 +1,7 @@
 import tkinter as tk
 from playsound import playsound
+from pydub import AudioSegment
+from pydub.playback import play
 import os
 def show_alert():
     root = tk.Tk()
@@ -18,7 +20,11 @@ def show_alert():
     mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
     print(mp3_path)
     # 播放声音
-    playsound(mp3_path)
+    # playsound(mp3_path)
+    playsound("../mp3/alarm.mp3")
+    # 播放音频
+    sound = AudioSegment.from_mp3(mp3_path)
+    play(sound)
     # 播放声音
     # playsound("../mp3/alert.mp3", block=False)
 

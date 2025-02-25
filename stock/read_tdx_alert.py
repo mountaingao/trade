@@ -3,13 +3,15 @@ import time
 import tkinter as tk
 from tkinter import messagebox
 from playsound import playsound
+from pydub import AudioSegment
+from pydub.playback import play
 import mysql.connector
 import datetime
 import pandas as pd
 
 # 文件路径
 file_path = r"alert1.txt"
-
+# file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 # 记录文件的最后修改时间和内容
 last_modified_time = os.path.getmtime(file_path)
 with open(file_path, 'r', encoding='GBK') as file:
@@ -29,13 +31,21 @@ def show_alert(new_content, mp3_path):
     root.attributes('-topmost', True)  # 确保窗口始终在最前面
     # 显示消息内容
     message = new_content
-    label = tk.Label(root, text=message, wraplength=280, justify="center")
-    label.pack(expand=True)
-    playsound(mp3_path)
+    label = tk.Label(root, text=message, wraplength=420, justify="center",padx=20,  # 内部水平填充
+                     pady=20,  # 内部垂直填充
+                     borderwidth=2,  # 边框宽度
+                     relief="groove")  # 边框样式)
+    label.pack(expand=True, padx=20, pady=20)
     # messagebox.showinfo("提醒", f"文件内容已更新！\n\n新增内容：\n{new_content}")
+    # playsound("alarm.mp3")
 
     # 设置定时器，5秒后关闭窗口
-    root.after(5000, root.destroy)
+    root.after(8000, root.destroy)
+
+    # 播放音频
+    sound = AudioSegment.from_mp3(mp3_path)
+    play(sound)
+    # playsound(mp3_path)
 
     # 阻止窗口关闭按钮关闭窗口
     # root.protocol('WM_DELETE_WINDOW', lambda: None)
@@ -43,47 +53,49 @@ def show_alert(new_content, mp3_path):
     # 运行主循环
     root.mainloop()
 
-def import_to_database(df, file_date, db_config):
+def import_to_database(data, db_config):
     try:
-        # 连接数据库
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
-
-        # 遍历 DataFrame 并插入数据
-        for _, row in df.iterrows():
-            print(row)
-            stock_name = row.iloc[0].strip()  # 股票名称
-            stock_code = str(row.iloc[1]).strip()  # 股票代码
-            print(stock_code)
-
-            alert_time_str = row.iloc[2].strip()  # 预警时间（仅时间部分）
-            current_price = float(str(row.iloc[3]).strip())  # 当前价格，确保转换为字符串
-            price_change = float(str(row.iloc[4]).strip().rstrip('%'))  # 涨跌幅（去掉百分号）
-            status = row.iloc[5].strip()  # 状态
-            # 解析预警时间（仅时间部分）
-            alert_time = datetime.strptime(alert_time_str, "%H:%M").time()
-            print(alert_time)
-            # 构造 SQL 插入语句
-            insert_query = """
+        insert_query = """
         INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-            values = (stock_code, stock_name, alert_time, current_price, price_change, status, file_date)
-            print(insert_query, values)
-            # 执行插入操作
-            cursor.execute(insert_query, values)
+        for row in data:
+            try:
+                stock_code = row[0].strip()
+                stock_name = str(row[1]).strip()
+                alert_datetime_str = row[2].strip()  # 包含日期和时间的字符串
+                current_price = float(str(row[3]).strip())
+                price_change = float(str(row[4]).strip().rstrip('%'))
+                status = row[6].strip()
 
-        # 提交事务
+                # 解析包含日期和时间的字符串
+                alert_datetime = datetime.datetime.strptime(alert_datetime_str, "%Y-%m-%d %H:%M")
+                alert_time = alert_datetime.time()  # 提取时间部分
+                alert_date = alert_datetime.date()  # 提取日期部分
+
+                values = (stock_code, stock_name, alert_time, current_price, price_change, status, alert_date)
+                cursor.execute(insert_query, values)
+                print(f"成功插入数据: {values}")
+            except Exception as e:
+                print(f"处理行数据时出错：{e}, 数据行: {row}")
         conn.commit()
         print("数据导入成功！")
     except Exception as e:
         print(f"导入数据时出错：{e}")
     finally:
-        # 关闭连接
         cursor.close()
         conn.close()
 
-
+def format_result(result):
+    """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔"""
+    formatted_lines = []
+    for item in result:
+        if len(item) >= 2:  # 确保每行至少有两个字段
+            formatted_line = f"{item[0].strip()} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} {item[6].strip()} "
+            formatted_lines.append(formatted_line)
+    return "\n".join(formatted_lines)
 def monitor_file(mp3_path,db_config):
     global last_modified_time, last_content
     while True:
@@ -108,21 +120,20 @@ def monitor_file(mp3_path,db_config):
             # 如果有新增内容，显示提醒
             if added_content:
                 # 插入到数据库中
-                # 定义列名
-                columns = ['code', 'name', 'date_time', 'price', 'change_rate', 'volume', 'status']
+                # 将数据按行分割
+                lines = added_content.strip().split("\n")
 
-                # 将数据转换为 DataFrame
-                df = pd.DataFrame([row.split('\t') for row in added_content], columns=columns)
-
-                # 打印 DataFrame
-                print(df)
-                # df = pd.read_csv(added_content)
-                # print(df)
-                file_date = df[2]
-                import_to_database(df, file_date, db_config)
+                # 解析每行数据
+                result = []
+                for line in lines:
+                    fields = line.split("\t")  # 按制表符分割字段
+                    result.append(fields)
 
                 # 弹出提示信息
-                show_alert(added_content,mp3_path)
+                show_alert(format_result(result),mp3_path)
+
+                # print(df)
+                import_to_database(result,  db_config)
 
         # 每隔1秒检查一次
         time.sleep(2)
