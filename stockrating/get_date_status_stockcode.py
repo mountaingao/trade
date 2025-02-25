@@ -44,11 +44,12 @@ db_config = {
     "database": "trade"
 }
 
-# 查询条件
-target_date = date(2025, 2, 21)  # 目标日期
-target_status = "盘中"  # 目标状态
-target_status = "开盘"  # 目标状态
-# target_status = "开盘-自"  # 目标状态
+if __name__ == "__main__":
+    # 查询条件
+    target_date = date(2025, 2, 21)  # 目标日期
+    target_status = "盘中"  # 目标状态
+    target_status = "开盘"  # 目标状态
+    # target_status = "开盘-自"  # 目标状态
 
-# 调用查询函数
-query_stock_codes_by_date_and_status(db_config, target_date, target_status)
+    # 调用查询函数
+    query_stock_codes_by_date_and_status(db_config, target_date, target_status)

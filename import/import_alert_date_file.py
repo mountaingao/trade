@@ -13,7 +13,7 @@ db_config = {
 
 # 目标目录路径
 directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202502"  # 替换为你的文件所在目录
-
+directory_path = "D:/BaiduSyncdisk/个人/通达信/202502"
 # 读取目录下的所有 CSV 文件
 def get_csv_files(directory):
     return [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith(('.xls', '.xlsx'))]
@@ -36,7 +36,7 @@ def extract_date_from_filename(file_name):
 def read_csv(file_path):
     try:
         # 读取 CSV 文件，假设文件编码为 GBK，且没有标题行
-        df = pd.read_csv(file_path, encoding='GBK', header=None, sep='\t')  # 使用制表符作为分隔符
+        df = pd.read_csv(file_path, encoding='GBK', header=None, sep='/t')  # 使用制表符作为分隔符
         print(f"成功读取文件：{file_path}")
         return df
     except Exception as e:

@@ -2,7 +2,7 @@ import tushare as ts
 import pandas as pd
 
 # 设置Tushare token
-ts.set_token('your_token')
+ts.set_token('296cdbdc3ad507506ec8785465785f5ea065c81e8ec5b38b8b4e35ba')
 pro = ts.pro_api()
 
 # 获取股票数据
