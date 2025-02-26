@@ -7,6 +7,7 @@ import mysql.connector
 from datetime import date
 from datetime import datetime
 import pandas as pd
+import time
 
 
 # 数据库连接配置
@@ -26,11 +27,34 @@ def get_existing_sectors_for_stock(cursor, stock_code):
 
 # 插入新数据（批量）
 def insert_new_sectors(cursor, new_sectors, join_time):
-    insert_query = """
-    INSERT INTO stockblock (stock_code, sector, status, join_time, delete_time, remark)
-    VALUES (%s, %s, 'active', %s, NULL, 'Initial addition')
     """
-    cursor.executemany(insert_query, [(stock_code, sector, join_time) for stock_code, sector in new_sectors])
+    批量插入新的板块数据，并根据插入顺序为 rank 赋值。
+
+    参数:
+    cursor (mysql.connector.cursor): 数据库游标对象
+    new_sectors (list of tuples): 包含股票代码和板块名称的列表，格式为 [(stock_code, sector), ...]
+    join_time (datetime): 加入时间
+
+    返回:
+    None
+    """
+    insert_query = """
+    INSERT INTO stockblock (stock_code, sector, status, rank, join_time, delete_time, remark)
+    VALUES (%s, %s, 'active', %s, %s, NULL, 'Initial addition')
+    """
+
+    # 使用 enumerate 为每个新板块分配 rank
+    values = [
+        (stock_code, sector, rank + 1, join_time)
+        for rank, (stock_code, sector) in enumerate(new_sectors)
+    ]
+
+    try:
+        cursor.executemany(insert_query, values)
+        print(f"成功插入 {len(values)} 条新板块数据")
+    except Exception as e:
+        print(f"插入新板块数据时出错: {e}")
+        raise
 
 # 标记已删除的数据（批量）
 def mark_deleted_sectors(cursor, deleted_sectors, delete_time):
@@ -58,44 +82,69 @@ def process_stock_sectors(cursor, stock_code, sectors, current_time):
     if deleted_sectors:
         mark_deleted_sectors(cursor, deleted_sectors, current_time)
 
-# 查询条件
-target_date = date(2025, 2, 21)  # 目标日期
-target_status = "盘中"  # 目标状态
-target_status = "开盘"  # 目标状态
-# target_status = "开盘-自"  # 目标状态
+def process_stock_concept_data(cursor, stock_code):
+    """
+    处理单个股票的概念板块数据，并更新数据库。
+
+    参数:
+    cursor (mysql.connector.cursor): 数据库游标对象
+    stock_code (string): 包含股票代码和其他相关信息的元组
+
+    返回:
+    bool: 是否成功处理了该股票的数据
+    """
+    try:
+        concept_data = stock_profit_forecast_ths(symbol=stock_code)
+        print(f"获取到股票 {stock_code} 的概念板块数据: {concept_data}")
+
+        if not concept_data:
+            print(f"股票 {stock_code} 没有概念板块数据")
+            return False
+
+        # 当前时间
+        current_time = datetime.now()
+
+        # 处理单个股票的板块数据
+        process_stock_sectors(cursor, stock_code, concept_data, current_time)
+
+        return True
+    except Exception as e:
+        print(f"处理股票 {stock_code} 的概念板块数据时出错: {e}")
+        return False
+    
+
+
 
 if __name__ == "__main__":
     # 示例：获取特定股票的概念板块
+    # 查询条件
+    target_date = date(2025, 2, 24)  # 目标日期
+    target_status = "盘中"  # 目标状态
+    target_status = "开盘"  # 目标状态
+    # target_status = "开盘-自"  # 目标状态
     result = query_stock_codes_by_date_and_status(db_config, target_date, target_status)
     print(result)
     # 安全地提取每个元组中的第一个元素，并用逗号分隔
     stock_codes = ",".join(item[0] for item in result if item)
 
     print(stock_codes)  # 输出：300256,300383,300450
-    stock_codes = "300718和300513、300870"  # 示例股票代码
-    df = get_stock_concept(stock_codes)
-    stock_code = "300513"
-    concept_data = stock_profit_forecast_ths(symbol=stock_code)
-    # stock_df = df[['代码', '名称', '所属概念']]
-    print(concept_data)
+    # stock_codes = "300718和300513、300870"  # 示例股票代码
+    # df = get_stock_concept(stock_codes)
 
-    # 循环遍历字典列表
-    for item in concept_data:
-        print(f"股票代码: {item[0]}, 概念: {item[1]}")
-    exit
 
     # 连接数据库
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
-    # 当前时间
-    current_time = datetime.now()
-
     # 遍历查询结果
+    for item in result:
+        print(item)
+        # stock_code = "300513"
+        stock_code = item[0]
+        process_stock_concept_data(cursor, stock_code)
 
+        time.sleep(10)
 
-    # 处理单个股票的板块数据
-    process_stock_sectors(cursor, stock_code, concept_data, current_time)
 
     # 提交事务
     conn.commit()
