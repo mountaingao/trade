@@ -8,10 +8,12 @@ from pydub.playback import play
 import mysql.connector
 import datetime
 import pandas as pd
+from datetime import datetime
 
 # 文件路径
 file_path = r"alert1.txt"
-# file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+# file_path = r"F:/baidu/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 # 记录文件的最后修改时间和内容
 last_modified_time = os.path.getmtime(file_path)
 with open(file_path, 'r', encoding='GBK') as file:
@@ -102,8 +104,9 @@ def monitor_file(mp3_path,db_config):
         # 获取文件的当前修改时间和内容
 
         current_modified_time = os.path.getmtime(file_path)
-        print(current_modified_time)
-        print(last_modified_time)
+        formatted_time = datetime.fromtimestamp(current_modified_time).strftime('%Y-%m-%d %H:%M:%S')
+        print(formatted_time)
+        # print(last_modified_time)
         # print(last_content)
         with open(file_path, 'r', encoding='GBK') as file:
             current_content = file.read()
