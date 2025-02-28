@@ -15,12 +15,15 @@ def add_market_prefix(stock_code: str) -> str:
 
 def get_minute_data(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    获取指定股票在指定日期范围内的分钟级别行情数据。
+    获取指定股票在指定日期范围内的分钟级别行情数据。  没有成交额，比较麻烦，通过成交量估算成交额  
+         day   open   high    low  close  volume
+0     2025-02-18 13:53:00  84.00  84.46  84.00  84.46   35800
     """
     try:
     # 添加市场前缀
         stock_code = add_market_prefix(stock_code)
         minute_data = ak.stock_zh_a_minute(symbol=stock_code, period="1",  adjust="qfq")
+    # stock_zh_a_spot_em
         return minute_data
     except Exception as e:
         print(f"获取分钟级别行情数据时出错：{e}")
