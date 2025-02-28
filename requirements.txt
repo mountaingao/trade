@@ -17,4 +17,4 @@ selenium
 mysql-connector-python
 pydub
 simpleaudio
-
+scipy

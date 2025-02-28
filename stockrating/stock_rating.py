@@ -1,15 +1,17 @@
 
 
 # 股票评级的几个方向，30个交易日内的
-# 1、近期成交额
+# 1、近期成交额 10亿以上100分，5-10亿 5分，5-10亿 4分，10-20亿 3分，20-50亿 2分，50亿以上 1分
 # 2、近期涨幅
 # 3、近期振幅
 # 4、股本大小
 # 5、是否热门板块和概念
+# 6、当日预估成交额
 
 import akshare as ak
 import pandas as pd
 import numpy as np
+from ak_stock_block_ths import stock_profit_forecast_ths
 
 # 获取股票数据
 def get_stock_data(stock_code):
@@ -51,8 +53,11 @@ def is_hot_stock(stock_code):
     # 这里可以根据问财或其他数据源判断股票是否属于热门板块或概念
     # 假设我们有一个热门板块列表
     hot_sectors = ["新能源", "半导体", "医药", "消费"]
-    stock_sectors = ak.stock_sector_detail(sector=stock_code)  # 获取股票所属板块
-    for sector in stock_sectors["板块名称"]:
+    # stock_sectors = ak.stock_sector_detail(sector=stock_code)  # 获取股票所属板块
+    stock_sectors = stock_profit_forecast_ths(symbol=stock_code)
+    print(f"获取到股票 {stock_code} 的概念板块数据: {stock_sectors}")
+
+    for sector in stock_sectors:
         if sector in hot_sectors:
             return True
     return False
@@ -96,6 +101,12 @@ def score_stock(stock_data, is_hot):
 
     # 5. 是否热门板块和概念评分
     hot_score = 5 if is_hot else 1
+
+    print(f"近期成交额评分: {turnover_score}")
+    print(f"近期涨幅评分: {pct_change_score}")
+    print(f"近期振幅评分: {amplitude_score}")
+    print(f"股本大小评分: {shares_score}")
+    print(f"热门板块: {hot_score}")
 
     # 综合评分
     total_score = turnover_score + pct_change_score + amplitude_score + shares_score + hot_score

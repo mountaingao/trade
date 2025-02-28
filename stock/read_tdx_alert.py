@@ -73,7 +73,7 @@ def import_to_database(data, db_config):
                 status = row[6].strip()
 
                 # 解析包含日期和时间的字符串
-                alert_datetime = datetime.datetime.strptime(alert_datetime_str, "%Y-%m-%d %H:%M")
+                alert_datetime = datetime.strptime(alert_datetime_str, "%Y-%m-%d %H:%M")
                 alert_time = alert_datetime.time()  # 提取时间部分
                 alert_date = alert_datetime.date()  # 提取日期部分
 

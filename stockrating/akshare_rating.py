@@ -1,15 +1,35 @@
 import akshare as ak
 import pandas as pd
+import pickle
+import os
 
 # 获取股票数据
+CACHE_DIR = './cache'  # 缓存文件夹路径
 def get_stock_data():
     # 获取所有股票列表
-    stock_info = ak.stock_info_a_code_name()
-    stock_list = stock_info.rename(columns={'code': 'ts_code', 'name': 'name'})
+    stock_list_cache_path = os.path.join(CACHE_DIR, 'stock_list.pkl')
+    limit_up_data_cache_path = os.path.join(CACHE_DIR, 'limit_up_data.pkl')
+
+    # 获取所有股票列表
+    if os.path.exists(stock_list_cache_path):
+        with open(stock_list_cache_path, 'rb') as f:
+            stock_list = pickle.load(f)
+    else:
+        stock_info = ak.stock_info_a_code_name()
+        stock_list = stock_info.rename(columns={'code': 'ts_code', 'name': 'name'})
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+        with open(stock_list_cache_path, 'wb') as f:
+            pickle.dump(stock_list, f)
 
     # 获取涨停次数数据
-    limit_up_data = ak.stock_zdt(trade_date='20231001')  # 获取某一天的涨停数据
-    return stock_list, limit_up_data
+    if os.path.exists(limit_up_data_cache_path):
+        with open(limit_up_data_cache_path, 'rb') as f:
+            limit_up_data = pickle.load(f)
+    else:
+        limit_up_data = ak.stock_zt_pool_em('20250227')  # 获取某一天的涨停数据
+        with open(limit_up_data_cache_path, 'wb') as f:
+            pickle.dump(limit_up_data, f)
 
 # 计算板块地位评分
 def calculate_sector_score(stock):

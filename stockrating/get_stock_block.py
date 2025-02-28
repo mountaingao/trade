@@ -118,7 +118,7 @@ def process_stock_concept_data(cursor, stock_code):
 if __name__ == "__main__":
     # 示例：获取特定股票的概念板块
     # 查询条件
-    target_date = date(2025, 2, 24)  # 目标日期
+    target_date = date(2025, 2, 27)  # 目标日期
     target_status = "盘中"  # 目标状态
     target_status = "开盘"  # 目标状态
     # target_status = "开盘-自"  # 目标状态
