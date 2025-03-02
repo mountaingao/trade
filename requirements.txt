@@ -18,3 +18,4 @@ mysql-connector-python
 pydub
 simpleaudio
 scipy
+deepseek

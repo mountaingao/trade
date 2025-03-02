@@ -6,7 +6,7 @@
 # 3、近期振幅
 # 4、股本大小
 # 5、是否热门板块和概念
-# 6、当日预估成交额
+# 6、当日预估成交额 （）
 
 import akshare as ak
 import pandas as pd
