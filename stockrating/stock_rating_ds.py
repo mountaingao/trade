@@ -119,7 +119,7 @@ def evaluate_stock(symbol):
 
     # 3. 流通市值（10%） f117
     print("流通市值：", stock_info.iloc[5]["value"])
-    market_cap = stock_info.iloc[5]["流通市值"] / 1e8  # 转换为亿
+    market_cap = stock_info.iloc[5]["value"] / 1e8  # 转换为亿
     market_cap_score = calculate_score(market_cap, SCORE_RULES["market_cap"])
 
     # 4. 振幅（10%）
