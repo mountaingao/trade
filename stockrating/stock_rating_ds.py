@@ -21,7 +21,13 @@ def get_stock_data(symbol):
     """
     jgcyd= ak.stock_comment_detail_zlkp_jgcyd_em(symbol=symbol)
     print("机构参与度：", jgcyd)
-    print(ak.__version__)
+    # print(ak.__version__)
+
+    # 计算机构参与度的平均值
+    if not jgcyd.empty and "机构参与度" in jgcyd.columns:
+        avg_jgcyd = jgcyd["机构参与度"].tail(5).mean()
+    else:
+        avg_jgcyd = None
 
     lspf= ak.stock_comment_detail_zhpj_lspf_em(symbol=symbol)
     print("综合评价-历史评分：", lspf)
@@ -47,7 +53,7 @@ def get_stock_data(symbol):
     # print("机构调研：", jgcyd)
 
 
-    exit()
+    # exit()
     try:
         # 获取股票基本信息
         stock_info = ak.stock_individual_info_em(symbol=symbol)
@@ -59,7 +65,7 @@ def get_stock_data(symbol):
         stock_info = None
     print("股票基本信息：", stock_info)
     print("流通市值：", stock_info.iloc[5]["value"])
-    exit()
+    # exit()
     try:
         # 获取历史行情数据
         stock_history = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")
@@ -80,7 +86,7 @@ def get_stock_data(symbol):
     print("龙虎榜数据：", dragon_tiger_data)
 
 
-    return stock_info, stock_history, dragon_tiger_data, jgcyd,desire_daily, lspf,focus
+    return stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus
 
 # 评分函数
 def calculate_score(value, rule):
@@ -101,7 +107,7 @@ def evaluate_stock(symbol):
     """
     对股票进行评分
     """
-    stock_info, stock_history, dragon_tiger_data, jgcyd,desire_daily, lspf,focus = get_stock_data(symbol)
+    stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus = get_stock_data(symbol)
 
     # 1. 近期成交额（15%） 成交量*均价 = 成交额
     recent_turnover = stock_history["成交额"].tail(5).mean() / 1e8  # 转换为亿
@@ -121,7 +127,7 @@ def evaluate_stock(symbol):
     amplitude_score = calculate_score(amplitude, SCORE_RULES["amplitude"])
 
     # 5. 机构占比（5%）
-    institution_ratio = jgcyd["机构占比"]  # 假设机构占比在基本信息中
+    institution_ratio = avg_jgcyd  # 假设机构占比在基本信息中
     institution_score = calculate_score(institution_ratio, SCORE_RULES["institution_ratio"])
 
     # 6. 龙虎榜分析（5%）
