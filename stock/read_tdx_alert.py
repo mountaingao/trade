@@ -13,6 +13,11 @@ from datetime import datetime
 # 文件路径
 file_path = r"alert1.txt"
 file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+# 检查文件是否存在，如果不存在则创建文件
+if not os.path.exists(file_path):
+    with open(file_path, 'w', encoding='GBK') as file:
+        file.write("")  # 创建空文件
+
 # 记录文件的最后修改时间和内容
 last_modified_time = os.path.getmtime(file_path)
 with open(file_path, 'r', encoding='GBK') as file:
