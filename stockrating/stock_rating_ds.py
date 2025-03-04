@@ -27,12 +27,7 @@ def load_cache(code):
     cache_file = get_cache_filename(code)
     if os.path.exists(cache_file):
         with open(cache_file, "r") as file:
-            data = json.load(file)
-            # 将字典转换回 DataFrame
-            stock_info = pd.DataFrame(data["stock_info"])
-            stock_history = pd.DataFrame(data["stock_history"])
-            dragon_tiger_data = pd.DataFrame(data["dragon_tiger_data"])
-            return stock_info, stock_history, dragon_tiger_data, data["avg_jgcyd"], data["desire_daily"], data["lspf"], data["focus"]
+            return json.load(file)
     return None
 
 def save_cache(code, data):
@@ -40,27 +35,8 @@ def save_cache(code, data):
     将数据保存到本地文件
     """
     cache_file = get_cache_filename(code)
-    # 将 DataFrame 转换为字典
-    stock_info_dict = data[0].to_dict(orient="records")
-    stock_history_dict = data[1].to_dict(orient="records")
-    dragon_tiger_data_dict = data[2].to_dict(orient="records") if data[2] is not None else None
-    avg_jgcyd = data[3]
-    desire_daily = data[4]
-    lspf = data[5]
-    focus = data[6]
-
-    data_to_save = {
-        "stock_info": stock_info_dict,
-        "stock_history": stock_history_dict,
-        "dragon_tiger_data": dragon_tiger_data_dict,
-        "avg_jgcyd": avg_jgcyd,
-        "desire_daily": desire_daily,
-        "lspf": lspf,
-        "focus": focus
-    }
-
     with open(cache_file, "w") as file:
-        json.dump(data_to_save, file)
+        json.dump(data, file)
 
 #
 # 1、近期成交额（15%），分成3个级别：5日内平均成交额10亿以上100分，5-10亿 60分，5亿以下0分
