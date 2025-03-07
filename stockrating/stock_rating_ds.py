@@ -26,8 +26,17 @@ def load_cache(code):
     """
     cache_file = get_cache_filename(code)
     if os.path.exists(cache_file):
-        with open(cache_file, "r") as file:
-            return json.load(file)
+        try:
+            with open(cache_file, "r") as file:
+                cache_data = json.load(file)
+                if cache_data.get("timestamp") == time.strftime("%Y-%m-%d"):
+                    return cache_data.get("data")
+                else:
+                    print(f"缓存文件 {cache_file} 已过期，将重新抓取数据")
+                    return None
+        except json.JSONDecodeError:
+            print(f"警告：缓存文件 {cache_file} 格式错误，将忽略此缓存文件")
+            return None
     return None
 
 def save_cache(code, data):
@@ -35,8 +44,16 @@ def save_cache(code, data):
     将数据保存到本地文件
     """
     cache_file = get_cache_filename(code)
-    with open(cache_file, "w") as file:
-        json.dump(data, file)
+    cache_data = {
+        "timestamp": time.strftime("%Y-%m-%d"),
+        "data": data
+    }
+    try:
+        with open(cache_file, "w") as file:
+            json.dump(cache_data, file, ensure_ascii=False, indent=4)
+            print(f"成功保存缓存文件 {cache_file}")
+    except Exception as e:
+        print(f"警告：无法保存缓存文件 {cache_file}，错误信息：{e}")
 
 #
 # 1、近期成交额（15%），分成3个级别：5日内平均成交额10亿以上100分，5-10亿 60分，5亿以下0分
@@ -50,9 +67,18 @@ def save_cache(code, data):
 #
 # 上述是对个股的评价系统，请用python 和akshare实现 ，后续需要进行微调，对各项分数比例进行评估和调整
 
+# 新增下面几个维度的参考值，东方财富评级
+# 9、机构调研（5%）：机构调研，如果多，则认为活跃度够，和热门板块重合
+
+
+# 机构参与度
+# 历史评分
+# 用户关注指数
+# 日度市场参与意愿
+
 # 配置评分规则和权重
 SCORE_RULES = {
-    "recent_turnover": {"weight": 0.15, "levels": [(10, 100), (5, 60), (0, 0)]},  # 近期成交额
+    "recent_turnover": {"weight": 0.20, "levels": [(15, 100),(10, 80), (5, 60), (0, 0)]},  # 近期成交额
     "recent_increase": {"weight": 0.10, "levels": [(60, 100), (40, 50), (10, 0)]},  # 近期涨幅
     "market_cap": {"weight": 0.10, "levels": [(500, 0),(300, 50), (50, 100), (20, 0)]},  # 流通市值
     "amplitude": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 振幅
@@ -76,9 +102,12 @@ def get_stock_data(symbol):
         print(f"从缓存中获取 {symbol} 的数据")
         return cached_data
 
-
+    # 定义返回数据字典
+    return_data = {}
+    return_data["code"] = symbol
     jgcyd= ak.stock_comment_detail_zlkp_jgcyd_em(symbol=symbol)
-    print("机构参与度：", jgcyd)
+    # print("机构参与度：", jgcyd)
+    # return_data["jgcyd"]=jgcyd
     # print(ak.__version__)
 
     # 计算机构参与度的平均值
@@ -87,20 +116,38 @@ def get_stock_data(symbol):
     else:
         avg_jgcyd = None
 
+    return_data["avg_jgcyd"]=avg_jgcyd
+
+
     lspf= ak.stock_comment_detail_zhpj_lspf_em(symbol=symbol)
-    print("综合评价-历史评分：", lspf)
+    # print("综合评价-历史评分：", lspf)
+    if not lspf.empty and "评分" in lspf.columns:
+        avg_lspf = lspf["评分"].tail(3).mean()
+    else:
+        avg_lspf = None
+    return_data["avg_lspf"]=avg_lspf
 
     focus= ak.stock_comment_detail_scrd_focus_em(symbol=symbol)
-    print("市场热度-用户关注指数：", focus)
+    # print("市场热度-用户关注指数：", focus)
+    if not focus.empty and "用户关注指数" in focus.columns:
+        avg_focus = focus["用户关注指数"].tail(3).mean()
+    else:
+        avg_focus = None
+    return_data["avg_focus"]=avg_focus
 
-    # 分时数据，无用
+    # 分时市场参与意愿数据，无用
     # desire= ak.stock_comment_detail_scrd_desire_em(symbol=symbol)
     # print("市场热度-市场参与意愿：", desire)
 
     desire_daily= ak.stock_comment_detail_scrd_desire_daily_em(symbol=symbol)
     print("市场热度-日度市场参与意愿：", desire_daily)
+    if not desire_daily.empty and "5日平均参与意愿变化" in desire_daily.columns:
+        last_desire_daily = desire_daily["5日平均参与意愿变化"].iloc[-1]
+    else:
+        last_desire_daily = None
+    return_data["last_desire_daily"]=last_desire_daily
 
-    # cost=历史数据，不准确
+# cost=历史数据，不准确
     # cost= ak.stock_comment_detail_scrd_cost_em(symbol=symbol)
     # print("市场热度-市场成本：", cost)
 
@@ -124,14 +171,19 @@ def get_stock_data(symbol):
     print("股票基本信息：", stock_info)
     print("流通市值：", stock_info.iloc[5]["value"])
     # exit()
+    return_data["free_float_value"] = stock_info.iloc[5]["value"]
+    # return_data["name"] = stock_info.iloc[1]["value"] gbk格式
+
     try:
         # 获取历史行情数据
         stock_history = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")
     except Exception as e:
         print(f"警告：获取股票 {symbol} 的历史行情数据时出错：{e}")
         stock_history = None
+    return_data["stock_history"] = stock_history.to_dict('records')
+    # print("历史行情数据：", stock_history)
 
-    print("历史行情数据：", stock_history)
+    # 暂时不用这个数据，自己算涨停次数
     # try:
     #     # 获取龙虎榜数据 stock_lhb_detail_em(
     #     #     start_date: str = "20230403", end_date: str = "20230417"
@@ -139,17 +191,24 @@ def get_stock_data(symbol):
     #     dragon_tiger_data = ak.stock_lhb_detail_em("20250201","20250228")
     # except Exception as e:
     #     print(f"警告：获取股票 {symbol} 的龙虎榜数据时出错：{e}")
-    dragon_tiger_data = None
+    # dragon_tiger_data = None
 
-    print("龙虎榜数据：", dragon_tiger_data)
+    # print("龙虎榜数据：", dragon_tiger_data)
 
+    # # 确保所有数据都有效
+    # if any(data is None for data in [stock_info, stock_history, avg_jgcyd, desire_daily, lspf, focus]):
+    #     print(f"警告：部分数据缺失，不保存缓存。")
+    #     return None, None, None, None, None, None, None
+
+    # 将数据存入缓存
 
     # return stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus
     # 将数据存入缓存
-    data_cache[symbol] = (stock_info, stock_history, dragon_tiger_data, avg_jgcyd, desire_daily, lspf, focus)
-
-    save_cache(symbol,  data_cache[symbol])
-    return data_cache[symbol]
+    data_cache = return_data
+    # print(return_data)
+    # print("数据已缓存：" + json.dumps(data_cache[symbol], ensure_ascii=False, indent=4))
+    save_cache(symbol, data_cache)
+    return data_cache
 
 # 清除缓存
 def clear_cache():
@@ -176,28 +235,48 @@ def evaluate_stock(symbol):
     """
     对股票进行评分
     """
-    stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus = get_stock_data(symbol)
-
+    # stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus = get_stock_data(symbol)
+    stock_data = get_stock_data(symbol)
+    print("stock_data:", stock_data)
+    stock_history = stock_data["stock_history"]
+    # print("stock_history:", stock_history)
     # 1. 近期成交额（15%） 成交量*均价 = 成交额
-    recent_turnover = stock_history["成交额"].tail(5).mean() / 1e8  # 转换为亿
+    turnover_array = np.array([entry["成交额"] for entry in stock_history[-5:]])
+    recent_turnover = turnover_array.mean() / 1e8  # 转换为亿
     turnover_score = calculate_score(recent_turnover, SCORE_RULES["recent_turnover"])
 
     # 2. 近期涨幅（10%）
-    recent_increase = (stock_history["收盘"].iloc[-1] - stock_history["收盘"].iloc[-20]) / stock_history["收盘"].iloc[-20] * 100
+    close_prices = np.array([entry["收盘"] for entry in stock_history])
+    recent_increase = (close_prices[-1] - close_prices[-20]) / close_prices[-20] * 100
     increase_score = calculate_score(recent_increase, SCORE_RULES["recent_increase"])
 
     # 3. 流通市值（10%） f117
-    print("流通市值：", stock_info.iloc[5]["value"])
-    market_cap = stock_info.iloc[5]["value"] / 1e8  # 转换为亿
+    print("流通市值：", stock_data["free_float_value"])
+    market_cap = stock_data["free_float_value"] / 1e8  # 转换为亿
     market_cap_score = calculate_score(market_cap, SCORE_RULES["market_cap"])
 
     # 4. 振幅（10%）
-    amplitude = (stock_history["最高"].max() - stock_history["最低"].min()) / stock_history["最低"].min() * 100
+    high_prices = np.array([entry["最高"] for entry in stock_history[-20:]])  # 修改为最近20天
+    low_prices = np.array([entry["最低"] for entry in stock_history[-20:]])  # 修改为最近20天
+    amplitude = (high_prices.max() - low_prices.min()) / low_prices.min() * 100
     amplitude_score = calculate_score(amplitude, SCORE_RULES["amplitude"])
 
-    # 5. 机构占比（5%）
-    institution_ratio = avg_jgcyd  # 假设机构占比在基本信息中
-    institution_score = calculate_score(institution_ratio, SCORE_RULES["institution_ratio"])
+    # 机构参与度
+    # 历史评分
+    # 用户关注指数
+    # 日度市场参与意愿
+
+    # 5. 机构参与度（5%）
+    institution_score = calculate_score(stock_data['avg_jgcyd'], SCORE_RULES["institution_ratio"])
+
+    # 5. 历史评分（5%）
+    lspf_score = calculate_score(stock_data['avg_lspf'], SCORE_RULES["institution_ratio"])
+
+    # 5. 用户关注指数（5%）
+    focus_score = calculate_score(stock_data['avg_focus'], SCORE_RULES["institution_ratio"])
+
+    # 5. 日度市场参与意愿（5%）
+    desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["institution_ratio"])
 
     # 6. 龙虎榜分析（5%）
     # if not dragon_tiger_data.empty:
@@ -287,6 +366,12 @@ symbol = "688393"
 # 3月4日 及格 60分
 # symbol = "300302"
 
+
+# 3月7日 及格 60分
+symbol = "300953"
+
+# 3月7日 及格 60分
+symbol = "300475"
 
 result = evaluate_stock(symbol)
 print("股票评分结果：", result)
