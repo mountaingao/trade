@@ -80,12 +80,15 @@ def save_cache(code, data):
 SCORE_RULES = {
     "recent_turnover": {"weight": 0.20, "levels": [(15, 100),(10, 80), (5, 60), (0, 0)]},  # 近期成交额
     "recent_increase": {"weight": 0.10, "levels": [(60, 100), (40, 50), (10, 0)]},  # 近期涨幅
-    "market_cap": {"weight": 0.10, "levels": [(500, 0),(300, 50), (50, 100), (20, 0)]},  # 流通市值
+    "market_cap": {"weight": 0.15, "levels": [(500, 0),(300, 50), (50, 100), (20, 0)]},  # 流通市值
     "amplitude": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 振幅
-    "institution_ratio": {"weight": 0.05, "levels": [(20, 0), (10, 50), (0, 100)]},  # 机构占比
-    "dragon_tiger": {"weight": 0.05, "levels": [("inflow", 100), ("small_inflow", 50), ("outflow", 0)]},  # 龙虎榜
-    "news_analysis": {"weight": 0.10, "levels": [(True, 100), (False, 0)]},  # 新闻报道分析
-    "estimated_turnover": {"weight": 0.25, "levels": [(10, 100), (5, 60), (0, 0)]},  # 预估成交额
+    "jgcyd": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 机构参与度
+    "lspf": {"weight": 0.10, "levels": [(8, 100), (6, 50), (0, 0)]},  # 历史评分
+    "focus": {"weight": 0.10, "levels": [(80, 100), (50, 50), (0, 0)]},  # 用户关注指数
+    "desire_daily": {"weight": 0.10, "levels": [(5, 100), (3, 50), (0, 0)]},  # 日度市场参与意愿
+    "dragon_tiger": {"weight": 0.00, "levels": [("inflow", 100), ("small_inflow", 50), ("outflow", 0)]},  # 龙虎榜
+    "news_analysis": {"weight": 0.00, "levels": [(True, 100), (False, 0)]},  # 新闻报道分析
+    "estimated_turnover": {"weight": 0.00, "levels": [(10, 100), (5, 60), (0, 0)]},  # 预估成交额
 }
 
 # 缓存字典
@@ -118,7 +121,6 @@ def get_stock_data(symbol):
 
     return_data["avg_jgcyd"]=avg_jgcyd
 
-
     lspf= ak.stock_comment_detail_zhpj_lspf_em(symbol=symbol)
     # print("综合评价-历史评分：", lspf)
     if not lspf.empty and "评分" in lspf.columns:
@@ -135,10 +137,6 @@ def get_stock_data(symbol):
         avg_focus = None
     return_data["avg_focus"]=avg_focus
 
-    # 分时市场参与意愿数据，无用
-    # desire= ak.stock_comment_detail_scrd_desire_em(symbol=symbol)
-    # print("市场热度-市场参与意愿：", desire)
-
     desire_daily= ak.stock_comment_detail_scrd_desire_daily_em(symbol=symbol)
     print("市场热度-日度市场参与意愿：", desire_daily)
     if not desire_daily.empty and "5日平均参与意愿变化" in desire_daily.columns:
@@ -147,18 +145,6 @@ def get_stock_data(symbol):
         last_desire_daily = None
     return_data["last_desire_daily"]=last_desire_daily
 
-# cost=历史数据，不准确
-    # cost= ak.stock_comment_detail_scrd_cost_em(symbol=symbol)
-    # print("市场热度-市场成本：", cost)
-
-    # jgcyd= ak.stock_comment_detail_zlkp_jgcyd_em(symbol=symbol)
-    # print("机构调研：", jgcyd)
-    #
-    # jgcyd= ak.stock_comment_detail_zlkp_jgcyd_em(symbol=symbol)
-    # print("机构调研：", jgcyd)
-
-
-    # exit()
     try:
         # 获取股票基本信息
         stock_info = ak.stock_individual_info_em(symbol=symbol)
@@ -170,9 +156,7 @@ def get_stock_data(symbol):
         stock_info = None
     print("股票基本信息：", stock_info)
     print("流通市值：", stock_info.iloc[5]["value"])
-    # exit()
     return_data["free_float_value"] = stock_info.iloc[5]["value"]
-    # return_data["name"] = stock_info.iloc[1]["value"] gbk格式
 
     try:
         # 获取历史行情数据
@@ -180,33 +164,16 @@ def get_stock_data(symbol):
     except Exception as e:
         print(f"警告：获取股票 {symbol} 的历史行情数据时出错：{e}")
         stock_history = None
-    return_data["stock_history"] = stock_history.to_dict('records')
-    # print("历史行情数据：", stock_history)
 
-    # 暂时不用这个数据，自己算涨停次数
-    # try:
-    #     # 获取龙虎榜数据 stock_lhb_detail_em(
-    #     #     start_date: str = "20230403", end_date: str = "20230417"
-    #     # )
-    #     dragon_tiger_data = ak.stock_lhb_detail_em("20250201","20250228")
-    # except Exception as e:
-    #     print(f"警告：获取股票 {symbol} 的龙虎榜数据时出错：{e}")
-    # dragon_tiger_data = None
+    # 将日期字段转换为字符串
+    stock_history_dict = stock_history.to_dict('records')
+    for record in stock_history_dict:
+        record['日期'] = record['日期'].strftime('%Y-%m-%d')  # 将日期转换为字符串
 
-    # print("龙虎榜数据：", dragon_tiger_data)
+    return_data["stock_history"] = json.dumps(stock_history_dict, ensure_ascii=False)
 
-    # # 确保所有数据都有效
-    # if any(data is None for data in [stock_info, stock_history, avg_jgcyd, desire_daily, lspf, focus]):
-    #     print(f"警告：部分数据缺失，不保存缓存。")
-    #     return None, None, None, None, None, None, None
-
-    # 将数据存入缓存
-
-    # return stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus
     # 将数据存入缓存
     data_cache = return_data
-    # print(return_data)
-    # print("数据已缓存：" + json.dumps(data_cache[symbol], ensure_ascii=False, indent=4))
     save_cache(symbol, data_cache)
     return data_cache
 
@@ -235,10 +202,9 @@ def evaluate_stock(symbol):
     """
     对股票进行评分
     """
-    # stock_info, stock_history, dragon_tiger_data, avg_jgcyd,desire_daily, lspf,focus = get_stock_data(symbol)
     stock_data = get_stock_data(symbol)
     print("stock_data:", stock_data)
-    stock_history = stock_data["stock_history"]
+    stock_history = json.loads(stock_data["stock_history"])  # 将 JSON 字符串反序列化为字典列表
     # print("stock_history:", stock_history)
     # 1. 近期成交额（15%） 成交量*均价 = 成交额
     turnover_array = np.array([entry["成交额"] for entry in stock_history[-5:]])
@@ -267,16 +233,16 @@ def evaluate_stock(symbol):
     # 日度市场参与意愿
 
     # 5. 机构参与度（5%）
-    institution_score = calculate_score(stock_data['avg_jgcyd'], SCORE_RULES["institution_ratio"])
+    jgcyd_score = calculate_score(stock_data['avg_jgcyd'], SCORE_RULES["jgcyd"])
 
-    # 5. 历史评分（5%）
-    lspf_score = calculate_score(stock_data['avg_lspf'], SCORE_RULES["institution_ratio"])
+    # 6. 历史评分（5%）
+    lspf_score = calculate_score(stock_data['avg_lspf'], SCORE_RULES["lspf"])
 
-    # 5. 用户关注指数（5%）
-    focus_score = calculate_score(stock_data['avg_focus'], SCORE_RULES["institution_ratio"])
+    # 7. 用户关注指数（5%）
+    focus_score = calculate_score(stock_data['avg_focus'], SCORE_RULES["focus"])
 
-    # 5. 日度市场参与意愿（5%）
-    desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["institution_ratio"])
+    # 8. 日度市场参与意愿（5%）
+    desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["desire_daily"])
 
     # 6. 龙虎榜分析（5%）
     # if not dragon_tiger_data.empty:
@@ -297,22 +263,26 @@ def evaluate_stock(symbol):
     news_score = 0
 
     # 8. 预估成交量和金额（25%）
-    estimated_turnover = recent_turnover  # 假设预估成交额等于近期成交额
+    estimated_turnover = recent_turnover/10  # 假设预估成交额等于近期成交额
     estimated_score = calculate_score(estimated_turnover, SCORE_RULES["estimated_turnover"])
 
-    # 计算总分
+    # 计算各项得分
     total_score = (
             turnover_score * SCORE_RULES["recent_turnover"]["weight"]
             + increase_score * SCORE_RULES["recent_increase"]["weight"]
             + market_cap_score * SCORE_RULES["market_cap"]["weight"]
             + amplitude_score * SCORE_RULES["amplitude"]["weight"]
-            + institution_score * SCORE_RULES["institution_ratio"]["weight"]
+            + jgcyd_score * SCORE_RULES["jgcyd"]["weight"]
+            + lspf_score * SCORE_RULES["lspf"]["weight"]
+            + focus_score * SCORE_RULES["focus"]["weight"]
+            + desire_daily_score * SCORE_RULES["desire_daily"]["weight"]
             + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
             + news_score * SCORE_RULES["news_analysis"]["weight"]
             + estimated_score * SCORE_RULES["estimated_turnover"]["weight"]
     )
 
-    return {
+    # 构建返回结果
+    result = {
         "symbol": symbol,
         "total_score": total_score,
         "scores": {
@@ -320,15 +290,58 @@ def evaluate_stock(symbol):
             "recent_increase": increase_score,
             "market_cap": market_cap_score,
             "amplitude": amplitude_score,
-            "institution_ratio": institution_score,
+            "jgcyd": jgcyd_score,
+            "lspf": lspf_score,
+            "focus": focus_score,
+            "desire_daily": desire_daily_score,
             "dragon_tiger": dragon_tiger_score,
             "news_analysis": news_score,
             "estimated_turnover": estimated_score,
         },
+        "source_data": {
+            "avg_jgcyd": stock_data['avg_jgcyd'],
+            "avg_lspf": stock_data['avg_lspf'],
+            "avg_focus": stock_data['avg_focus'],
+            "last_desire_daily": stock_data['last_desire_daily'],
+            "free_float_value": stock_data['free_float_value']
+        }
     }
 
+    # 将评分结果和基础数据保存到 MySQL 数据库
+    import mysql.connector
+    # 数据库连接配置
+    db_config = {
+        "host": "localhost",  # 数据库主机地址
+        "user": "root",  # 数据库用户名
+        "password": "111111",  # 数据库密码
+        "database": "trade"  # 数据库名称
+    }
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    
+    # 插入数据到 stock_rating 表
+    cursor.execute('''
+        INSERT INTO stock_rating (
+            symbol, recent_turnover, recent_increase, market_cap, amplitude,
+            jgcyd, lspf, focus, desire_daily, dragon_tiger, news_analysis,
+            estimated_turnover, total_score, avg_jgcyd, avg_lspf, avg_focus,
+            last_desire_daily, free_float_value
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (
+        symbol, turnover_score, increase_score, market_cap_score, amplitude_score,
+        jgcyd_score, lspf_score, focus_score, desire_daily_score, dragon_tiger_score,
+        news_score, estimated_score, total_score, stock_data['avg_jgcyd'],
+        stock_data['avg_lspf'], stock_data['avg_focus'], stock_data['last_desire_daily'],
+        stock_data['free_float_value']
+    ))
+    
+    conn.commit()
+    conn.close()
+
+    return result
+
 # 测试
-symbol = "300718"  # 长盛轴承
+# symbol = "300718"  # 长盛轴承
 # symbol = "300153"
 # symbol = "300173"
 # symbol = "300814"
@@ -346,7 +359,7 @@ symbol = "300718"  # 长盛轴承
 # 股票评分结果： {'symbol': '300083', 'total_score': 70.0, 'scores': {'recent_turnover': 100, 'recent_increase': 100, 'market_cap': 100, 'amplitude': 100, 'institution_ratio': 0, 'dragon_tiger': 0, 'news_analysis': 0, 'estimated_turnover': 100}}
 # symbol = "300083"
 # 3月4日 失败 股票评分结果： {'symbol': '688393', 'total_score': 40.0, 'scores': {'recent_turnover': 0, 'recent_increase': 100, 'market_cap': 0, 'amplitude': 100, 'institution_ratio': 0, 'dragon_tiger': 0, 'news_analysis': 100, 'estimated_turnover': 0}}
-symbol = "688393"
+# symbol = "688393"
 # 3月4日 失败 股票评分结果： {'symbol': '301382', 'total_score': 60.0, 'scores': {'recent_turnover': 100, 'recent_increase': 100, 'market_cap': 0, 'amplitude': 100, 'institution_ratio': 0, 'dragon_tiger': 0, 'news_analysis': 0, 'estimated_turnover': 100}}
 # symbol = "301382"
 # 3月4日  股票评分结果： {'symbol': '688234', 'total_score': 55.0, 'scores': {'recent_turnover': 100, 'recent_increase': 50, 'market_cap': 0, 'amplitude': 100, 'institution_ratio': 0, 'dragon_tiger': 0, 'news_analysis': 0, 'estimated_turnover': 100}}
@@ -368,10 +381,18 @@ symbol = "688393"
 
 
 # 3月7日 及格 60分
-symbol = "300953"
+# symbol = "300953"
 
-# 3月7日 及格 60分
-symbol = "300475"
+# # 3月7日 及格 60分
+# symbol = "300475"
 
-result = evaluate_stock(symbol)
-print("股票评分结果：", result)
+# 执行给定数组中的所有股票代码
+symbols = [
+    "000665", "001339", "002196", "002760", "300148", "300258", "300475", 
+    "300515", "300657", "300840", "300953", "301128", "301368", "301325", 
+    "600367", "600588", "603039", "605069", "688306", "688685", "831832", "836208"
+]
+
+for symbol in symbols:
+    result = evaluate_stock(symbol)
+    print(f"股票评分结果：{symbol}", result)
