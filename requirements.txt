@@ -19,3 +19,4 @@ pydub
 simpleaudio
 scipy
 deepseek
+mootdx
