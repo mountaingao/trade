@@ -509,11 +509,11 @@ symbols = [
 # symbols = unique_stock_codes
 
 # 执行给定数组中的所有股票代码
-for symbol in symbols:
-    print(symbol)
-    result = evaluate_stock(symbol)
-    print(f"股票评分结果：{symbol}", result)
-    time.sleep(1)  # 添加3秒延迟
+# for symbol in symbols:
+#     print(symbol)
+#     result = evaluate_stock(symbol)
+#     print(f"股票评分结果：{symbol}", result)
+#     time.sleep(1)  # 添加3秒延迟
 
 def get_stock_codes():
     """
