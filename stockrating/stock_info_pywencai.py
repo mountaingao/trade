@@ -37,20 +37,10 @@ from bs4 import BeautifulSoup
 def get_stock_market_value_pywencai(query):
     df = pywencai.get(query="A股流通市值", loop=True)
     # df = pywencai.get(query="A股流通市值")
-
-    print(df)
+    # print(df)
 
     # 将数据插入mysql数据库中
     from sqlalchemy import create_engine
-    import mysql.connector
-    # 数据库连接配置
-    db_config = {
-        "host": "localhost",  # 数据库主机地址
-        "user": "root",  # 数据库用户名
-        "password": "111111",  # 数据库密码
-        "database": "trade"  # 数据库名称
-    }
-    conn = mysql.connector.connect(**db_config)
 
     # 创建数据库连接
     engine = create_engine('mysql+pymysql://root:111111@localhost:3306/trade')
@@ -89,10 +79,66 @@ def read_stock_market_value_from_db():
 
 # 示例调用
 
-
+# 返回指定代码的数据
 def get_stock_info(result_data,code):
     # print(result_data)
     return result_data[result_data['code'] == code]
+
+import pandas as pd
+import requests
+from akshare.utils.cons import headers
+
+# 概念和板块排名
+def stock_profit_forecast_ths(
+        symbol: str = "600519", indicator: str = "概念贴合度排名"
+) -> pd.DataFrame:
+    """
+    同花顺-盈利预测
+    https://basic.10jqka.com.cn/new/600519/
+    :param symbol: 股票代码
+    :type symbol: str
+    :param indicator: choice of {“概念贴合度排名”,"预测年报每股收益", "预测年报净利润", "业绩预测详表-机构", "业绩预测详表-详细指标预测"}
+    :type indicator: str
+    :return: 盈利预测
+    :rtype: pandas.DataFrame
+    """
+    url = f"https://basic.10jqka.com.cn/new/{symbol}/"
+    r = requests.get(url, headers=headers)
+    r.encoding = "gbk"
+    # 得到 概念贴合度排名
+    # print(r.text)
+
+    temp_df = stock_extract_concept_ranking(r.text)
+    return temp_df
+
+def stock_extract_concept_ranking(html_content):
+    """
+    从HTML内容中提取概念贴合度排名信息。
+
+    参数:
+        html_content (str): HTML文档内容。
+
+    返回:
+        list: 包含概念名称和链接的列表，格式为 [(概念名称, 链接), ...]。
+              如果未找到相关信息，返回空列表。
+    """
+    # 使用BeautifulSoup解析HTML
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # 查找包含“概念贴合度排名”的标签
+    concept_ranking = soup.find('div', class_='newconcept')
+
+    # 提取所有概念
+    concepts = []
+    if concept_ranking:
+        for a_tag in concept_ranking.find_all('a'):
+            concept_name = a_tag.text.strip()
+            # concept_link = a_tag.get('href', '')
+            # concepts.append((concept_name, concept_link))
+            concepts.append((concept_name))
+        if concepts:
+            concepts.pop()  # 移除最后一个元素
+    return concepts
 
 if __name__ == '__main__':
 
@@ -100,3 +146,6 @@ if __name__ == '__main__':
     code = '300264'
     info = get_stock_info(result_data,code)
     print(info)
+
+    block = stock_profit_forecast_ths(code)
+    print(block)
