@@ -1,8 +1,8 @@
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-# reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+# reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 # 获取历史日线数据
 daily_data = reader.daily(symbol='300264')
@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup
 # driver.quit()
 # exit()
 
-def get_stock_market_value_pywencai(query):
+def get_stock_market_value_pywencai():
     df = pywencai.get(query="A股流通市值", loop=True)
     # df = pywencai.get(query="A股流通市值")
 
@@ -42,16 +42,6 @@ def get_stock_market_value_pywencai(query):
 
     # 将数据插入mysql数据库中
     from sqlalchemy import create_engine
-    import mysql.connector
-    # 数据库连接配置
-    db_config = {
-        "host": "localhost",  # 数据库主机地址
-        "user": "root",  # 数据库用户名
-        "password": "111111",  # 数据库密码
-        "database": "trade"  # 数据库名称
-    }
-    conn = mysql.connector.connect(**db_config)
-
     # 创建数据库连接
     engine = create_engine('mysql+pymysql://root:111111@localhost:3306/trade')
 
@@ -95,7 +85,10 @@ def get_stock_info(result_data,code):
     return result_data[result_data['code'] == code]
 
 if __name__ == '__main__':
+    # 新抓取当日的市值数据
+    # get_stock_market_value_pywencai()
 
+    #使用方法
     result_data = read_stock_market_value_from_db()
     code = '300264'
     info = get_stock_info(result_data,code)
