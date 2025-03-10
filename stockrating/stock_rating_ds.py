@@ -37,7 +37,7 @@ def load_cache(code):
         try:
             with open(cache_file, "r") as file:
                 cache_data = json.load(file)
-                if cache_data.get("timestamp") == time.strftime("%Y-%m-%d"):
+                if cache_data.get("timestamp") <= time.strftime("%Y-%m-%d"):
                     return cache_data.get("data")
                 else:
                     print(f"缓存文件 {cache_file} 已过期，将重新抓取数据")
@@ -473,6 +473,7 @@ symbol = "301396"
 # symbol = "688521"
 # symbol = "300083"
 # symbol = "002276"
+symbol = "300451"
 result = evaluate_stock(symbol)
 #
 # 执行给定数组中的所有股票代码
@@ -481,6 +482,34 @@ symbols = [
     "300515", "300657", "300840", "300953", "301128", "301368", "301325",
     "600367", "600588", "603039", "605069", "688306", "688685", "831832", "836208"
 ]
+# 0310
+symbols = [
+    "300007",
+    "300083",
+    "301525",
+    "300580",
+    "301382",
+    "688022",
+    "688010",
+    "688003",
+    "688097",
+    "688166",
+    "688160",
+    "300404",
+    "300857",
+    "300986",
+    "301021",
+    "688246",
+    "688393",
+    "688502",
+    "300253",
+    "300451",
+    "300432",
+    "300503",
+    "300676",
+    "300244",
+    "300433"
+];
 #
 # # 提取并去重股票代码
 # stock_codes = [
@@ -509,11 +538,11 @@ symbols = [
 # symbols = unique_stock_codes
 
 # 执行给定数组中的所有股票代码
-# for symbol in symbols:
-#     print(symbol)
-#     result = evaluate_stock(symbol)
-#     print(f"股票评分结果：{symbol}", result)
-#     time.sleep(1)  # 添加3秒延迟
+for symbol in symbols:
+    print(symbol)
+    result = evaluate_stock(symbol)
+    print(f"股票评分结果：{symbol}", result)
+    time.sleep(1)  # 添加3秒延迟
 
 def get_stock_codes():
     """
@@ -551,17 +580,17 @@ def get_stock_codes():
     
     return stock_codes
 
-# 修改执行部分
-symbols = get_stock_codes()
-print(f"获取到 {len(symbols)} 个股票代码")
-
-# 执行给定数组中的所有股票代码
-for symbol in symbols:
-    print(f"正在处理股票代码：{symbol}")
-    try:
-        result = evaluate_stock(symbol)
-        print(f"股票评分结果：{symbol}", result)
-        time.sleep(1)  # 添加1秒延迟
-    except Exception as e:
-        print(f"处理股票代码 {symbol} 时出错：{e}")
+# # 修改执行部分
+# symbols = get_stock_codes()
+# print(f"获取到 {len(symbols)} 个股票代码")
+#
+# # 执行给定数组中的所有股票代码
+# for symbol in symbols:
+#     print(f"正在处理股票代码：{symbol}")
+#     try:
+#         result = evaluate_stock(symbol)
+#         print(f"股票评分结果：{symbol}", result)
+#         time.sleep(1)  # 添加1秒延迟
+#     except Exception as e:
+#         print(f"处理股票代码 {symbol} 时出错：{e}")
 
