@@ -20,3 +20,4 @@ simpleaudio
 scipy
 deepseek
 mootdx
+sqlalchemy
