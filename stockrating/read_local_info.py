@@ -5,8 +5,8 @@ reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
 # reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 # 获取历史日线数据
-daily_data = reader.daily(symbol='300264')
-print("日线数据：", daily_data)
+# daily_data = reader.daily(symbol='300264')
+# print("日线数据：", daily_data)
 
 # # 获取历史分时数据 无效 需下载
 # minute_data = reader.minute(symbol='300264')
@@ -93,3 +93,5 @@ if __name__ == '__main__':
     code = '300264'
     info = get_stock_info(result_data,code)
     print(info)
+    print(info['name'].values[0])
+    print(info['circulating_market_value'].values[0])

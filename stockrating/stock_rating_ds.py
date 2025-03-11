@@ -10,7 +10,8 @@ import pywencai
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+# reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 
 
@@ -170,48 +171,65 @@ def get_stock_data(symbol):
         last_desire_daily = None
     return_data["last_desire_daily"]=last_desire_daily
 
-    # 先尝试使用pywencai获取流通市值和股票名称
+    info = get_stock_info(result_data,symbol)
+    # print(info)
+    return_data["stockname"] = info["name"].values[0]
+    # return_data["free_float_value"] = info["circulating_market_value"].values[0] / 1e8
+    # 尝试将流通市值转换为数值类型
     try:
-        df = pywencai.get(query= f"{symbol} 流通市值")
-        text = df['txt1']  # 获取第一个匹配结果的文本
-        # 使用字符串查找和切片提取流通市值
-        start_index = text.find("流通市值为") + len("流通市值为")
-        end_index = text.find("亿元", start_index)
-        circulating_market_value = text[start_index:end_index]
-
-        # 提取股票名称
-        start_index_1 = text.find("日") + len("日")
-        end_index_1 = text.find("的", start_index_1)
-        name = text[start_index_1:end_index_1]
-
-        print(f"流通市值为: {circulating_market_value} 亿元")
-        print(f"股票名称为: {name}")
-
-        return_data["stockname"] = name
-        return_data["free_float_value"] = circulating_market_value
-        print(f"流通市值为: {circulating_market_value} 亿元")
+        free_float_value = pd.to_numeric(info["circulating_market_value"].values[0], errors='coerce')
+        if pd.isna(free_float_value):
+            raise ValueError("无法将流通市值转换为数值类型")
+        return_data["free_float_value"] = free_float_value / 1e8
     except Exception as e:
-        print(f"警告：使用pywencai获取流通市值和股票名称时出错：{e}")
-        # 如果pywencai失败，再尝试使用akshare获取股票基本信息
-        try:
-            stock_info = ak.stock_individual_info_em(symbol=symbol)
-            if stock_info is None:
-                print(f"警告：股票代码 {symbol} 未找到相关信息，请检查代码格式是否正确。")
-                return None, None, None
-        except KeyError:
-            print(f"警告：股票代码 {symbol} 未找到相关信息，请检查代码格式是否正确。")
-            stock_info = None
+        print(f"警告：获取或转换流通市值时出错：{e}")
+        return_data["free_float_value"] = None
 
-        if stock_info is not None:
-            print("股票基本信息：", stock_info)
-            print("流通市值：", stock_info.iloc[5]["value"])
-            return_data["stockname"] = stock_info.iloc[1]["value"]
-            return_data["free_float_value"] = stock_info.iloc[5]["value"]
+    # # 先尝试使用pywencai获取流通市值和股票名称
+    # try:
+    #     df = pywencai.get(query= f"{symbol} 流通市值")
+    #     text = df['txt1']  # 获取第一个匹配结果的文本
+    #     # 使用字符串查找和切片提取流通市值
+    #     start_index = text.find("流通市值为") + len("流通市值为")
+    #     end_index = text.find("亿元", start_index)
+    #     circulating_market_value = text[start_index:end_index]
+    #
+    #     # 提取股票名称
+    #     start_index_1 = text.find("日") + len("日")
+    #     end_index_1 = text.find("的", start_index_1)
+    #     name = text[start_index_1:end_index_1]
+    #
+    #     print(f"流通市值为: {circulating_market_value} 亿元")
+    #     print(f"股票名称为: {name}")
+    #     result_data【symbol】 = result_data
+    #
+    #
+    #
+    #     return_data["stockname"] = name
+    #     return_data["free_float_value"] = circulating_market_value
+    #     print(f"流通市值为: {circulating_market_value} 亿元")
+    # except Exception as e:
+    #     print(f"警告：使用pywencai获取流通市值和股票名称时出错：{e}")
+    #     # 如果pywencai失败，再尝试使用akshare获取股票基本信息
+    #     try:
+    #         stock_info = ak.stock_individual_info_em(symbol=symbol)
+    #         if stock_info is None:
+    #             print(f"警告：股票代码 {symbol} 未找到相关信息，请检查代码格式是否正确。")
+    #             return None, None, None
+    #     except KeyError:
+    #         print(f"警告：股票代码 {symbol} 未找到相关信息，请检查代码格式是否正确。")
+    #         stock_info = None
+    #
+    #     if stock_info is not None:
+    #         print("股票基本信息：", stock_info)
+    #         print("流通市值：", stock_info.iloc[5]["value"])
+    #         return_data["stockname"] = stock_info.iloc[1]["value"]
+    #         return_data["free_float_value"] = stock_info.iloc[5]["value"]
 
     # 先尝试从本地读取历史数据
     try:
         daily_data = reader.daily(symbol=symbol)
-        print("日线数据：", daily_data)
+        # print("日线数据：", daily_data)
         return_data["stock_history"] = json.dumps(daily_data.to_dict('records'), ensure_ascii=False)
     except Exception as e:
         print(f"警告：从本地读取历史数据时出错：{e}")
@@ -260,7 +278,7 @@ def evaluate_stock(symbol):
     对股票进行评分
     """
     stock_data = get_stock_data(symbol)
-    print("stock_data:", stock_data)
+    # print("stock_data:", stock_data)
     stock_history = json.loads(stock_data["stock_history"])  # 将 JSON 字符串反序列化为字典列表
 
     # 获取股票名称
@@ -277,7 +295,7 @@ def evaluate_stock(symbol):
     increase_score = calculate_score(recent_increase, SCORE_RULES["recent_increase"])
 
     # 3. 流通市值（10%） f117
-    print("流通市值：", stock_data["free_float_value"])
+    # print("流通市值：", stock_data["free_float_value"])
     # market_cap = stock_data["free_float_value"] / 1e8  # 转换为亿
     market_cap = float(stock_data["free_float_value"])
     market_cap_score = calculate_score(market_cap, SCORE_RULES["market_cap"])
@@ -304,10 +322,6 @@ def evaluate_stock(symbol):
 
     # 8. 日度市场参与意愿（5%）
     desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["desire_daily"])
-
-
-
-
 
     # 6. 龙虎榜分析（5%）
     # if not dragon_tiger_data.empty:
@@ -419,7 +433,8 @@ def evaluate_stock(symbol):
     conn.commit()
     conn.close()
 
-    return result
+    print(f" {symbol} 的评分：{total_score}")
+    return total_score
 
 # 测试
 # symbol = "300718"  # 长盛轴承
@@ -468,81 +483,109 @@ def evaluate_stock(symbol):
 # symbol = "300475"
 
 
-symbol = "301396"
-# symbol = "301368"
-# symbol = "688521"
-# symbol = "300083"
-# symbol = "002276"
-symbol = "300451"
-result = evaluate_stock(symbol)
-#
-# 执行给定数组中的所有股票代码
-symbols = [
-    "000665", "001339", "002196", "002760", "300148", "300258", "300475",
-    "300515", "300657", "300840", "300953", "301128", "301368", "301325",
-    "600367", "600588", "603039", "605069", "688306", "688685", "831832", "836208"
-]
-# 0310
-symbols = [
-    "300007",
-    "300083",
-    "301525",
-    "300580",
-    "301382",
-    "688022",
-    "688010",
-    "688003",
-    "688097",
-    "688166",
-    "688160",
-    "300404",
-    "300857",
-    "300986",
-    "301021",
-    "688246",
-    "688393",
-    "688502",
-    "300253",
-    "300451",
-    "300432",
-    "300503",
-    "300676",
-    "300244",
-    "300433"
-];
-#
-# # 提取并去重股票代码
-# stock_codes = [
-#     "002050", "003021", "002993", "002965", "002929", "002896", "002765", "002760",
-#     "002757", "002725", "002599", "002582", "002580", "002575", "002527", "002522",
-#     "002501", "002398", "002369", "002364", "002358", "002335", "002326", "002276",
-#     "002261", "002245", "002196", "002195", "002139", "002126", "002123", "002105",
-#     "002048", "002044", "002042", "002031", "001368", "001339", "001319", "001309",
-#     "001298", "000997", "000892", "000887", "000880", "000868", "000856", "000837",
-#     "000818", "000785", "000710", "000665", "000570", "000034", "000032", "688685",
-#     "688629", "688615", "688591", "688590", "688561", "688521", "688400", "688393",
-#     "688369", "688365", "688347", "688343", "688333", "688327", "688322", "688316",
-#     "688306", "688256", "688228", "688220", "688205", "688159", "688158", "688118",
-#     "688114", "688041", "688031", "688017", "688003", "605488", "605100", "605069",
-#     "605066", "603986", "603918", "603887", "603881", "603855", "603700", "603629",
-#     "603618", "603583", "603501", "603496", "603360", "603315", "603300", "603296",
-#     "603270", "603220", "603219", "603200", "603166", "603119", "603118", "603039",
-#     "603012", "601789", "601616", "601177", "600986", "600845", "600797", "600633",
-#     "600602", "600592", "600590", "600589", "600588", "600580", "600498", "600367",
-#     "600203"
-# ]
-#
-# # 去重
-# unique_stock_codes = list(set(stock_codes))
-# # 替换 symbols 列表
-# symbols = unique_stock_codes
+from stockrating.read_local_info import read_stock_market_value_from_db,get_stock_info
+result_data = read_stock_market_value_from_db()
 
-# 执行给定数组中的所有股票代码
-for symbol in symbols:
-    print(symbol)
+
+def calculate_symbol_score(symbol):
+
+    # symbol = "301396"
+    # # symbol = "301368"
+    # # symbol = "688521"
+    # # symbol = "300083"
+    # # symbol = "002276"
+    symbol = "300451"
     result = evaluate_stock(symbol)
-    print(f"股票评分结果：{symbol}", result)
-    time.sleep(1)  # 添加3秒延迟
+#
+def calculate_symbols_score(symbols):
+    # 执行给定数组中的所有股票代码
+    symbols = [
+        "000665", "001339", "002196", "002760", "300148", "300258", "300475",
+        "300515", "300657", "300840", "300953", "301128", "301368", "301325",
+        "600367", "600588", "603039", "605069", "688306", "688685", "831832", "836208"
+    ]
+    # 0310
+    symbols = [
+        "300007",
+        "300083",
+        "301525",
+        "300580",
+        "301382",
+        "688022",
+        "688010",
+        "688003",
+        "688097",
+        "688166",
+        "688160",
+        "300404",
+        "300857",
+        "300986",
+        "301021",
+        "688246",
+        "688393",
+        "688502",
+        "300253",
+        "300451",
+        "300432",
+        "300503",
+        "300676",
+        "300244",
+        "300433"
+    ];
+    # 0311
+    symbols = [
+        "300657",
+        "300738",
+        "300042",
+        "300895",
+        "300296",
+        "301377",
+        "300100",
+        "300153",
+        "300441",
+        "300503",
+        "300083",
+        "688037",
+        "300840",
+        "301392",
+        "301389",
+        "688306",
+        "836263",
+        "873726"
+    ];
+    #
+    # # 提取并去重股票代码
+    # stock_codes = [
+    #     "002050", "003021", "002993", "002965", "002929", "002896", "002765", "002760",
+    #     "002757", "002725", "002599", "002582", "002580", "002575", "002527", "002522",
+    #     "002501", "002398", "002369", "002364", "002358", "002335", "002326", "002276",
+    #     "002261", "002245", "002196", "002195", "002139", "002126", "002123", "002105",
+    #     "002048", "002044", "002042", "002031", "001368", "001339", "001319", "001309",
+    #     "001298", "000997", "000892", "000887", "000880", "000868", "000856", "000837",
+    #     "000818", "000785", "000710", "000665", "000570", "000034", "000032", "688685",
+    #     "688629", "688615", "688591", "688590", "688561", "688521", "688400", "688393",
+    #     "688369", "688365", "688347", "688343", "688333", "688327", "688322", "688316",
+    #     "688306", "688256", "688228", "688220", "688205", "688159", "688158", "688118",
+    #     "688114", "688041", "688031", "688017", "688003", "605488", "605100", "605069",
+    #     "605066", "603986", "603918", "603887", "603881", "603855", "603700", "603629",
+    #     "603618", "603583", "603501", "603496", "603360", "603315", "603300", "603296",
+    #     "603270", "603220", "603219", "603200", "603166", "603119", "603118", "603039",
+    #     "603012", "601789", "601616", "601177", "600986", "600845", "600797", "600633",
+    #     "600602", "600592", "600590", "600589", "600588", "600580", "600498", "600367",
+    #     "600203"
+    # ]
+    #
+    # # 去重
+    # unique_stock_codes = list(set(stock_codes))
+    # # 替换 symbols 列表
+    # symbols = unique_stock_codes
+
+    # 执行给定数组中的所有股票代码
+    for symbol in symbols:
+        print(symbol)
+        result = evaluate_stock(symbol)
+        print(f"股票评分结果：{symbol}", result)
+        time.sleep(1)  # 添加3秒延迟
 
 def get_stock_codes():
     """
@@ -580,17 +623,27 @@ def get_stock_codes():
     
     return stock_codes
 
-# # 修改执行部分
-# symbols = get_stock_codes()
-# print(f"获取到 {len(symbols)} 个股票代码")
-#
-# # 执行给定数组中的所有股票代码
-# for symbol in symbols:
-#     print(f"正在处理股票代码：{symbol}")
-#     try:
-#         result = evaluate_stock(symbol)
-#         print(f"股票评分结果：{symbol}", result)
-#         time.sleep(1)  # 添加1秒延迟
-#     except Exception as e:
-#         print(f"处理股票代码 {symbol} 时出错：{e}")
+def calculate_all_stock_score():
+    # # 修改执行部分
+    symbols = get_stock_codes()
+    print(f"获取到 {len(symbols)} 个股票代码")
 
+    # 执行给定数组中的所有股票代码
+    for symbol in symbols:
+        print(f"正在处理股票代码：{symbol}")
+        try:
+            result = evaluate_stock(symbol)
+            print(f"股票评分结果：{symbol}", result)
+            time.sleep(1)  # 添加1秒延迟
+        except Exception as e:
+            print(f"处理股票代码 {symbol} 时出错：{e}")
+
+if __name__ == '__main__':
+    # 所有股票评分
+    calculate_all_stock_score()
+
+    # 单个股票评分
+    calculate_symbol_score("300541")
+
+    # 多个股票评分
+    calculate_symbols_score()
