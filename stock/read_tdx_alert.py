@@ -155,7 +155,7 @@ def monitor_file(mp3_path,db_config):
                 result = []
                 for line in lines:
                     fields = line.split("\t")  # 按制表符分割字段
-                    print(fields)
+                    # print(fields)
                     result.append(fields)
                 # 过滤掉积分低于50的信号
                 alertInfo = format_result(result)

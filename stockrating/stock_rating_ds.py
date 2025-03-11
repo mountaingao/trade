@@ -433,7 +433,7 @@ def evaluate_stock(symbol):
     conn.commit()
     conn.close()
 
-    print(f"股票 {symbol} 的评分：{total_score}")
+    print(f" {symbol} 的评分：{total_score}")
     return total_score
 
 # 测试
