@@ -9,10 +9,12 @@ import mysql.connector
 import datetime
 import pandas as pd
 from datetime import datetime
+from stockrating.stock_rating_ds import evaluate_stock
+
 
 # 文件路径
 file_path = r"alert1.txt"
-file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+# file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 # 检查文件是否存在，如果不存在则创建文件
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='GBK') as file:
@@ -37,10 +39,13 @@ def show_alert(new_content, mp3_path):
     root.attributes('-topmost', True)  # 确保窗口始终在最前面
     # 显示消息内容
     message = new_content
-    label = tk.Label(root, text=message, wraplength=420, justify="center",padx=20,  # 内部水平填充
+    label = tk.Label(root, text=message, wraplength=420, justify="center", padx=20,  # 内部水平填充
                      pady=20,  # 内部垂直填充
                      borderwidth=2,  # 边框宽度
-                     relief="groove")  # 边框样式)
+                     relief="groove",  # 边框样式
+                     font=("Arial", 10))  # 设置字体大小
+                     # fg="red",  # 设置字体颜色
+                     # bg="white")  # 设置背景颜色
     label.pack(expand=True, padx=20, pady=20)
     # messagebox.showinfo("提醒", f"文件内容已更新！\n\n新增内容：\n{new_content}")
     # playsound("alarm.mp3")
@@ -95,13 +100,28 @@ def import_to_database(data, db_config):
         conn.close()
 
 def format_result(result):
-    """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔"""
+    """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔
+    过滤代码信息：通过结果集合 result 获取代码，并通过 evaluate_stock 方法得到积分，当大于50分时，返回给弹窗提示
+    """
     formatted_lines = []
     for item in result:
         if len(item) >= 2:  # 确保每行至少有两个字段
-            formatted_line = f"{item[0].strip()} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} {item[6].strip()} "
-            formatted_lines.append(formatted_line)
+            # 获取股票代码
+            stock_code = item[0].strip()
+            # 调用 evaluate_stock 方法获取评分
+            if stock_code.startswith('8') or stock_code.startswith('4') or stock_code.startswith('9'):
+                return formatted_lines
+
+            score = evaluate_stock(stock_code)
+            # 如果评分大于50，添加到格式化结果中
+            if score > 50:
+                formatted_lines.append(f"{item[6].strip()}   {stock_code}评分: {score}")
+                formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
+                formatted_lines.append(formatted_line)
+                formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+
     return "\n".join(formatted_lines)
+
 def monitor_file(mp3_path,db_config):
     global last_modified_time, last_content
     while True:
@@ -124,6 +144,7 @@ def monitor_file(mp3_path,db_config):
             # 301396	宏景科技	2025-02-21 09:20	55.20	 0.00%	    0	开盘
             print(added_content)
 
+
             # 如果有新增内容，显示提醒
             if added_content:
                 # 插入到数据库中
@@ -134,10 +155,14 @@ def monitor_file(mp3_path,db_config):
                 result = []
                 for line in lines:
                     fields = line.split("\t")  # 按制表符分割字段
+                    print(fields)
                     result.append(fields)
-
-                # 弹出提示信息
-                show_alert(format_result(result),mp3_path)
+                # 过滤掉积分低于50的信号
+                alertInfo = format_result(result)
+                if len(alertInfo)>0:
+                    print(alertInfo)
+                    # 弹出提示信息
+                    show_alert(alertInfo,mp3_path)
 
                 # print(df)
                 import_to_database(result,  db_config)
