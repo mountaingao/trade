@@ -31,3 +31,7 @@ CREATE TABLE `stock_rating` (
     COLLATE='utf8mb4_0900_ai_ci'
 ENGINE=InnoDB
 ;
+
+ALTER TABLE `stock_rating`
+    ADD COLUMN `rating_date` DATE NULL DEFAULT NULL AFTER `recent_turnover`;
+SELECT `DEFAULT_COLLATION_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`='trade';

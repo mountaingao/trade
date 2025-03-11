@@ -4,8 +4,8 @@ import datetime
 # 本地日线数据
 def get_stock_history_by_local():
     # 创建 Reader 对象
-    # reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-    reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+    reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+    # reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
     # 获取历史日线数据
     daily_data = reader.daily(symbol='300264')

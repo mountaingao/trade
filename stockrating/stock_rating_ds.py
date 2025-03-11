@@ -4,14 +4,14 @@ import numpy as np
 import json
 import os
 import hashlib
-import time
+import time, datetime
 import pywencai
 
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-# reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+# reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 
 
@@ -164,7 +164,7 @@ def get_stock_data(symbol):
     return_data["avg_focus"]=avg_focus
 
     desire_daily= ak.stock_comment_detail_scrd_desire_daily_em(symbol=symbol)
-    print("市场热度-日度市场参与意愿：", desire_daily)
+    # print("市场热度-日度市场参与意愿：", desire_daily)
     if not desire_daily.empty and "5日平均参与意愿变化" in desire_daily.columns:
         last_desire_daily = desire_daily["5日平均参与意愿变化"].iloc[-1]
     else:
@@ -415,16 +415,17 @@ def evaluate_stock(symbol):
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
+    rating_date = datetime.now().strftime("%Y-%m-%d")
     # 插入数据到 stock_rating 表
     cursor.execute('''
         INSERT INTO stock_rating (
-            symbol,stockname, recent_turnover, recent_increase, market_cap, amplitude,
+            symbol,stockname, rating_date, recent_turnover, recent_increase, market_cap, amplitude,
             jgcyd, lspf, focus, desire_daily, dragon_tiger, news_analysis,
             estimated_turnover, total_score, avg_jgcyd, avg_lspf, avg_focus,
             last_desire_daily, free_float_value
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
-        symbol, stockname, turnover_score, increase_score, market_cap_score, amplitude_score,
+        symbol, stockname,rating_date, turnover_score, increase_score, market_cap_score, amplitude_score,
         jgcyd_score, lspf_score, focus_score, desire_daily_score, dragon_tiger_score,
         news_score, estimated_score, total_score, avg_jgcyd,
         avg_lspf, avg_focus, last_desire_daily, free_float_value

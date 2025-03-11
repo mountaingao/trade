@@ -12,6 +12,13 @@ from datetime import datetime
 from stockrating.stock_rating_ds import evaluate_stock
 
 
+import tempfile
+from pydub import AudioSegment
+from pydub.playback import play
+
+# 设置自定义临时目录
+tempfile.tempdir = "D:\\temp"  # 替换为一个你有权限的目录
+
 # 文件路径
 file_path = r"alert1.txt"
 # file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
@@ -55,7 +62,7 @@ def show_alert(new_content, mp3_path):
 
     # 播放音频
     sound = AudioSegment.from_mp3(mp3_path)
-    play(sound)
+    # play(sound)
     # playsound(mp3_path)
 
     # 阻止窗口关闭按钮关闭窗口
@@ -110,15 +117,15 @@ def format_result(result):
             stock_code = item[0].strip()
             # 调用 evaluate_stock 方法获取评分
             if stock_code.startswith('8') or stock_code.startswith('4') or stock_code.startswith('9'):
-                return formatted_lines
-
-            score = evaluate_stock(stock_code)
-            # 如果评分大于50，添加到格式化结果中
-            if score > 50:
-                formatted_lines.append(f"{item[6].strip()}   {stock_code}评分: {score}")
                 formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
-                formatted_lines.append(formatted_line)
-                formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+            else:
+                score = evaluate_stock(stock_code)
+                # 如果评分大于50，添加到格式化结果中
+                if score > 50:
+                    formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
+                    formatted_line = f"{item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
+                    formatted_lines.append(formatted_line)
+                    formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
 
     return "\n".join(formatted_lines)
 
@@ -177,4 +184,9 @@ if __name__ == "__main__":
     mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
     print(mp3_path)
 
+    mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
+
+    # sound = AudioSegment.from_mp3(mp3_path)
+    # play(sound)
+    # exit()
     monitor_file(mp3_path,db_config)
