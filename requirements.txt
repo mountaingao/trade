@@ -21,3 +21,4 @@ scipy
 deepseek
 mootdx
 sqlalchemy
+pytdx
