@@ -62,7 +62,7 @@ def show_alert(new_content, mp3_path):
 
     # 播放音频
     sound = AudioSegment.from_mp3(mp3_path)
-    # play(sound)
+    play(sound)
     # playsound(mp3_path)
 
     # 阻止窗口关闭按钮关闭窗口
@@ -118,6 +118,7 @@ def format_result(result):
             # 调用 evaluate_stock 方法获取评分
             if stock_code.startswith('8') or stock_code.startswith('4') or stock_code.startswith('9'):
                 formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
+                formatted_lines.append(formatted_line)
             else:
                 score = evaluate_stock(stock_code)
                 # 如果评分大于50，添加到格式化结果中

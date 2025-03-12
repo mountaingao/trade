@@ -10,8 +10,8 @@ import pywencai
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-# reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+# reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 
 
@@ -38,7 +38,7 @@ def load_cache(code):
         try:
             with open(cache_file, "r") as file:
                 cache_data = json.load(file)
-                if cache_data.get("timestamp") <= time.strftime("%Y-%m-%d"):
+                if cache_data.get("timestamp") == time.strftime("%Y-%m-%d"):
                     return cache_data.get("data")
                 else:
                     print(f"缓存文件 {cache_file} 已过期，将重新抓取数据")
@@ -415,7 +415,7 @@ def evaluate_stock(symbol):
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
-    rating_date = datetime.now().strftime("%Y-%m-%d")
+    rating_date = datetime.date.strftime(datetime.date.today(),"%Y-%m-%d")
     # 插入数据到 stock_rating 表
     cursor.execute('''
         INSERT INTO stock_rating (
@@ -423,9 +423,9 @@ def evaluate_stock(symbol):
             jgcyd, lspf, focus, desire_daily, dragon_tiger, news_analysis,
             estimated_turnover, total_score, avg_jgcyd, avg_lspf, avg_focus,
             last_desire_daily, free_float_value
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
-        symbol, stockname,rating_date, turnover_score, increase_score, market_cap_score, amplitude_score,
+        symbol, stockname, rating_date, turnover_score, increase_score, market_cap_score, amplitude_score,
         jgcyd_score, lspf_score, focus_score, desire_daily_score, dragon_tiger_score,
         news_score, estimated_score, total_score, avg_jgcyd,
         avg_lspf, avg_focus, last_desire_daily, free_float_value
