@@ -64,7 +64,7 @@ def get_stock_minutes_by_remote(symbol='', date=''):
     if date == '':
         date = datetime.now().strftime('%Y%m%d')
     minutes = client.minutes(symbol, date)
-    print(minutes)
+    # print(minutes)
     return minutes
 
 def calculate_vol_percentage(mini_data):
@@ -100,15 +100,16 @@ def calculate_amount_percentage(mini_data):
 
     # 计算总成交金额
     total_amount = amount_data.sum()
-    print(f"total_amount:{total_amount}")
+    # print(f"total_amount:{total_amount}")
 
     # 计算每分钟成交金额的累计和
     cumulative_amount = amount_data.cumsum()
 
     # 计算每分钟成交金额占全天总成交金额的百分比
-    amount_percentage = (cumulative_amount / total_amount) * 100
+    amount_percentage = (cumulative_amount / total_amount)
 
     return amount_percentage.tolist()
+
 def calculate_total_volume(mini_data, vol_percentage, num):
     """
     计算当日完整的成交量，通过第15个 vol_percentage 的值和前15个 vol 的累计和来反推总成交量。
@@ -118,22 +119,22 @@ def calculate_total_volume(mini_data, vol_percentage, num):
     :return: 当日完整的成交量
     """
     # 提取前15个 vol 的累计和
-    cumulative_vol_15 = mini_data['vol'][:num].sum()
+    cumulative_vol_15 = mini_data['vol'].iloc[:num].sum()
     
     # 获取第15个 vol_percentage 的值
     percentage_15 = vol_percentage[num-1]
     
     # 反推当日完整的成交量
-    total_volume = (cumulative_vol_15 ) / (percentage_15/240)
+    total_volume = (cumulative_vol_15 ) / (percentage_15)
 
-    # print(mini2['price'][14])
-    price = mini_data['price'][num-1]
+    # 获取第num个价格
+    price = mini_data['price'].iloc[num-1]
 
-    return total_volume*price*100
+    return total_volume * price * 100
 
 def calculate_total_amount(mini_data, amount_percentage, num):
     """
-    计算当日完整的成交量，通过第15个 vol_percentage 的值和前15个 vol 的累计和来反推总成交量。
+    计算当日完整的成交量，通过第15个 vol_percentage 的값和前15个 vol 的累计和来反推总成交量。
 
     :param mini_data: 包含分钟数据的 DataFrame
     :param vol_percentage: 包含每分钟成交量百分比的数组
@@ -142,16 +143,17 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     # 计算每分钟的成交金额
     amount_data = mini_data['price'] * mini_data['vol']
 
+    print(f"amount_data:{amount_data}")
     # 提取前num个 vol 的累计和
-    cumulative_vol_15 = amount_data[:num].sum()
-
+    cumulative_vol_iloc = amount_data.iloc[:num].sum()
+    print(f"cumulative_vol_iloc:{cumulative_vol_iloc}")
     # 获取第15个 vol_percentage 的值
-    percentage_15 = amount_percentage[num-1]
-
+    percentage_num = amount_percentage[num-1]
+    print(f"percentage_num:{percentage_num}")
     # 反推当日完整的成交量
-    total_volume = (cumulative_vol_15 ) / (percentage_15/240)
+    total_amount = cumulative_vol_iloc * 100 / percentage_num
 
-    return total_volume
+    return total_amount
 
 def expected_calculate_total_amount(symbol, num):
     today = datetime.now().strftime('%Y%m%d')
@@ -163,6 +165,7 @@ def expected_calculate_total_amount(symbol, num):
     today_mini = get_stock_minutes_by_remote(symbol, today)
     if num == 0:
         num = today_mini.count()
+    print(f"today_mini:{today_mini.count()}")
     yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday)
     # 计算并打印每分钟成交量百分比
     amount_percentage = calculate_amount_percentage(yesterday_mini)
@@ -174,8 +177,9 @@ def expected_calculate_total_amount(symbol, num):
 
 if __name__ == '__main__':
 
-    expected_total_amount = expected_calculate_total_amount(symbol='300565', num=0)
-    print(expected_total_amount)
+    # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
+    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
+    print(f"当日预计的成交额: {expected_total_amount}")
     exit()
     # 前一天的分钟数据
     mini = get_stock_minutes_by_remote(symbol='300565', date='20250312')
@@ -195,6 +199,7 @@ if __name__ == '__main__':
 
     # 当日的分钟数据
     mini2 = get_stock_minutes_by_remote(symbol='300565', date='20250313')
+    mini2 = get_stock_minutes_by_remote(symbol='301139', date='20250313')
     amount_percentage = calculate_amount_percentage(mini2)
 
     # 计算当日完整的成交量
