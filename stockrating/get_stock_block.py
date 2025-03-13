@@ -1,8 +1,7 @@
 import pywencai
 # 导入 a.py 和 b.py 中的函数
-from get_date_status_stockcode import query_stock_codes_by_date_and_status
-from ak_stock_block_ths import stock_profit_forecast_ths
-from stock_block import get_stock_concept
+from stockrating.get_date_status_stockcode import query_stock_codes_by_date_and_status
+from stockrating.ak_stock_block_ths import stock_profit_forecast_ths
 import mysql.connector
 from datetime import date
 from datetime import datetime
@@ -39,7 +38,7 @@ def insert_new_sectors(cursor, new_sectors, join_time):
     None
     """
     insert_query = """
-    INSERT INTO stockblock (stock_code, sector, status, rank, join_time, delete_time, remark)
+    INSERT INTO stockblock (stock_code, sector, status, ranking, join_time, delete_time, remark)
     VALUES (%s, %s, 'active', %s, %s, NULL, 'Initial addition')
     """
 
@@ -107,7 +106,7 @@ def process_stock_concept_data(cursor, stock_code):
         # 处理单个股票的板块数据
         process_stock_sectors(cursor, stock_code, concept_data, current_time)
 
-        return True
+        return concept_data
     except Exception as e:
         print(f"处理股票 {stock_code} 的概念板块数据时出错: {e}")
         return False
@@ -118,7 +117,7 @@ def process_stock_concept_data(cursor, stock_code):
 if __name__ == "__main__":
     # 示例：获取特定股票的概念板块
     # 查询条件
-    target_date = date(2025, 2, 27)  # 目标日期
+    target_date = date(2025, 3, 12)  # 目标日期
     target_status = "盘中"  # 目标状态
     target_status = "开盘"  # 目标状态
     # target_status = "开盘-自"  # 目标状态

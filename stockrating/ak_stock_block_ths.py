@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 
 from akshare.utils.cons import headers
-from get_stock_block_ths import stock_extract_concept_ranking
+from stockrating.get_stock_block_ths import stock_extract_concept_ranking
 
 
 def stock_profit_forecast_ths(

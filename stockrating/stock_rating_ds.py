@@ -185,6 +185,7 @@ def get_stock_data(symbol):
         print(f"警告：获取或转换流通市值时出错：{e}")
         return_data["free_float_value"] = None
 
+    # 获取所属板块
     # # 先尝试使用pywencai获取流通市值和股票名称
     # try:
     #     df = pywencai.get(query= f"{symbol} 流通市值")
@@ -323,7 +324,7 @@ def evaluate_stock(symbol):
     # 8. 日度市场参与意愿（5%）
     desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["desire_daily"])
 
-    # 6. 龙虎榜分析（5%）
+    # 9. 龙虎榜分析（5%）
     # if not dragon_tiger_data.empty:
     #     net_inflow = dragon_tiger_data["净买入额"].sum() / 1e4  # 转换为万元
     #     if net_inflow > 0:
@@ -336,15 +337,15 @@ def evaluate_stock(symbol):
     #     dragon_tiger_score = 0
     dragon_tiger_score = 0
 
-    # 7. 新闻报道分析（20%）
+    # 10. 新闻报道分析（20%）
     # 假设通过某种方式获取新闻报道数量（这里用随机值模拟）
     # news_count = np.random.randint(0, 10)  # 模拟新闻报道数量
     news_score = 0
 
-    # 增加当日收盘价创1年新高的评分（盘中数据，和预测相关）
+    #11 增加当日收盘价创1年新高的评分（盘中数据，和预测相关）
     high_rating = is_new_high(stock_data)
 
-    # 8. 预估成交量和金额（25%）
+    # 13. 预估成交量和金额（25%）
     estimated_turnover = recent_turnover/10  # 假设预估成交额等于近期成交额
     estimated_score = calculate_score(estimated_turnover, SCORE_RULES["estimated_turnover"])
 
