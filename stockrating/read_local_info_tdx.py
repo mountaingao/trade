@@ -1,6 +1,8 @@
 from mootdx.quotes import Quotes
 from mootdx.reader import Reader
 from datetime import datetime, timedelta
+import pandas as pd
+
 # 本地日线数据
 def get_stock_history_by_local():
     # 创建 Reader 对象
@@ -112,7 +114,7 @@ def calculate_amount_percentage(mini_data):
 
 def calculate_total_volume(mini_data, vol_percentage, num):
     """
-    计算当日完整的成交量，通过第15个 vol_percentage 的值和前15个 vol 的累计和来反推总成交量。
+    计算当日完整的成交量，通过第15个 vol_percentage 的값和前15个 vol 的累计和来反推总成交量。
 
     :param mini_data: 包含分钟数据的 DataFrame
     :param vol_percentage: 包含每分钟成交量百分比的数组
@@ -121,7 +123,7 @@ def calculate_total_volume(mini_data, vol_percentage, num):
     # 提取前15个 vol 的累计和
     cumulative_vol_15 = mini_data['vol'].iloc[:num].sum()
     
-    # 获取第15个 vol_percentage 的值
+    # 获取第15个 vol_percentage 的값
     percentage_15 = vol_percentage[num-1]
     
     # 反推当日完整的成交量
@@ -140,14 +142,19 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     :param vol_percentage: 包含每分钟成交量百分比的数组
     :return: 当日完整的成交量
     """
+    # 确保 mini_data 的索引是 RangeIndex 或 DatetimeIndex
+    if not isinstance(mini_data.index, (pd.RangeIndex, pd.DatetimeIndex)):
+        mini_data = mini_data.reset_index(drop=True)
+
     # 计算每分钟的成交金额
     amount_data = mini_data['price'] * mini_data['vol']
 
-    print(f"amount_data:{amount_data}")
+    # print(f"amount_data:{amount_data}")
+    # print(f"num:{num}")
     # 提取前num个 vol 的累计和
     cumulative_vol_iloc = amount_data.iloc[:num].sum()
     print(f"cumulative_vol_iloc:{cumulative_vol_iloc}")
-    # 获取第15个 vol_percentage 的值
+    # 获取第15个 vol_percentage 的값
     percentage_num = amount_percentage[num-1]
     print(f"percentage_num:{percentage_num}")
     # 反推当日完整的成交量
@@ -164,21 +171,23 @@ def expected_calculate_total_amount(symbol, num):
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
     if num == 0:
-        num = today_mini.count()
-    print(f"today_mini:{today_mini.count()}")
+        num = today_mini['vol'].count()
+    # print(num)
+
     yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday)
     # 计算并打印每分钟成交量百分比
     amount_percentage = calculate_amount_percentage(yesterday_mini)
 
     # 计算当日完整的成交量
-    total_amount = calculate_total_amount(today_mini, amount_percentage, num)
+    total_amount = calculate_total_amount(today_mini, amount_percentage, num) / 1e8
 
     return total_amount
 
 if __name__ == '__main__':
 
     # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
-    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
+    # expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
+    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=0)
     print(f"当日预计的成交额: {expected_total_amount}")
     exit()
     # 前一天的分钟数据
