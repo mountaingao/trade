@@ -21,7 +21,7 @@ tempfile.tempdir = "D:\\temp"  # 替换为一个你有权限的目录
 
 # 文件路径
 file_path = r"alert1.txt"
-# file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 # 检查文件是否存在，如果不存在则创建文件
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='GBK') as file:
@@ -137,6 +137,16 @@ def format_result(result,conn):
                     formatted_line = f"{item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
                     formatted_lines.append(formatted_line)
                     formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+                    formatted_lines.append(block_str)
+                else:
+                    #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
+                    if calculate_vol_percentage(item) >= 0.1:
+                        formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
+                        formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+                        formatted_lines.append(f"预计成交量{calculate_vol_percentage(item) * 100:.2f}亿，超过10亿，可能涨停！")
+                    else:
+                        formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
+                    formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
                     formatted_lines.append(block_str)
 
     return "\n".join(formatted_lines)
