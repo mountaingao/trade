@@ -10,7 +10,8 @@ import datetime
 import pandas as pd
 from datetime import datetime
 from stockrating.stock_rating_ds import evaluate_stock
-
+from stockrating.get_stock_block import process_stock_concept_data
+from stockrating.read_local_info_tdx import expected_calculate_total_amount
 
 import tempfile
 from pydub import AudioSegment
@@ -71,9 +72,8 @@ def show_alert(new_content, mp3_path):
     # 运行主循环
     root.mainloop()
 
-def import_to_database(data, db_config):
+def import_to_database(data, conn):
     try:
-        conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
         insert_query = """
         INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
@@ -104,9 +104,9 @@ def import_to_database(data, db_config):
         print(f"导入数据时出错：{e}")
     finally:
         cursor.close()
-        conn.close()
+        # conn.close()
 
-def format_result(result):
+def format_result(result,conn):
     """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔
     过滤代码信息：通过结果集合 result 获取代码，并通过 evaluate_stock 方法得到积分，当大于50分时，返回给弹窗提示
     """
@@ -115,23 +115,44 @@ def format_result(result):
         if len(item) >= 2:  # 确保每行至少有两个字段
             # 获取股票代码
             stock_code = item[0].strip()
+            cursor = conn.cursor()
+
+            block = process_stock_concept_data(cursor, stock_code)
+            cursor.close()
             # 调用 evaluate_stock 方法获取评分
             if stock_code.startswith('8') or stock_code.startswith('4') or stock_code.startswith('9'):
+                # 将 block 列表转换为字符串
+                block_str = ', '.join(block[:3])
                 formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
                 formatted_lines.append(formatted_line)
+                formatted_lines.append(block_str)
             else:
                 score = evaluate_stock(stock_code)
                 # 如果评分大于50，添加到格式化结果中
-                if score > 50:
+                if score >= 50:
+                    # 将 block 列表转换为字符串
+                    block_str = ', '.join(block[:3])
                     formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
                     formatted_line = f"{item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
                     formatted_lines.append(formatted_line)
                     formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+                    formatted_lines.append(block_str)
+                else:
+                    #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
+                    expected_total_amount = expected_calculate_total_amount(stock_code,0)
+                    print(f"预计成交额{expected_total_amount:.2f}亿")
+                    if expected_total_amount >= 10:
+                        formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
+                        formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
+                        formatted_lines.append(f"预计成交额{expected_total_amount:.2f}亿，超过10亿，可能涨停！")
 
     return "\n".join(formatted_lines)
 
 def monitor_file(mp3_path,db_config):
     global last_modified_time, last_content
+
+    # 连接数据库
+    conn = mysql.connector.connect(**db_config)
     while True:
         # 获取文件的当前修改时间和内容
 
@@ -166,14 +187,14 @@ def monitor_file(mp3_path,db_config):
                     # print(fields)
                     result.append(fields)
                 # 过滤掉积分低于50的信号
-                alertInfo = format_result(result)
+                alertInfo = format_result(result,conn)
                 if len(alertInfo)>0:
                     print(alertInfo)
                     # 弹出提示信息
                     show_alert(alertInfo,mp3_path)
 
                 # print(df)
-                import_to_database(result,  db_config)
+                import_to_database(result,  conn)
 
         # 每隔1秒检查一次
         time.sleep(2)

@@ -35,3 +35,9 @@ ENGINE=InnoDB
 ALTER TABLE `stock_rating`
     ADD COLUMN `rating_date` DATE NULL DEFAULT NULL AFTER `recent_turnover`;
 SELECT `DEFAULT_COLLATION_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`='trade';
+
+
+
+ALTER TABLE `stockblock`
+    CHANGE COLUMN `rank` `ranking` INT(10) NOT NULL DEFAULT '0' AFTER `status`;
+
