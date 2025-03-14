@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 # 本地日线数据
-def get_stock_history_by_local():
+def get_stock_history_by_local(symbol):
     # 创建 Reader 对象
     reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
     # reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
     # 获取历史日线数据
-    daily_data = reader.daily(symbol='300264')
-    print("日线数据：", daily_data)
+    daily_data = reader.daily(symbol)
+    # print("日线数据：", daily_data.head(5))
     return daily_data
 
 
@@ -114,7 +114,7 @@ def calculate_amount_percentage(mini_data):
 
 def calculate_total_volume(mini_data, vol_percentage, num):
     """
-    计算当日完整的成交量，通过第15个 vol_percentage 的값和前15个 vol 的累计和来反推总成交量。
+    计算当日完整的成交量，通过第15个 vol_percentage 的值和前15个 vol 的累计和来反推总成交量。
 
     :param mini_data: 包含分钟数据的 DataFrame
     :param vol_percentage: 包含每分钟成交量百分比的数组
@@ -123,7 +123,7 @@ def calculate_total_volume(mini_data, vol_percentage, num):
     # 提取前15个 vol 的累计和
     cumulative_vol_15 = mini_data['vol'].iloc[:num].sum()
     
-    # 获取第15个 vol_percentage 的값
+    # 获取第15个 vol_percentage 的值
     percentage_15 = vol_percentage[num-1]
     
     # 反推当日完整的成交量
@@ -163,6 +163,10 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     return total_amount / 1e8,current_amount*100 / 1e8
 
 def expected_calculate_total_amount(symbol, num):
+    """
+    计算当日预计的成交金额。
+    """
+    print(f"symbol:{symbol}")
     today = datetime.now().strftime('%Y%m%d')
     print(f"今天的日期: {today}")
     # 获取昨天的日期
@@ -184,8 +188,60 @@ def expected_calculate_total_amount(symbol, num):
 
     return total_amount,current_amount
 
+def calculate_stock_profit_from_date(symbol, date, price, days=5):
+    """
+    给出当日信号价格，计算后续第1-days天的最高价、最低价和收盘价的盈利比例。
+    :param symbol: 股票代码
+    :param date: 信号日期
+    :param price: 信号价格
+    :param days: 计算后续的天数，默认为5天
+    :return: 返回一个字典，包含第1-days天的最高价、最低价和收盘价的盈利比例
+    """
+    history_data = get_stock_history_by_local(symbol)
+    if date not in history_data.index:
+        print(f"日期 {date} 不在历史数据中")
+        return None
+
+    # 获取日期索引
+    date_index = history_data.index.get_loc(date)
+    
+    # 初始化结果字典
+    profit_ratios = {}
+
+    # 计算后续第1-days天的最高价、最低价和收盘价的盈利比例
+    for day in range(1, days + 1):
+        if date_index + day >= len(history_data):
+            print(f"无法计算第 {day} 天的数据，历史数据不足")
+            break
+
+        # 获取第day天的数据
+        future_data = history_data.iloc[date_index + day]
+        # print(f"future_data:{future_data}")
+        # 获取最高价、最低价和收盘价
+        max_price = future_data['high']
+        min_price = future_data['low']
+        close_price = future_data['close']
+        # print(f"max_price:{max_price}")
+        # print(f"min_price:{min_price}")
+        # print(f"close_price:{close_price}")
+
+        # 计算盈利比例
+        max_profit_ratio = (max_price - price) / price * 100
+        min_profit_ratio = (min_price - price) / price * 100
+        close_profit_ratio = (close_price - price) / price * 100
+
+        # 存储结果
+        profit_ratios[f"{day}_day_max"] = max_profit_ratio
+        profit_ratios[f"{day}_day_min"] = min_profit_ratio
+        profit_ratios[f"{day}_day_close"] = close_profit_ratio
+
+    return profit_ratios
+
 if __name__ == '__main__':
 
+    list_data = calculate_stock_profit_from_date('300328', '20250303', 9.24)
+    print(list_data)
+    exit()
     # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
     # expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
     expected_total_amount = expected_calculate_total_amount(symbol='301139', num=0)
