@@ -170,7 +170,7 @@ def expected_calculate_total_amount(symbol, num):
     print(f"昨天的日期: {yesterday}")
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
-    if num == 0:
+    if num == -1:
         num = today_mini['vol'].count()
     # print(num)
 

@@ -112,11 +112,11 @@ def get_number_of_timer(time):
 
     # 计算时间对应的数字
     if 9 <= alert_time.hour < 11 or (alert_time.hour == 11 and alert_time.minute <= 30):
-        time_number = (alert_time.hour - 9) * 60 + alert_time.minute
+        time_number = (alert_time.hour - 9) * 60 + alert_time.minute-30
     elif 13 <= alert_time.hour < 15 or (alert_time.hour == 15 and alert_time.minute <= 0):
         time_number = 120 + (alert_time.hour - 13) * 60 + alert_time.minute
     else:
-        time_number = 0  # 如果时间不在指定范围内，设置为 None
+        time_number = -1  # 如果时间不在指定范围内，设置为 None
     print(time_number)
     return time_number
 
@@ -144,7 +144,7 @@ def format_result(result,conn):
                 # formatted_lines.append(block_str)
                 # formatted_lines.append(f"注: 上轨有效")
                 formatted_lines.append("-------------------------------------")
-                formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  {item[6].strip()}")
+                formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  【{item[6].strip()}】")
                 formatted_lines.append("-------------------------------------")
                 formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
                 formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
@@ -181,7 +181,7 @@ def format_result(result,conn):
                     print(f"预计成交额{total_amount:.2f}亿")
                     if total_amount >= 10:
                         formatted_lines.append("-------------------------------------")
-                        formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  ")
+                        formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  【{item[6].strip()}】")
                         formatted_lines.append("-------------------------------------")
                         formatted_lines.append(f"|【评分】: {score} 【{item[6].strip()}】  ")
                         formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
