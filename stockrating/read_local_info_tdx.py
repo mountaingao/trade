@@ -151,16 +151,16 @@ def calculate_total_amount(mini_data, amount_percentage, num):
 
     # print(f"amount_data:{amount_data}")
     # print(f"num:{num}")
-    # 提取前num个 vol 的累计和
-    cumulative_vol_iloc = amount_data.iloc[:num].sum()
-    print(f"cumulative_vol_iloc:{cumulative_vol_iloc}")
+    # 提取前num个 amount 的累计和
+    current_amount = amount_data.iloc[:num].sum()
+    print(f"cumulative_vol_iloc:{current_amount}")
     # 获取第15个 vol_percentage 的값
     percentage_num = amount_percentage[num-1]
     print(f"percentage_num:{percentage_num}")
     # 反推当日完整的成交量
-    total_amount = cumulative_vol_iloc * 100 / percentage_num
+    total_amount = current_amount * 100 / percentage_num
 
-    return total_amount
+    return total_amount / 1e8,current_amount*100 / 1e8
 
 def expected_calculate_total_amount(symbol, num):
     today = datetime.now().strftime('%Y%m%d')
@@ -179,9 +179,10 @@ def expected_calculate_total_amount(symbol, num):
     amount_percentage = calculate_amount_percentage(yesterday_mini)
 
     # 计算当日完整的成交量
-    total_amount = calculate_total_amount(today_mini, amount_percentage, num) / 1e8
+    total_amount,current_amount = calculate_total_amount(today_mini, amount_percentage, num)
+    # total_amount = calculate_total_amount(today_mini, amount_percentage, num) / 1e8
 
-    return total_amount
+    return total_amount,current_amount
 
 if __name__ == '__main__':
 

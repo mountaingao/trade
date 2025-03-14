@@ -47,7 +47,7 @@ def show_alert(new_content, mp3_path):
     root.attributes('-topmost', True)  # 确保窗口始终在最前面
     # 显示消息内容
     message = new_content
-    label = tk.Label(root, text=message, wraplength=420, justify="center", padx=20,  # 内部水平填充
+    label = tk.Label(root, text=message, wraplength=420, justify="left", padx=20,  # 内部水平填充
                      pady=20,  # 内部垂直填充
                      borderwidth=2,  # 边框宽度
                      relief="groove",  # 边框样式
@@ -58,8 +58,8 @@ def show_alert(new_content, mp3_path):
     # messagebox.showinfo("提醒", f"文件内容已更新！\n\n新增内容：\n{new_content}")
     # playsound("alarm.mp3")
 
-    # 设置定时器，5秒后关闭窗口
-    root.after(8000, root.destroy)
+    # 设置定时器，10秒后关闭窗口
+    root.after(10000, root.destroy)
 
     # 播放音频
     sound = AudioSegment.from_mp3(mp3_path)
@@ -106,6 +106,20 @@ def import_to_database(data, conn):
         cursor.close()
         # conn.close()
 
+def get_number_of_timer(time):
+    # 解析时间字符串为 datetime 对象
+    alert_time = datetime.strptime(time, "%Y-%m-%d %H:%M").time()
+
+    # 计算时间对应的数字
+    if 9 <= alert_time.hour < 11 or (alert_time.hour == 11 and alert_time.minute <= 30):
+        time_number = (alert_time.hour - 9) * 60 + alert_time.minute
+    elif 13 <= alert_time.hour < 15 or (alert_time.hour == 15 and alert_time.minute <= 0):
+        time_number = 120 + (alert_time.hour - 13) * 60 + alert_time.minute
+    else:
+        time_number = 0  # 如果时间不在指定范围内，设置为 None
+    print(time_number)
+    return time_number
+
 def format_result(result,conn):
     """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔
     过滤代码信息：通过结果集合 result 获取代码，并通过 evaluate_stock 方法得到积分，当大于50分时，返回给弹窗提示
@@ -118,33 +132,69 @@ def format_result(result,conn):
             cursor = conn.cursor()
 
             block = process_stock_concept_data(cursor, stock_code)
+
+            block_str = ', '.join(block[:3])
+
             cursor.close()
             # 调用 evaluate_stock 方法获取评分
             if stock_code.startswith('8') or stock_code.startswith('4') or stock_code.startswith('9'):
                 # 将 block 列表转换为字符串
-                block_str = ', '.join(block[:3])
-                formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
-                formatted_lines.append(formatted_line)
-                formatted_lines.append(block_str)
+                # formatted_line = f"{stock_code} {item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
+                # formatted_lines.append(formatted_line)
+                # formatted_lines.append(block_str)
+                # formatted_lines.append(f"注: 上轨有效")
+                formatted_lines.append("-------------------------------------")
+                formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  {item[6].strip()}")
+                formatted_lines.append("-------------------------------------")
+                formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
+                formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
+                formatted_lines.append("-------------------------------------")
+                formatted_lines.append("| 相关概念:                        ")
+                for concept in block[:3]:
+                    formatted_lines.append(f"| - {concept}                         ")
+                formatted_lines.append("-------------------------------------")
+                formatted_lines.append(f"| 注: 上轨有效！                   ")
+
             else:
                 score = evaluate_stock(stock_code)
+                #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
+                total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( item[2].strip()))
                 # 如果评分大于50，添加到格式化结果中
                 if score >= 50:
                     # 将 block 列表转换为字符串
-                    block_str = ', '.join(block[:3])
-                    formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
-                    formatted_line = f"{item[1].strip()} {item[2].strip()} {item[3].strip()} {item[4].strip()} "
-                    formatted_lines.append(formatted_line)
-                    formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
-                    formatted_lines.append(block_str)
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}   【{item[6].strip()}】")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"|【评分】: {score}   ")
+                    formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
+                    formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"| 当前成交额: {current_amount:.2f}亿           ")
+                    formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append("| 相关概念:                        ")
+                    for concept in block[:3]:
+                        formatted_lines.append(f"| - {concept}                         ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"| 注: 上轨有效！                   ")
                 else:
-                    #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
-                    expected_total_amount = expected_calculate_total_amount(stock_code,0)
-                    print(f"预计成交额{expected_total_amount:.2f}亿")
-                    if expected_total_amount >= 10:
-                        formatted_lines.append(f" {stock_code} 【评分】: {score} {item[6].strip()}  ")
-                        formatted_lines.append(f"注: {stock_code} 站上上轨有效！")
-                        formatted_lines.append(f"预计成交额{expected_total_amount:.2f}亿，超过10亿，可能涨停！")
+                    print(f"预计成交额{total_amount:.2f}亿")
+                    if total_amount >= 10:
+                        formatted_lines.append("-------------------------------------")
+                        formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  ")
+                        formatted_lines.append("-------------------------------------")
+                        formatted_lines.append(f"|【评分】: {score} 【{item[6].strip()}】  ")
+                        formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
+                        formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
+                        formatted_lines.append("-------------------------------------")
+                        formatted_lines.append(f"| 当前成交额: {current_amount:.2f}亿           ")
+                        formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
+                        formatted_lines.append("-------------------------------------")
+                        formatted_lines.append("| 相关概念:                        ")
+                        for concept in block[:3]:
+                            formatted_lines.append(f"| - {concept}                         ")
+                        formatted_lines.append("-------------------------------------")
+                        formatted_lines.append(f"| 注: 上轨有效！                   ")
 
     return "\n".join(formatted_lines)
 
