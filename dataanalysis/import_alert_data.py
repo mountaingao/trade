@@ -95,7 +95,13 @@ def import_alert_data(df, file_date, db_config):
 
         # 将 result 数据写入 Excel 文件
         result_df = pd.DataFrame.from_dict(result, orient='index')
-        result_df.to_excel(f"alert_data_{file_date}.xlsx", index=False)
+        
+        # 检查文件是否存在，如果存在则追加，否则创建新文件
+        if os.path.exists("alert_data_all.xlsx"):
+            with pd.ExcelWriter("alert_data_all.xlsx", mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
+                result_df.to_excel(writer, index=False, header=False, startrow=writer.sheets['Sheet1'].max_row)
+        else:
+            result_df.to_excel("alert_data_all.xlsx", index=False)
 
         # 提交事务
         # conn.commit()
@@ -128,4 +134,4 @@ if __name__ == "__main__":
             if df is not None:
                 # 导入数据到数据库
                 import_alert_data(df, file_date, db_config)
-            # exit()
+            # exit() b
