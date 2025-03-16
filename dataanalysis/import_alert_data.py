@@ -27,7 +27,7 @@ def extract_date_from_filename(file_name):
         # 将日期字符串转换为日期对象
         date_obj = datetime.strptime(date_str, "%m%d").date()
         current_year = datetime.now().year
-        final_date = date_obj.replace(year=current_year)
+        final_date = date_obj.replace(year=current_year).strftime("%Y%m%d")
         return final_date
     except ValueError:
         print(f"无法从文件名中提取日期：{file_name}")
@@ -53,15 +53,15 @@ def cal_stock_profit(stockcode,date,time):
     return return_data
 
 # 将数据导入数据库
-def import_to_database(df, file_date, db_config):
+def import_alert_data(df, file_date, db_config):
     try:
         # 连接数据库
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
         print(df)
+        result = {}
         # 遍历 DataFrame 并插入数据
         for _, row in df.iterrows():
-
             # 解析 row 内容
             row_data = row.iloc[0].split('\t')  # 使用制表符分割行数据
             if len(row_data) < 6:
@@ -75,23 +75,31 @@ def import_to_database(df, file_date, db_config):
             price_change = float(row_data[4].strip().rstrip('%'))  # 涨跌幅（去掉百分号）
             status = row_data[5].strip()  # 状态
 
-            cal_stock_profit(stock_code,alert_time_str,current_price)
+            # 计算1-5天的收盘价和最高价相对于买入价的百分比
+            # 将日期格式转换一下
+            print(file_date)
+            days = 5
+            return_data = calculate_stock_profit_from_date(stock_code, file_date, current_price,days)
+            if return_data is None:
+                print(f"无法计算收益率：{stock_code}")
+                continue
 
-            # 解析预警时间（仅时间部分）
-            alert_time = datetime.strptime(alert_time_str, "%H:%M").time()
-            print(alert_time)
-            # 构造 SQL 插入语句
-            insert_query = """
-            INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            values = (stock_code, stock_name, alert_time, current_price, price_change, status, file_date)
-            print(insert_query, values)
-            # 执行插入操作
-            cursor.execute(insert_query, values)
+            print(return_data)
+            return_data['stock_name'] = stock_name
+            return_data['stock_code'] = stock_code
+            return_data['alert_time'] = alert_time_str
+            return_data['current_price'] = current_price
+            return_data['alert_date'] = file_date
+
+            result[stock_code] = return_data
+
+        # 将 result 数据写入 Excel 文件
+        result_df = pd.DataFrame.from_dict(result, orient='index')
+        result_df.to_excel(f"alert_data_{file_date}.xlsx", index=False)
 
         # 提交事务
-        conn.commit()
+        # conn.commit()
+        print(result)
         print("数据导入成功！")
     except Exception as e:
         print(f"导入数据时出错：{e}")
@@ -119,5 +127,5 @@ if __name__ == "__main__":
             df = read_csv(file_path)
             if df is not None:
                 # 导入数据到数据库
-                import_to_database(df, file_date, db_config)
-            exit()
+                import_alert_data(df, file_date, db_config)
+            # exit()

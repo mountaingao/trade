@@ -197,7 +197,14 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
     :param days: 计算后续的天数，默认为5天
     :return: 返回一个字典，包含第1-days天的最高价、最低价和收盘价的盈利比例
     """
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    if '-' in date:
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+
     history_data = get_stock_history_by_local(symbol)
+    print(f"date:{date}")
+    print(f"history_data:{history_data}")
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
     if date not in history_data.index:
         print(f"日期 {date} 不在历史数据中")
         return None
