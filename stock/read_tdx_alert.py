@@ -22,7 +22,7 @@ tempfile.tempdir = "D:\\temp"  # 替换为一个你有权限的目录
 
 # 文件路径
 file_path = r"alert1.txt"
-# file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
+file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 # 检查文件是否存在，如果不存在则创建文件
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='GBK') as file:
