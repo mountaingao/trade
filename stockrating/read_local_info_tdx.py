@@ -240,6 +240,7 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
         future_data = history_data.iloc[date_index + day]
         # print(f"future_data:{future_data}")
         # 获取最高价、最低价和收盘价
+        open_price = future_data['open']
         max_price = future_data['high']
         min_price = future_data['low']
         close_price = future_data['close']
@@ -251,8 +252,10 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
         max_profit_ratio = (max_price - price) / price * 100
         min_profit_ratio = (min_price - price) / price * 100
         close_profit_ratio = (close_price - price) / price * 100
+        open_profit_ratio = (open_price - price) / price * 100
 
         # 存储结果
+        profit_ratios[f"{day}_day_open"] = open_profit_ratio
         profit_ratios[f"{day}_day_max"] = max_profit_ratio
         profit_ratios[f"{day}_day_min"] = min_profit_ratio
         profit_ratios[f"{day}_day_close"] = close_profit_ratio
