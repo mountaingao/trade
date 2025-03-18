@@ -6,8 +6,8 @@ import pandas as pd
 # 本地日线数据
 def get_stock_history_by_local(symbol):
     # 创建 Reader 对象
-    reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-    # reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+    # reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+    reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
     # 获取历史日线数据
     daily_data = reader.daily(symbol)
@@ -169,16 +169,31 @@ def expected_calculate_total_amount(symbol, num):
     print(f"symbol:{symbol}")
     today = datetime.now().strftime('%Y%m%d')
     print(f"今天的日期: {today}")
-    # 获取昨天的日期
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
-    print(f"昨天的日期: {yesterday}")
+
+    # 获取上一个交易日
+    yesterday = datetime.now() - timedelta(days=1)
+    while True:
+        # 检查是否为周末
+        if yesterday.weekday() >= 5:  # 5和6分别代表周六和周日
+            yesterday -= timedelta(days=1)
+            continue
+        # 获取历史数据检查是否为交易日
+        history_data = get_stock_history_by_local(symbol)
+        if yesterday.strftime('%Y%m%d') in history_data.index:
+            break
+        yesterday -= timedelta(days=1)
+    yesterday_str = yesterday.strftime('%Y%m%d')
+    print(f"上一个交易日: {yesterday_str}")
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
+    print(today_mini)
     if num == -1:
         num = today_mini['vol'].count()
     # print(num)
 
-    yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday)
+    yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday_str)
+    print(yesterday_mini)
+    print(yesterday_mini)
     # 计算并打印每分钟成交量百分比
     amount_percentage = calculate_amount_percentage(yesterday_mini)
 
@@ -246,9 +261,9 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
 
 if __name__ == '__main__':
 
-    list_data = calculate_stock_profit_from_date('300328', '20250303', 9.24)
-    print(list_data)
-    exit()
+    # list_data = calculate_stock_profit_from_date('300328', '20250303', 9.24)
+    # print(list_data)
+    # exit()
     # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
     # expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
     expected_total_amount = expected_calculate_total_amount(symbol='301139', num=0)

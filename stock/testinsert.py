@@ -5,6 +5,7 @@ import time
 file_path = r"ALERT.txt"
 # file_path = r"ALERT-0311.txt"
 # file_path = r"ALERT-0310.txt"
+file_path = r"ALERT-0317.txt"
 # file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 
 # 读取文件并解析时间
