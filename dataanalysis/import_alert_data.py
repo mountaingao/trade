@@ -13,8 +13,8 @@ db_config = {
 }
 
 # 目标目录路径
-directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
-# directory_path = "D:/BaiduSyncdisk/个人/通达信/202502"
+# directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
+directory_path = "D:/BaiduSyncdisk/个人/通达信/202501"
 # 读取目录下的所有 CSV 文件
 def get_csv_files(directory):
     return [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith(('.xls', '.xlsx'))]
@@ -53,7 +53,7 @@ def cal_stock_profit(stockcode,date,time):
     return return_data
 
 # 将数据导入数据库
-def import_alert_data(df, file_date, db_config):
+def import_alert_data(df, file_date, db_config,file_name):
     try:
         # 连接数据库
         conn = mysql.connector.connect(**db_config)
@@ -97,11 +97,11 @@ def import_alert_data(df, file_date, db_config):
         result_df = pd.DataFrame.from_dict(result, orient='index')
         
         # 检查文件是否存在，如果存在则追加，否则创建新文件
-        if os.path.exists("alert_data_all.xlsx"):
-            with pd.ExcelWriter("alert_data_all.xlsx", mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
+        if os.path.exists(file_name):
+            with pd.ExcelWriter(file_name, mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
                 result_df.to_excel(writer, index=False, header=False, startrow=writer.sheets['Sheet1'].max_row)
         else:
-            result_df.to_excel("alert_data_all.xlsx", index=False)
+            result_df.to_excel(file_name, index=False)
 
         # 提交事务
         # conn.commit()
@@ -131,7 +131,8 @@ if __name__ == "__main__":
 
             # 读取 CSV 文件
             df = read_csv(file_path)
+            xls_name = os.path.basename(directory_path)+".xlsx"
             if df is not None:
-                # 导入数据到数据库
-                import_alert_data(df, file_date, db_config)
+                # 计算数据
+                import_alert_data(df, file_date, db_config,xls_name)
             # exit() b
