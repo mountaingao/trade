@@ -18,7 +18,7 @@ print(df.count())
 # print(df.head())
 # 统计各个字段大于0的延续性
 # 1、成交额大于1亿的继续下一步统计
-df = df[df['0_amount'] > 1e9]
+df = df[df['0_amount'] <= 1e9]
 
 print(df.head())
 print(df.count())
@@ -42,6 +42,20 @@ def cal_day_ratio(df, fields):
 
 cal_day_ratio(df, fields)
 exit()
+
+#
+# 当0_day_close大于0时，1_day_close大于0_day_close的比例为: 23.53%
+# 当1_day_close大于0时，2_day_close大于1_day_close的比例为: 21.85%
+# 当2_day_close大于0时，3_day_close大于2_day_close的比例为: 22.69%
+# 当3_day_close大于0时，4_day_close大于3_day_close的比例为: 35.29%
+# 当4_day_close大于0时，5_day_close大于4_day_close的比例为: 20.17%
+
+# 10亿以下
+# 当0_day_close大于0时，1_day_close大于0_day_close的比例为: 18.68%
+# 当1_day_close大于0时，2_day_close大于1_day_close的比例为: 17.58%
+# 当2_day_close大于0时，3_day_close大于2_day_close的比例为: 12.09%
+# 当3_day_close大于0时，4_day_close大于3_day_close的比例为: 14.29%
+# 当4_day_close大于0时，5_day_close大于4_day_close的比例为: 17.58%
 
 for field in fields:
     if field.endswith('_close'):
