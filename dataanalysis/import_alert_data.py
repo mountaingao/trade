@@ -15,7 +15,7 @@ db_config = {
 # 目标目录路径
 # directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
 # directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
-directory_path = "D:/BaiduSyncdisk/个人/通达信/202501"
+directory_path = "D:/BaiduSyncdisk/个人/通达信/202502"
 # 读取目录下的所有 CSV 文件
 def get_csv_files(directory):
     return [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith(('.xls', '.xlsx'))]

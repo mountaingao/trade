@@ -230,6 +230,8 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
     # 初始化结果字典
     profit_ratios = {}
 
+    # 获取当日的数据
+
     # 计算后续第1-days天的最高价、最低价和收盘价的盈利比例
     for day in range(0, days + 1):
         if date_index + day >= len(history_data):
@@ -248,7 +250,10 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
         # print(f"max_price:{max_price}")
         # print(f"min_price:{min_price}")
         # print(f"close_price:{close_price}")
-
+        # 收盘价和信号价，以高价为买入价格，后续计算方便
+        if day == 0:
+            if future_data['close'] > price:
+                price = future_data['close']
         # 计算盈利比例
         max_profit_ratio = (max_price - price) / price * 100
         min_profit_ratio = (min_price - price) / price * 100
