@@ -14,6 +14,7 @@ db_config = {
 
 # 目标目录路径
 # directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
+# directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
 directory_path = "D:/BaiduSyncdisk/个人/通达信/202501"
 # 读取目录下的所有 CSV 文件
 def get_csv_files(directory):
@@ -75,6 +76,8 @@ def import_alert_data(df, file_date, db_config,file_name):
             price_change = float(row_data[4].strip().rstrip('%'))  # 涨跌幅（去掉百分号）
             status = row_data[5].strip()  # 状态
 
+
+
             # 计算1-5天的收盘价和最高价相对于买入价的百分比
             # 将日期格式转换一下
             print(file_date)
@@ -84,12 +87,13 @@ def import_alert_data(df, file_date, db_config,file_name):
                 print(f"无法计算收益率：{stock_code}")
                 continue
 
-            print(return_data)
             return_data['stock_name'] = stock_name
             return_data['stock_code'] = stock_code
             return_data['alert_time'] = alert_time_str
             return_data['current_price'] = current_price
             return_data['alert_date'] = file_date
+            print(return_data)
+
 
             result[stock_code] = return_data
 
@@ -106,7 +110,7 @@ def import_alert_data(df, file_date, db_config,file_name):
         # 提交事务
         # conn.commit()
         print(result)
-        print("数据导入成功！")
+        print("数据写入成功！"+file_name)
     except Exception as e:
         print(f"导入数据时出错：{e}")
     finally:
