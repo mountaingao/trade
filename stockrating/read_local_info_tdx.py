@@ -262,6 +262,10 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
 
         # 存储结果
 
+        profit_ratios[f"{day}_open"] = open_price
+        profit_ratios[f"{day}_high"] = max_price
+        profit_ratios[f"{day}_low"] = min_price
+        profit_ratios[f"{day}_close"] = close_price
         profit_ratios[f"{day}_amount"] = amount
         profit_ratios[f"{day}_day_open"] = open_profit_ratio
         profit_ratios[f"{day}_day_max"] = max_profit_ratio
@@ -270,6 +274,106 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
 
     return profit_ratios
 
+def get_stock_data_from_date(symbol, date,  days=5):
+    """
+    返回最高价、最低价和收盘价的盈利比例。
+    :param symbol: 股票代码
+    :param date: 信号日期
+    :param price: 信号价格
+    :param days: 计算后续的天数，默认为5天
+    :return: 返回一个字典，包含第1-days天的最高价、最低价和收盘价的盈利比例
+    """
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    # if '-' in date:
+    #     date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+
+    history_data = get_stock_history_by_local(symbol)
+    print(f"date:{date}")
+    print(f"history_data:{history_data.head()}")
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    if date not in history_data.index:
+        print(f"日期 {date} 不在历史数据中")
+        return None
+
+    # 获取日期索引
+    date_index = history_data.index.get_loc(date)
+
+    # 返回days 的数据
+    # 返回从date_index 开始的days+1条数据
+    history_data = history_data.iloc[date_index:date_index+days+1]
+    print(f"history_data:{history_data}")
+    return history_data
+
+def calculate_stock_profit_from_date(symbol, date, price, days=5):
+    """
+    给出当日信号价格，计算后续第1-days天的最高价、最低价和收盘价的盈利比例。
+    :param symbol: 股票代码
+    :param date: 信号日期
+    :param price: 信号价格
+    :param days: 计算后续的天数，默认为5天
+    :return: 返回一个字典，包含第1-days天的最高价、最低价和收盘价的盈利比例
+    """
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    if '-' in date:
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+
+    history_data = get_stock_history_by_local(symbol)
+    print(f"date:{date}")
+    print(f"history_data:{history_data.head()}")
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    if date not in history_data.index:
+        print(f"日期 {date} 不在历史数据中")
+        return None
+
+    # 获取日期索引
+    date_index = history_data.index.get_loc(date)
+
+    # 初始化结果字典
+    profit_ratios = {}
+
+    # 获取当日的数据
+
+    # 计算后续第1-days天的最高价、最低价和收盘价的盈利比例
+    for day in range(0, days + 1):
+        if date_index + day >= len(history_data):
+            print(f"无法计算第 {day} 天的数据，历史数据不足")
+            break
+
+        # 获取第day天的数据
+        future_data = history_data.iloc[date_index + day]
+        # print(f"future_data:{future_data}")
+        # 获取最高价、最低价和收盘价
+        open_price = future_data['open']
+        max_price = future_data['high']
+        min_price = future_data['low']
+        close_price = future_data['close']
+        amount = future_data['amount']
+        # print(f"max_price:{max_price}")
+        # print(f"min_price:{min_price}")
+        # print(f"close_price:{close_price}")
+        # 收盘价和信号价，以高价为买入价格，后续计算方便
+        if day == 0:
+            if future_data['close'] > price:
+                price = future_data['close']
+        # 计算盈利比例
+        max_profit_ratio = (max_price - price) / price * 100
+        min_profit_ratio = (min_price - price) / price * 100
+        close_profit_ratio = (close_price - price) / price * 100
+        open_profit_ratio = (open_price - price) / price * 100
+
+        # 存储结果
+
+        profit_ratios[f"{day}_open"] = open_price
+        profit_ratios[f"{day}_high"] = max_price
+        profit_ratios[f"{day}_low"] = min_price
+        profit_ratios[f"{day}_close"] = close_price
+        profit_ratios[f"{day}_amount"] = amount
+        profit_ratios[f"{day}_day_open"] = open_profit_ratio
+        profit_ratios[f"{day}_day_max"] = max_profit_ratio
+        profit_ratios[f"{day}_day_min"] = min_profit_ratio
+        profit_ratios[f"{day}_day_close"] = close_profit_ratio
+
+    return profit_ratios
 if __name__ == '__main__':
 
     # list_data = calculate_stock_profit_from_date('300328', '20250303', 9.24)
