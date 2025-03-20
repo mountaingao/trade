@@ -13,14 +13,17 @@ def calculate_stock_statistics(stock_code, stock_name, start_date):
         return None
     
     # 计算股票利润
-    stock_code = str(int(stock_code))
+    stock_code =  f"{int(stock_code):06d}"
     start_date = str(int(start_date))
 
     stock_data = get_stock_data_from_date(stock_code, start_date, days=5)
+    stock_data['code'] = stock_code
+    stock_data['name'] = stock_name
+    stock_data['alertdate'] = start_date
     print(stock_data)
     return_data = {}
     if stock_data is not None:
-        return_data[stock_code] = calculate_price_comparison(stock_data)
+        return_data = calculate_price_comparison(stock_data)
 
     return return_data
 
@@ -41,8 +44,11 @@ def generate_analysis_excel(stock_data, output_file):
             statistics = calculate_stock_statistics(stock_code, stock_name, start_date)
             # 将结果转换为 DataFrame
             if statistics is not None:
-                result_df[stock_code] = statistics
-        exit()
+        # 添加 code, name, alertdate 到 stock_data
+        #         result_df[] = statistics
+                # 提取 DataFrame 并添加到 result_df 中
+                result_df = pd.concat([result_df, statistics])
+
     # 生成 Excel 文件
     result_df.to_excel(output_file, index=False)
 
@@ -53,17 +59,20 @@ def calculate_price_comparison(stock_data):
     stock_data['close_higher'] = (stock_data['close'] > stock_data['close'].shift(1)).astype(int)
     stock_data['open_higher'] = (stock_data['open'] > stock_data['open'].shift(1)).astype(int)
 
+    stock_data['high_percent'] = (stock_data['high'] / stock_data['high'].shift(1)).astype(float)
+    stock_data['low_percent'] = (stock_data['low'] / stock_data['low'].shift(1)).astype(float)
+    stock_data['close_percent'] = (stock_data['close'] / stock_data['close'].shift(1)).astype(float)
+    stock_data['open_percent'] = (stock_data['open'] / stock_data['open'].shift(1)).astype(float)
+
+    df_prices = stock_data[['high_higher', 'low_higher', 'close_higher', 'open_higher']]
     print(stock_data['high_higher'])
     print(stock_data['low_higher'])
     print(stock_data['close_higher'])
     print(stock_data['open_higher'])
+    print(stock_data)
     # 计算比例
-    high_ratio = stock_data['high_higher'].mean()
-    low_ratio = stock_data['low_higher'].mean()
-    close_ratio = stock_data['close_higher'].mean()
 
-    print(high_ratio, low_ratio, close_ratio)
-    return high_ratio, low_ratio, close_ratio
+    return stock_data
 
 # 示例用法
 if __name__ == "__main__":
