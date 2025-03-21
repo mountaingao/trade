@@ -15,6 +15,16 @@ pip install --upgrade akshare
 deepseek key
 sk-a44e4ee6903e4a92aab99ace6a034186
 
+
+
+预警和分析已经完成，下一步需要把每日选股提前选出来，如果能够提前埋伏，则后续能够获得更好的机会
+1、根据形态选出合适的标的
+2、计算积分，只有合适的才会进入下一轮选择
+3、通过情绪周期和板块，结合K线图，完成确定性的部分
+
+两种思路，一种是启动当日追高买入，这种成功率较高，需要盯盘，做确定性的事情
+第二种是提前埋伏，什么情况下可以介入，需要再仔细琢磨方法，当前思路下没有问题
+
 X_1:=CLOSE>REF(CLOSE,1) AND CLOSE>REF(CLOSE,2);
 X_2:=REF(X_1,1) AND CLOSE<=REF(CLOSE,1) AND CLOSE>=REF(CLOSE,2);
 X_3:=REF(X_2,1) AND CLOSE>=REF(CLOSE,1) AND CLOSE<=REF(CLOSE,2);
