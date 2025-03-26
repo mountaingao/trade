@@ -76,8 +76,8 @@ def import_to_database(data, conn):
     try:
         cursor = conn.cursor()
         insert_query = """
-        INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO AlertData (stock_code, stock_name, alert_time, current_price, price_change, status, date, score, popup_status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         for row in data:
             try:
@@ -93,7 +93,11 @@ def import_to_database(data, conn):
                 alert_time = alert_datetime.time()  # 提取时间部分
                 alert_date = alert_datetime.date()  # 提取日期部分
 
-                values = (stock_code, stock_name, alert_time, current_price, price_change, status, alert_date)
+                # 计算分数和弹出状态
+                score = evaluate_stock(stock_code)
+                popup_status = 1 if score >= 50 else 0
+
+                values = (stock_code, stock_name, alert_time, current_price, price_change, status, alert_date, score, popup_status)
                 cursor.execute(insert_query, values)
                 print(f"成功插入数据: {values}")
             except Exception as e:
@@ -241,7 +245,7 @@ def monitor_file(mp3_path,db_config):
                 if len(alertInfo)>0:
                     print(alertInfo)
                     # 弹出提示信息
-                    show_alert(alertInfo,mp3_path)
+                    popup_status = show_alert(alertInfo,mp3_path)
 
                 # print(df)
                 import_to_database(result,  conn)

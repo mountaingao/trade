@@ -71,3 +71,10 @@ CREATE TABLE `gp_base_info` (
                                 `tr` decimal(15,2) DEFAULT NULL COMMENT '换手率，百分比',
                                 PRIMARY KEY (`code`,`dt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+ALTER TABLE `alertdata`
+    ADD COLUMN `score` FLOAT NOT NULL DEFAULT 0 AFTER `price_change`,
+	ADD COLUMN `popup_status` TINYINT NOT NULL DEFAULT 0 AFTER `score`,
+	CHANGE COLUMN `status` `status` VARCHAR(20) NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `popup_status`;
