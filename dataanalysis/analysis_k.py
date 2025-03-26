@@ -2,8 +2,10 @@ import pandas as pd
 from stockrating.read_local_info_tdx import  get_stock_data_from_date
 def read_excel_and_get_top_n(file_path, n):
     # 读取 Excel 文件
-    df = pd.read_excel(file_path)
-    # 获取前 N 条数据
+    # df = pd.read_excel(file_path)
+    df = pd.read_excel(file_path, engine='openpyxl')
+
+# 获取前 N 条数据
     top_n_data = df.head(n)
     return top_n_data
 
@@ -11,7 +13,7 @@ def calculate_stock_statistics(stock_code, stock_name, start_date):
     # 检查 stock_code 是否为 NaN
     if pd.isna(stock_code):
         return None
-    
+
     # 计算股票利润
     stock_code =  f"{int(stock_code):06d}"
     start_date = str(int(start_date))
@@ -76,9 +78,11 @@ def calculate_price_comparison(stock_data):
 
 # 示例用法
 if __name__ == "__main__":
-    file_path = '202501.xlsx'
-    top_n_data = read_excel_and_get_top_n(file_path, 34)
-    output_file = 'stock_analysis.xlsx'
+    file_path = '202502.xlsx'
+    top_n_data = read_excel_and_get_top_n(file_path, 71)
+    # print(top_n_data)
+    # exit()
+    output_file = 'stock_analysis-202502.xlsx'
     generate_analysis_excel(top_n_data, output_file)
     
     # # 示例数据

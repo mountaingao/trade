@@ -1,7 +1,8 @@
 import pandas as pd
 
 # 读取文件202503.xlsx，并转换成DataFrame
-df = pd.read_excel('202501.xlsx')
+# df = pd.read_excel('202501.xlsx')
+df = pd.read_excel('202502.xlsx')
 
 # 得到所有的字段
 print(df.columns)
