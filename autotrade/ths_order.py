@@ -44,6 +44,8 @@ def buy_stock(stock_code, price, quantity):
     time.sleep(1)
 
 def main():
+    print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
+    print(pyautogui.size())
     # 登录同花顺
     login_to_tonghuashun()
     time.sleep(10)
