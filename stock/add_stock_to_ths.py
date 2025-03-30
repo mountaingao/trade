@@ -56,6 +56,18 @@ def update_ths_mfb_selfstock(stock_codes, file_path=r"D:\同花顺软件\同花�
 
     return True
 
+def get_ths_mfb_selfstock():
+    file_path = r"D:\同花顺软件\同花顺\mx_550967754\SelfStockInfo.json"
+    if os.path.exists(file_path):
+        with open(file_path) as file:
+            data = json.load(file)
+            return [i['C'] for i in data]
+    return []
+
+
+stock_codes = get_ths_mfb_selfstock()
+print(stock_codes)
 # 示例：添加股票
-stock_codes = ['600519.SH', '000001.SZ']
-update_ths_mfb_selfstock(stock_codes)
+# stock_codes = ['600519.SH', '000001.SZ']
+# update_ths_mfb_selfstock(stock_codes)
+
