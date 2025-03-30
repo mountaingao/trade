@@ -24,3 +24,6 @@ sqlalchemy
 pytdx
 scikit-learn
 efinance
+pyautogui
+easytrader
+pywin32

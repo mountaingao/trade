@@ -12,34 +12,23 @@ from datetime import datetime
 from stockrating.stock_rating_ds import evaluate_stock
 from stockrating.get_stock_block import process_stock_concept_data
 from stockrating.read_local_info_tdx import expected_calculate_total_amount
-
 import tempfile
-from pydub import AudioSegment
-from pydub.playback import play
+import json
+
+# 新增代码：读取配置文件
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
+with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
+    config = json.load(config_file)
 
 # 设置自定义临时目录
-tempfile.tempdir = "D:\\temp"  # 替换为一个你有权限的目录
+tempfile.tempdir = config['tempdir']
 
 # 文件路径
-file_path = r"alert1.txt"
-file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
-# 检查文件是否存在，如果不存在则创建文件
-if not os.path.exists(file_path):
-    with open(file_path, 'w', encoding='GBK') as file:
-        file.write("")  # 创建空文件
-
-# 记录文件的最后修改时间和内容
-last_modified_time = os.path.getmtime(file_path)
-with open(file_path, 'r', encoding='GBK') as file:
-    last_content = file.read()  # 读取初始文件内容
+file_path_test = config['file_path_test']
+file_path = config['file_path']
 
 # 数据库连接配置
-db_config = {
-    "host": "localhost",  # 数据库主机地址
-    "user": "root",  # 数据库用户名
-    "password": "111111",  # 数据库密码
-    "database": "trade"  # 数据库名称
-}
+db_config = config['db_config']
 
 def show_alert(new_content, mp3_path):
     root = tk.Tk()
@@ -124,6 +113,77 @@ def get_number_of_timer(time):
     print(time_number)
     return time_number
 
+def get_alert_info(lines, conn):
+    alert_info = []
+    result = []
+    for line in lines:
+        fields = line.split("\t")  # 按制表符分割字段
+        print(fields)
+        if len(fields) >= 2:  # 确保每行至少有两个字段
+            # 获取股票代码
+            stock_code = fields[0].strip()
+            cursor = conn.cursor()
+
+            # 获取板块数据
+            block = process_stock_concept_data(cursor, stock_code)
+            block_str = ', '.join(block[:3])
+            print(block_str)
+
+            # 调用 evaluate_stock 方法获取评分
+            score = evaluate_stock(stock_code)
+            #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
+            total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( fields[2].strip()))
+
+            # 将板块数据和评分加入到 fields 中
+            fields.append(current_amount)
+            fields.append(total_amount)
+            fields.append(block_str)
+
+            fields.append(str(score))
+
+            # 将处理后的 fields 加入到 result 中
+            result.append(fields)
+            alert_info = format_alert_info(fields)
+            # 将股票代码、板块数据和评分加入到 alert_info 中
+            alert_info.append(alert_info)
+    print(result)
+    print(alert_info)
+    return result, alert_info
+
+def format_alert_info(fields):
+    print(fields)
+    formatted_lines = []
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"|【{fields[1].strip()}】 {fields[0].strip()}  【{item[6].strip()}】")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"| 预警时间: {fields[2].strip()}           ")
+    formatted_lines.append(f"| 当前价格: {fields[3].strip()} ({fields[4].strip()})          ")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append("| 相关概念:                        ")
+    for concept in block[:3]:
+        formatted_lines.append(f"| - {concept}                         ")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"| 注: 上轨有效！                   ")
+
+    formatted_lines.append("-------------------------------------")
+
+    formatted_lines.append(f"|【{fields[1].strip()}】 {fields[0].strip()}  【{item[6].strip()}】")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"|【评分】: {fields[7]} 【{fields[6].strip()}】  ")
+    formatted_lines.append(f"| 预警时间: {fields[2].strip()}           ")
+    formatted_lines.append(f"| 当前价格: {fields[3].strip()} ({item[4].strip()})          ")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"| 当前成交额: {current_amount:.2f}亿           ")
+    formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append("| 相关概念:                        ")
+    for concept in block[:3]:
+        formatted_lines.append(f"| - {concept}                         ")
+    formatted_lines.append("-------------------------------------")
+    formatted_lines.append(f"| 注: 上轨有效！                   ")
+
+    return formatted_lines
+
 def format_result(result,conn):
     """格式化 result 列表，提取每行的第一个和第二个字段，并用空格分隔，多条记录用换行符分隔
     过滤代码信息：通过结果集合 result 获取代码，并通过 evaluate_stock 方法得到积分，当大于50分时，返回给弹窗提示
@@ -135,9 +195,10 @@ def format_result(result,conn):
             stock_code = item[0].strip()
             cursor = conn.cursor()
 
+            # 获取板块数据
             block = process_stock_concept_data(cursor, stock_code)
-
             block_str = ', '.join(block[:3])
+            print(block_str)
 
             cursor.close()
             # 调用 evaluate_stock 方法获取评分
@@ -215,7 +276,7 @@ def monitor_file(mp3_path,db_config):
         print(formatted_time)
         # print(last_modified_time)
         # print(last_content)
-        with open(file_path, 'r', encoding='GBK') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:  # 修改编码为utf-8
             current_content = file.read()
 
         # 如果文件被修改
@@ -227,7 +288,6 @@ def monitor_file(mp3_path,db_config):
             # 301396	宏景科技	2025-02-21 09:20	55.20	 0.00%	    0	开盘
             print(added_content)
 
-
             # 如果有新增内容，显示提醒
             if added_content:
                 # 插入到数据库中
@@ -236,6 +296,8 @@ def monitor_file(mp3_path,db_config):
 
                 # 解析每行数据
                 result = []
+                # get_alert_info(lines, conn)
+                # exit()
                 for line in lines:
                     fields = line.split("\t")  # 按制表符分割字段
                     # print(fields)
@@ -266,3 +328,4 @@ if __name__ == "__main__":
     # play(sound)
     # exit()
     monitor_file(mp3_path,db_config)
+s

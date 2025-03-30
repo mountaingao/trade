@@ -1,8 +1,8 @@
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-# reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
-reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
+reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
+# reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
 # 获取历史日线数据
 # daily_data = reader.daily(symbol='300264')
