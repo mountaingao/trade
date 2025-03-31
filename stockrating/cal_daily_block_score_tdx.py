@@ -75,5 +75,5 @@ if __name__ == "__main__":
     block_name = f"{current_date}YU"
     block_name = "0328YU"
     block_name = "1Y".encode('GBK')  # 修改字符集为GBK
-    block_name = "0328"
+    block_name = "0331"
     calculate_and_save_block_scores(block_name)
