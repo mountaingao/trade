@@ -5,8 +5,8 @@ from tkinter import messagebox
 from playsound import playsound
 
 # 文件路径
-# file_path = r"D:\BaiduSyncdisk\个人\通达信\ALERT\ALERT.txt"
-file_path = r"alert1.txt"
+file_path = r"D:\BaiduSyncdisk\个人\通达信\ALERT\ALERT.txt"
+# file_path = r"alert1.txt"
 
 # 记录文件的最后修改时间
 last_modified_time = os.path.getmtime(file_path)

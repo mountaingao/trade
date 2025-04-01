@@ -10,10 +10,15 @@ import pywencai
 from mootdx.reader import Reader
 
 # 创建 Reader 对象
-reader = Reader.factory(market='std', tdxdir='D:/new_haitong/')
 # reader = Reader.factory(market='std', tdxdir='D:/zd_haitong/')
 
+# 新增代码：读取配置文件
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
+with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
+    config = json.load(config_file)
 
+
+reader = Reader.factory(market='std', tdxdir=config['tdxdir'])
 
 # 定义缓存目录
 CACHE_DIR = "cache"

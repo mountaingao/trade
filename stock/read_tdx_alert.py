@@ -27,6 +27,16 @@ tempfile.tempdir = config['tempdir']
 file_path_test = config['file_path_test']
 file_path = config['file_path']
 
+# 检查文件是否存在，如果不存在则创建文件
+if not os.path.exists(file_path):
+    with open(file_path, 'w', encoding='GBK') as file:
+        file.write("")  # 创建空文件
+
+# 记录文件的最后修改时间
+last_modified_time = os.path.getmtime(file_path)
+with open(file_path, 'r', encoding='GBK') as file:
+    last_content = file.read()  # 读取初始文件内容
+
 # 数据库连接配置
 db_config = config['db_config']
 
@@ -196,8 +206,11 @@ def format_result(result,conn):
             cursor = conn.cursor()
 
             # 获取板块数据
+            block_str = ""
             block = process_stock_concept_data(cursor, stock_code)
-            block_str = ', '.join(block[:3])
+            if len(block) > 3:
+                # block = block[:3]
+                block_str = ', '.join(block[:3])
             print(block_str)
 
             cursor.close()
@@ -276,7 +289,7 @@ def monitor_file(mp3_path,db_config):
         print(formatted_time)
         # print(last_modified_time)
         # print(last_content)
-        with open(file_path, 'r', encoding='utf-8') as file:  # 修改编码为utf-8
+        with open(file_path, 'r', encoding='GBK') as file:  # 修改编码为utf-8
             current_content = file.read()
 
         # 如果文件被修改
@@ -328,4 +341,4 @@ if __name__ == "__main__":
     # play(sound)
     # exit()
     monitor_file(mp3_path,db_config)
-s
+
