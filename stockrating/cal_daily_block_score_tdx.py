@@ -31,17 +31,17 @@ def read_tdx_block_data(block_name):
     # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
     return block_data
 
-def read_tdx_block_data(block_name):
-    print(block_name)
-    # 修改代码：从配置文件中获取tdxdir的值
-    custom = Customize(tdxdir=config['tdxdir'])
-    # 读取通达信板块数据，返回股票列表
-    # 读取板块数据
-    block_data = custom.search(block_name)
-    # 打印板块数据
-    print(block_data)
-    # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
-    return block_data
+# def read_tdx_block_data(block_name):
+#     print(block_name)
+#     # 修改代码：从配置文件中获取tdxdir的值
+#     custom = Customize(tdxdir=config['tdxdir'])
+#     # 读取通达信板块数据，返回股票列表
+#     # 读取板块数据
+#     block_data = custom.search(block_name)
+#     # 打印板块数据
+#     print(block_data)
+#     # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
+#     return block_data
 
 def save_tdx_block_data(block_name, stock_list):
     # 新建自定义板块
@@ -75,5 +75,5 @@ if __name__ == "__main__":
     block_name = f"{current_date}YU"
     block_name = "0328YU"
     block_name = "1Y".encode('GBK')  # 修改字符集为GBK
-    block_name = "0331"
+    block_name = "0401"
     calculate_and_save_block_scores(block_name)

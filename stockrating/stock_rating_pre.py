@@ -126,11 +126,11 @@ def is_new_high(stock_data):
 # 配置评分规则和权重
 SCORE_RULES = {
     "recent_turnover": {"weight": 0.20, "levels": [(15, 100),(10, 80), (5, 60), (0, 0)]},  # 近期成交额
-    "recent_increase": {"weight": 0.10, "levels": [(60, 100), (40, 50), (10, 0)]},  # 近期涨幅
+    "recent_increase": {"weight": 0.10, "levels": [(60, 100), (15, 50), (10, 0)]},  # 近期涨幅
     "market_cap": {"weight": 0.15, "levels": [(500, 0),(200, 50), (35, 100), (20, 0)]},  # 流通市值
     "amplitude": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 振幅 +5
     "jgcyd": {"weight": 0.10, "levels": [(50, 0), (42, 50), (32, 60), (0, 100)]},  # 机构参与度
-    "lspf": {"weight": 0.10, "levels": [(67, 100), (60, 50), (0, 0)]},  # 历史评分
+    "lspf": {"weight": 0.10, "levels": [(67, 100), (58, 50), (0, 0)]},  # 历史评分
     "focus": {"weight": 0.10, "levels": [(87, 100), (79, 50), (0, 0)]},  # 用户关注指数
     "desire_daily": {"weight": 0.10, "levels": [(5, 100), (3, 50), (0, 0)]},  # 日度市场参与意愿  意义不大，可替换
     "dragon_tiger": {"weight": 0.00, "levels": [("inflow", 100), ("small_inflow", 50), ("outflow", 0)]},  # 龙虎榜
@@ -314,6 +314,9 @@ def evaluate_stock(symbol):
     # 2. 近期涨幅（10%）
     close_prices = np.array([entry["close"] for entry in stock_history])
     recent_increase = (close_prices[-1] - close_prices[-20]) / close_prices[-20] * 100
+    print("近close涨幅：", close_prices[-1] )
+    print("近期涨幅：", recent_increase)
+    print("close_prices[-20]涨幅：", close_prices[-20])
     increase_score = calculate_score(recent_increase, SCORE_RULES["recent_increase"])
 
     # 3. 流通市值（10%） f117
