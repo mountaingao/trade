@@ -93,6 +93,12 @@ def process_stock_concept_data(cursor, stock_code):
     bool: 是否成功处理了该股票的数据
     """
     try:
+        # 增加一个从数据库中获取股票代码对应的概念板块数据，如果没有，则从同花顺获取数据
+        concept_data = get_existing_sectors_for_stock(cursor, stock_code)
+        if concept_data:
+            print(f"股票 {stock_code} 的概念板块数据已经存在，无需更新")
+            return concept_data
+
         concept_data = stock_profit_forecast_ths(symbol=stock_code)
         print(f"获取到股票 {stock_code} 的概念板块数据: {concept_data}")
 

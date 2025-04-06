@@ -26,7 +26,10 @@ tempfile.tempdir = config['tempdir']
 # 文件路径
 file_path_test = config['file_path_test']
 file_path = config['file_path']
+if config['test']:
+    file_path = file_path_test
 
+print("正在读取文件..."+file_path)
 # 检查文件是否存在，如果不存在则创建文件
 if not os.path.exists(file_path):
     with open(file_path, 'w', encoding='GBK') as file:
