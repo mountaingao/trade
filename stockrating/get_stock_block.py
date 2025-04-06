@@ -21,7 +21,7 @@ db_config = {
 
 # 获取指定股票的现有板块数据
 def get_existing_sectors_for_stock(cursor, stock_code):
-    cursor.execute("SELECT sector FROM stockblock WHERE stock_code = %s AND status = 'active'", (stock_code,))
+    cursor.execute("SELECT sector FROM stockblock WHERE stock_code = %s AND status = 1 order by ranking", (stock_code,))
     return {row[0] for row in cursor.fetchall()}
 
 # 插入新数据（批量）
@@ -38,8 +38,8 @@ def insert_new_sectors(cursor, new_sectors, join_time):
     None
     """
     insert_query = """
-    INSERT INTO stockblock (stock_code, sector, status, ranking, join_time, delete_time, remark)
-    VALUES (%s, %s, 'active', %s, %s, NULL, 'Initial addition')
+    INSERT INTO stockblock (stock_code, sector, ranking, join_time)
+    VALUES (%s, %s, %s, %s)
     """
 
     # 使用 enumerate 为每个新板块分配 rank
@@ -47,13 +47,22 @@ def insert_new_sectors(cursor, new_sectors, join_time):
         (stock_code, sector, rank + 1, join_time)
         for rank, (stock_code, sector) in enumerate(new_sectors)
     ]
+    print(values)
+    print(insert_query)
+    # cursor.
+    # try:
+    value = cursor.executemany(insert_query, values)
+    # 确保提交事务
+    # cursor.commit()
+    print(value)
+    print(insert_query)
+    print(f"成功插入 {len(values)} 条新板块数据")
 
-    try:
-        cursor.executemany(insert_query, values)
-        print(f"成功插入 {len(values)} 条新板块数据")
-    except Exception as e:
-        print(f"插入新板块数据时出错: {e}")
-        raise
+    # except Exception as e:
+    #     print(f"插入新板块数据时出错: {e}")
+    #     # 回滚事务
+    #     # cursor.rollback()
+    #     raise
 
 # 标记已删除的数据（批量）
 def mark_deleted_sectors(cursor, deleted_sectors, delete_time):
@@ -73,13 +82,15 @@ def process_stock_sectors(cursor, stock_code, sectors, current_time):
     new_sectors = [(stock_code, sector) for sector in sectors if sector not in existing_sectors]
     deleted_sectors = [(stock_code, sector) for sector in existing_sectors if sector not in sectors]
 
+    print(new_sectors)
     # 批量插入新数据
     if new_sectors:
         insert_new_sectors(cursor, new_sectors, current_time)
+    print(deleted_sectors)
 
     # 批量标记已删除的数据
-    if deleted_sectors:
-        mark_deleted_sectors(cursor, deleted_sectors, current_time)
+    # if deleted_sectors:
+        # mark_deleted_sectors(cursor, deleted_sectors, current_time)
 
 def process_stock_concept_data(cursor, stock_code):
     """
@@ -97,7 +108,8 @@ def process_stock_concept_data(cursor, stock_code):
         concept_data = get_existing_sectors_for_stock(cursor, stock_code)
         if concept_data:
             print(f"股票 {stock_code} 的概念板块数据已经存在，无需更新")
-            return concept_data
+            df = pd.DataFrame(list(concept_data), columns=["板块"])
+            return df
 
         concept_data = stock_profit_forecast_ths(symbol=stock_code)
         print(f"获取到股票 {stock_code} 的概念板块数据: {concept_data}")
