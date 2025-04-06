@@ -146,6 +146,7 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     if not isinstance(mini_data.index, (pd.RangeIndex, pd.DatetimeIndex)):
         mini_data = mini_data.reset_index(drop=True)
 
+    print(f"mini_data:{mini_data}")
     # 计算每分钟的成交金额
     amount_data = mini_data['price'] * mini_data['vol']
 
@@ -187,6 +188,11 @@ def expected_calculate_total_amount(symbol, num):
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
     print(today_mini)
+    # exit()
+    # 此处为空，不需要继续执行
+    if today_mini.empty:
+        print(f"今日 {today} 无分钟数据")
+    return 0, 0
     if num == -1:
         num = today_mini['vol'].count()
     # print(num)

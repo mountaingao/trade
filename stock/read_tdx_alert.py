@@ -23,10 +23,14 @@ with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为
 # 设置自定义临时目录
 tempfile.tempdir = config['tempdir']
 
+# 确保临时目录存在并且具有写权限
+if not os.path.exists(tempfile.tempdir):
+    os.makedirs(tempfile.tempdir, exist_ok=True)
+
 # 文件路径
 file_path_test = config['file_path_test']
 file_path = config['file_path']
-if config['test']:
+if config['istest']:
     file_path = file_path_test
 
 print("正在读取文件..."+file_path)
@@ -211,9 +215,13 @@ def format_result(result,conn):
             # 获取板块数据
             block_str = ""
             block = process_stock_concept_data(cursor, stock_code)
+            # print(block)
+            # 数据库返回的板块数据和网络请求获取的值是否一致
             if len(block) > 3:
                 # block = block[:3]
                 block_str = ', '.join(block[:3])
+            else:
+                block_str = ', '.join(block)
             print(block_str)
 
             cursor.close()

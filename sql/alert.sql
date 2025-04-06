@@ -78,3 +78,10 @@ ALTER TABLE `alertdata`
     ADD COLUMN `score` FLOAT NOT NULL DEFAULT 0 AFTER `price_change`,
 	ADD COLUMN `popup_status` TINYINT NOT NULL DEFAULT 0 AFTER `score`,
 	CHANGE COLUMN `status` `status` VARCHAR(20) NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `popup_status`;
+
+#板块
+ALTER TABLE `stockblock`
+    CHANGE COLUMN `status` `status` TINYINT NOT NULL DEFAULT 1 COLLATE 'utf8mb4_unicode_ci' AFTER `sector`;
+
+ALTER TABLE `stockblock`
+    CHANGE COLUMN `join_time` `join_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP() AFTER `ranking`;
