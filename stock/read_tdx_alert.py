@@ -194,8 +194,7 @@ def format_alert_info(fields):
     formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
     formatted_lines.append("-------------------------------------")
     formatted_lines.append("| 相关概念:                        ")
-    for concept in block[:3]:
-        formatted_lines.append(f"| - {concept}                         ")
+    formatted_lines.append(f"| - {block_str}                         ")
     formatted_lines.append("-------------------------------------")
     formatted_lines.append(f"| 注: 上轨有效！                   ")
 
@@ -214,14 +213,9 @@ def format_result(result,conn):
 
             # 获取板块数据
             block_str = ""
-            block = process_stock_concept_data(cursor, stock_code)
-            # print(block)
-            # 数据库返回的板块数据和网络请求获取的值是否一致
-            if len(block) > 3:
-                # block = block[:3]
-                block_str = ', '.join(block[:3])
-            else:
-                block_str = ', '.join(block)
+            block_str = process_stock_concept_data(cursor, stock_code)
+
+            print("block_str:")
             print(block_str)
 
             cursor.close()
@@ -239,8 +233,7 @@ def format_result(result,conn):
                 formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
                 formatted_lines.append("-------------------------------------")
                 formatted_lines.append("| 相关概念:                        ")
-                for concept in block[:3]:
-                    formatted_lines.append(f"| - {concept}                         ")
+                formatted_lines.append(f"| - {block_str}                         ")
                 formatted_lines.append("-------------------------------------")
                 formatted_lines.append(f"| 注: 上轨有效！                   ")
 
@@ -262,8 +255,7 @@ def format_result(result,conn):
                     formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
                     formatted_lines.append("-------------------------------------")
                     formatted_lines.append("| 相关概念:                        ")
-                    for concept in block[:3]:
-                        formatted_lines.append(f"| - {concept}                         ")
+                    formatted_lines.append(f"| - {block_str}                         ")
                     formatted_lines.append("-------------------------------------")
                     formatted_lines.append(f"| 注: 上轨有效！                   ")
                 else:
@@ -280,8 +272,7 @@ def format_result(result,conn):
                         formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
                         formatted_lines.append("-------------------------------------")
                         formatted_lines.append("| 相关概念:                        ")
-                        for concept in block[:3]:
-                            formatted_lines.append(f"| - {concept}                         ")
+                        formatted_lines.append(f"| - {block_str}                         ")
                         formatted_lines.append("-------------------------------------")
                         formatted_lines.append(f"| 注: 上轨有效！                   ")
 

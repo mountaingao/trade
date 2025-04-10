@@ -192,24 +192,24 @@ def expected_calculate_total_amount(symbol, num):
         if yesterday.strftime('%Y%m%d') in history_data.index:
             break
         yesterday -= timedelta(days=1)
-    yesterday_str = yesterday.strftime('%Y%m%d')
-    print(f"上一个交易日: {yesterday_str}")
+
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
-    print(today_mini)
-    # exit()
+    print(f"today_mini:{today_mini}")
+    # print(today_mini)
     # 此处为空，不需要继续执行
     if today_mini.empty:
         print(f"今日 {today} 无分钟数据")
-    return 0, 0
+        return 0, 0
     if num == -1:
         num = today_mini['vol'].count()
     # print(num)
-
+    yesterday_str = yesterday.strftime('%Y%m%d')
+    print(f"上一个交易日: {yesterday_str}")
     yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday_str)
-    print(yesterday_mini)
-    print(yesterday_mini)
-    # 计算并打印每分钟成交量百分比
+    print(f"yesterday_mini:{yesterday_mini}")
+
+# 计算并打印每分钟成交量百分比
     amount_percentage = calculate_amount_percentage(yesterday_mini)
 
     # 计算当日完整的成交量
@@ -391,12 +391,14 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
     return profit_ratios
 if __name__ == '__main__':
 
+    # expected_calculate_total_amount("300134", 235)
+
     # list_data = calculate_stock_profit_from_date('300328', '20250303', 9.24)
     # print(list_data)
     # exit()
     # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
     # expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
-    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=0)
+    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=235)
     print(f"当日预计的成交额: {expected_total_amount}")
     exit()
     # 前一天的分钟数据
