@@ -124,6 +124,8 @@ def process_stock_concept_data(cursor, stock_code):
     if concept_data:
         print(f"股票 {stock_code} 的概念板块数据已经存在，无需更新")
         print(concept_data)
+        # 要求去重
+        concept_data = list(set(concept_data))
         df = pd.DataFrame(list(concept_data), columns=["板块"])
         # 取前3个用逗号连接，如果小于3个或为空，也返回信息
         if len(df) > 0:

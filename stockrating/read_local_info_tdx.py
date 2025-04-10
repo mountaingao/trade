@@ -172,16 +172,23 @@ def calculate_total_amount(mini_data, amount_percentage, num):
 
     return total_amount / 1e8,current_amount*100 / 1e8
 
-def expected_calculate_total_amount(symbol, num):
+def expected_calculate_total_amount(symbol, num ,date):
     """
     计算当日预计的成交金额。
     """
     print(f"symbol:{symbol}")
-    today = datetime.now().strftime('%Y%m%d')
-    print(f"今天的日期: {today}")
+    if date == '':
+        today = datetime.now().strftime('%Y%m%d')
+    else:
+        today = date
+    # today = datetime.now().strftime('%Y%m%d')
+    print(f"预警日期: {today}")
+
+    # 将 today 转换为 datetime 对象
+    today_dt = datetime.strptime(today, '%Y%m%d')
 
     # 获取上一个交易日
-    yesterday = datetime.now() - timedelta(days=1)
+    yesterday = today_dt - timedelta(days=1)
     while True:
         # 检查是否为周末
         if yesterday.weekday() >= 5:  # 5和6分别代表周六和周日
@@ -398,7 +405,7 @@ if __name__ == '__main__':
     # exit()
     # expected_total_amount = expected_calculate_total_amount(symbol='300565', num=15)
     # expected_total_amount = expected_calculate_total_amount(symbol='301139', num=207)
-    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=235)
+    expected_total_amount = expected_calculate_total_amount(symbol='301139', num=235,date='20250317')
     print(f"当日预计的成交额: {expected_total_amount}")
     exit()
     # 前一天的分钟数据

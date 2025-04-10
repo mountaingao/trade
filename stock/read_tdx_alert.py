@@ -145,11 +145,12 @@ def get_alert_info(lines, conn):
             block = process_stock_concept_data(cursor, stock_code)
             block_str = ', '.join(block[:3])
             print(block_str)
-
+            # 获取日期
+            alert_date = datetime.strptime(item[2].strip(), "%Y-%m-%d %H:%M").date().strftime("%Y%m%d")
             # 调用 evaluate_stock 方法获取评分
             score = evaluate_stock(stock_code)
             #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
-            total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( fields[2].strip()))
+            total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( fields[2].strip()),alert_date)
 
             # 将板块数据和评分加入到 fields 中
             fields.append(current_amount)
@@ -212,11 +213,11 @@ def format_result(result,conn):
             cursor = conn.cursor()
 
             # 获取板块数据
-            block_str = ""
             block_str = process_stock_concept_data(cursor, stock_code)
-
             print("block_str:")
             print(block_str)
+            # 获取日期
+            alert_date = datetime.strptime(item[2].strip(), "%Y-%m-%d %H:%M").date().strftime("%Y%m%d")
 
             cursor.close()
             # 调用 evaluate_stock 方法获取评分
@@ -240,7 +241,7 @@ def format_result(result,conn):
             else:
                 score = evaluate_stock(stock_code)
                 #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
-                total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( item[2].strip()))
+                total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( item[2].strip()),alert_date)
                 # 如果评分大于50，添加到格式化结果中
                 if score >= 50:
                     # 将 block 列表转换为字符串
