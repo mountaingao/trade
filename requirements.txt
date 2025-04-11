@@ -27,3 +27,4 @@ efinance
 pyautogui
 easytrader
 pywin32
+gradio
