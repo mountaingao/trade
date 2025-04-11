@@ -124,8 +124,7 @@ def process_stock_concept_data(cursor, stock_code):
     if concept_data:
         print(f"股票 {stock_code} 的概念板块数据已经存在，无需更新")
         print(concept_data)
-        # 要求去重
-        concept_data = list(set(concept_data))
+        # concept_data = list(set(concept_data))
         df = pd.DataFrame(list(concept_data), columns=["板块"])
         # 取前3个用逗号连接，如果小于3个或为空，也返回信息
         if len(df) > 0:
@@ -143,11 +142,14 @@ def process_stock_concept_data(cursor, stock_code):
         print(f"股票 {stock_code} 没有概念板块数据")
         return "无板块数据"
 
+    # 入库前去重
+    # concept_data = list(set(concept_data))
+
     # 当前时间
     current_time = datetime.now()
 
-    # 处理单个股票的板块数据
-    process_stock_sectors(cursor, stock_code, concept_data, current_time)
+    # 处理单个股票的板块数据 要求去重
+    process_stock_sectors(cursor, stock_code, list(set(concept_data)), current_time)
 
     # 取前3个用逗号连接，如果小于3个或为空，也返回信息
     if len(concept_data) > 0:
@@ -166,7 +168,7 @@ def process_stock_concept_data(cursor, stock_code):
 
 if __name__ == "__main__":
     # 示例：获取特定股票的概念板块
-    stock_code = "300611"
+    stock_code = "833429"
     # 连接数据库
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()

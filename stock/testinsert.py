@@ -5,7 +5,7 @@ import time
 file_path = r"ALERT.txt"
 # file_path = r"ALERT-0311.txt"
 # file_path = r"ALERT-0310.txt"
-file_path = r"ALERT-0317.txt"
+file_path = r"ALERT-0410.txt"
 # file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 
 # 读取文件并解析时间
@@ -39,4 +39,4 @@ if rows:
             target_file.write(line)  # 写入当前行
             target_file.write('\n')  # 写入换行符（如果需要）
             print(f"写入一行：{line.strip()}")
-        time.sleep(3)  # 暂停10S
+        time.sleep(10)  # 暂停10S
