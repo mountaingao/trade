@@ -111,11 +111,11 @@ def is_new_high(stock_data):
 SCORE_RULES = {
     "recent_turnover": {"weight": 0.20, "levels": [(15, 100),(10, 80), (5, 60), (0, 0)]},  # 近期成交额
     "recent_increase": {"weight": 0.10, "levels": [(60, 100), (40, 50), (10, 0)]},  # 近期涨幅
-    "market_cap": {"weight": 0.15, "levels": [(500, 0),(200, 50), (35, 100), (20, 0)]},  # 流通市值
+    "market_cap": {"weight": 0.15, "levels": [(500, 0),(200, 50), (30, 100), (20, 0)]},  # 流通市值
     "amplitude": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 振幅 +5
-    "jgcyd": {"weight": 0.10, "levels": [(50, 0), (42, 50), (32, 60), (0, 100)]},  # 机构参与度
+    "jgcyd": {"weight": 0.10, "levels": [(50, 0), (42, 100), (30, 80), (0, 0)]},  # 机构参与度
     "lspf": {"weight": 0.10, "levels": [(67, 100), (60, 50), (0, 0)]},  # 历史评分
-    "focus": {"weight": 0.10, "levels": [(87, 100), (80, 50), (0, 0)]},  # 用户关注指数
+    "focus": {"weight": 0.10, "levels": [(87, 100), (80, 80), (0, 0)]},  # 用户关注指数
     "desire_daily": {"weight": 0.10, "levels": [(5, 100), (3, 50), (0, 0)]},  # 日度市场参与意愿  意义不大，可替换
     "dragon_tiger": {"weight": 0.00, "levels": [("inflow", 100), ("small_inflow", 50), ("outflow", 0)]},  # 龙虎榜
     "news_analysis": {"weight": 0.00, "levels": [(True, 100), (False, 0)]},  # 新闻报道分析
@@ -290,8 +290,8 @@ def evaluate_stock(symbol):
     # 获取股票名称
     stockname = stock_data["stockname"]
 
-    # 1. 近期成交额（15%） 成交量*均价 = 成交额
-    turnover_array = np.array([entry["amount"] for entry in stock_history[-5:]])
+    # 1. 近期成交额（15%） 成交量*均价 = 成交额  3天 有效
+    turnover_array = np.array([entry["amount"] for entry in stock_history[-3:]])
     recent_turnover = turnover_array.mean() / 1e8  # 转换为亿
     turnover_score = calculate_score(recent_turnover, SCORE_RULES["recent_turnover"])
 
