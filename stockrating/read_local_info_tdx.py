@@ -3,7 +3,8 @@ from mootdx.reader import Reader
 from datetime import datetime, timedelta
 import pandas as pd
 import os, json
-
+# 初始化板块对象
+from mootdx.tools.customize import Customize
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
@@ -12,6 +13,8 @@ with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为
 
 
 reader = Reader.factory(market='std', tdxdir=config['tdxdir'])
+# 修改代码：从配置文件中获取tdxdir的值
+custom = Customize(tdxdir=config['tdxdir'])
 # 本地日线数据
 def get_stock_history_by_local(symbol):
     # 创建 Reader 对象
@@ -325,6 +328,15 @@ def get_stock_data_from_date(symbol, date,  days=5):
     history_data = history_data.iloc[date_index:date_index+days+1]
     print(f"history_data:{history_data}")
     return history_data
+def read_tdx_block_data(block_name):
+    print(block_name)
+    # 读取通达信板块数据，返回股票列表
+    # 读取板块数据
+    block_data = custom.search(block_name)
+    # 打印板块数据
+    print(block_data)
+    # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
+    return block_data
 
 def calculate_stock_profit_from_date(symbol, date, price, days=5):
     """
