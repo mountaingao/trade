@@ -30,9 +30,9 @@ SELECT * FROM `trade`.`stock_rating` WHERE rating_date =20250408 ORDER BY total_
 pip install gradio
 
 
+1、macd 红柱缩短的不考虑，大幅上涨过的不考虑
 
-"id"	"symbol"	"stockname"	"recent_turnover"	"rating_date"	"recent_increase"	"market_cap"	"amplitude"	"jgcyd"	"lspf"	"focus"	"desire_daily"	"dragon_tiger"	"news_analysis"	"estimated_turnover"	"total_score"	"avg_jgcyd"	"avg_lspf"	"avg_focus"	"last_desire_daily"	"free_float_value"	"created_at"
-"4588"	"002570"	"贝因美"	"60"	"2025-04-08"	"0"	"100"	"50"	"60"	"100"	"100"	"0"	"0"	"0"	"0"	"58"	"35.925"	"79.3381"	"88.2667"	"-2.31"	"47.6278"	"2025-04-08 22:59:41"
-
-"id"	"symbol"	"stockname"	"recent_turnover"	"rating_date"	"recent_increase"	"market_cap"	"amplitude"	"jgcyd"	"lspf"	"focus"	"desire_daily"	"dragon_tiger"	"news_analysis"	"estimated_turnover"	"total_score"	"second_day"	"third_day"	"avg_jgcyd"	"avg_lspf"	"avg_focus"	"last_desire_daily"	"free_float_value"	"created_at"
-"1"	"002570"	"贝因美"	"100"	"2025-04-08"	"50"	"100"	"100"	"44.8678"	"68.7307"	"94.8"	"-1.46"	"0"	"0"	"0"	"0"	"0"	"70.8399"	"44.8678"	"68.7307"	"94.8"	"-1.46"	"47.6278"	"2025-04-12 22:13:16"
+下载 talib
+https://github.com/cgohlke/talib-build/releases
+安装 talib
+pip install .\ta_lib-0.6.3-cp310-cp310-win_amd64.whl

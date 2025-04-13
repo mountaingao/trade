@@ -260,6 +260,34 @@ def calculate_score(value, rule):
             if value >= threshold:
                 return score
     return 0
+# //计算macd返回值
+def calculate_macd(stock_history, date):
+    # 将 JSON 字符串反序列化为 DataFrame
+    stock_history_df = pd.DataFrame(json.loads(stock_history))
+    # 将日期列设置为索引
+    stock_history_df.set_index('date', inplace=True)
+    macd = get_macd(stock_history_df)
+    # 将 alert_date 转换为 datetime 对象
+    cur_date = date.strftime("%Y-%m-%d")
+    print(f"cur_date {cur_date}")
+
+    # 从 DataFrame 中获取指定日期的 MACD 值
+    macd_value = macd.loc[macd.index == cur_date, 'MACD'].values[0] if cur_date in macd.index else None
+    print(f"macd_value {macd_value} ")
+
+    # 获取第二日
+    # 将日期转换为 datetime 对象以便比较
+    cur_date_dt = datetime.strptime(cur_date, "%Y-%m-%d")
+    # 获取 cur_date_dt 之前的两条数据
+    prev_days = macd[macd.index < cur_date].tail(1)
+    # 得到第一条数据
+    prev_macd_value = prev_days['MACD'].values[0] if not prev_days.empty else None
+    print(f"prev_macd_value {prev_macd_value}")
+
+    if macd_value is not None and prev_macd_value is not None and macd_value > prev_macd_value:
+        return 1
+    else:
+        return 0
 
 # 计算各项得分
 def calculate_symbol_score(symbol,date):
@@ -268,6 +296,8 @@ def calculate_symbol_score(symbol,date):
     """
     # 将date转换为时间
     date = datetime.strptime(date, "%Y%m%d")
+    print( date)
+
     stock_data = get_stock_data(symbol,date)
     # print( stock_data)
     # exit()
@@ -377,6 +407,10 @@ def calculate_symbol_score(symbol,date):
 
     second_day, third_day = calculate_second_and_third_day_ratio(stock_data, date)
     print(second_day,third_day)
+
+    macd = calculate_macd(stock_data["stock_history"],date)
+    print(macd)
+    # 比较前一天macd，为正则是1，为负则是0
     # 插入数据到 stock_rating_history 表
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
@@ -385,13 +419,13 @@ def calculate_symbol_score(symbol,date):
             symbol,stockname, rating_date, recent_turnover, recent_increase, market_cap, amplitude,
             jgcyd, lspf, focus, desire_daily, dragon_tiger, news_analysis,
             estimated_turnover, total_score,second_day,third_day, avg_jgcyd, avg_lspf, avg_focus,
-            last_desire_daily,free_float_value
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            last_desire_daily,free_float_value,macd
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         symbol, stockname, rating_date, turnover_score, increase_score, market_cap_score, amplitude_score,
         jgcyd_score, lspf_score, focus_score, desire_daily_score,dragon_tiger_score,
         news_score, estimated_score, total_score,second_day,third_day,
-        stock_data["avg_jgcyd"], stock_data["avg_lspf"], stock_data["avg_focus"], stock_data["last_desire_daily"],stock_data['free_float_value']
+        stock_data["avg_jgcyd"], stock_data["avg_lspf"], stock_data["avg_focus"], stock_data["last_desire_daily"],stock_data['free_float_value'],macd
     ))
 
     conn.commit()
@@ -455,6 +489,57 @@ def calculate_all_stock_score():
             time.sleep(1)  # 添加1秒延迟
         except Exception as e:
             print(f"处理股票代码 {symbol} 时出错：{e}")
+def get_macd(data):
+
+    # 编写计算函数
+    # 上市首日，DIFF、DEA、MACD = 0
+    # 用来装变量的list
+    EMA12 = []
+    EMA26 = []
+    DIFF = []
+    DEA = []
+    BAR = []
+    # 如果是上市首日
+    if len(data) == 1:
+        # 则DIFF、DEA、MACD均为0
+        DIFF = [0]
+        DEA = [0]
+        BAR = [0]
+
+    # 如果不是首日
+    else:
+        # 第一日的EMA要用收盘价代替
+        EMA12.append(data['close'].iloc[0])
+        EMA26.append(data['close'].iloc[0])
+        DIFF.append(0)
+        DEA.append(0)
+        BAR.append(0)
+
+        # 计算接下来的EMA
+        # 搜集收盘价
+        close = list(data['close'].iloc[1:])    # 从第二天开始计算，去掉第一天
+        for i in close:
+            ema12 = EMA12[-1] * (11/13) + i * (2/13)
+            ema26 = EMA26[-1] * (25/27) + i * (2/27)
+            diff = ema12 - ema26
+            dea = DEA[-1] * (8/10) + diff * (2/10)
+            bar = 2 * (diff - dea)
+
+            # 将计算结果写进list中
+            EMA12.append(ema12)
+            EMA26.append(ema26)
+            DIFF.append(diff)
+            DEA.append(dea)
+            BAR.append(bar)
+
+    # 返回全部的macd
+    MACD = pd.DataFrame({'DIFF':DIFF,'DEA':DEA,'MACD':BAR})
+    # 将计算出的 MACD 值直接添加到 data 中
+    data['DIFF'] = DIFF
+    data['DEA'] = DEA
+    data['MACD'] = BAR
+
+    return data
 
 def calculate_second_and_third_day_ratio(stock_data, alert_date):
     """
@@ -546,16 +631,17 @@ def process_block(block_name):
     
     for symbol in stock_list:
         # stock_data = get_stock_data(symbol,"20250408")
-        # alert_date = datetime.date.today().strftime("%Y-%m-%d")
+        year = datetime.today().strftime("%Y")
         # second_day, third_day = calculate_second_and_third_day_ratio(stock_data, alert_date)
-        score =  calculate_symbol_score(symbol, "20250408")
+        score =  calculate_symbol_score(symbol, f"{year}{block_name}")
         
-        # if score >= 40:
-        #     high_score_stocks.append((symbol, second_day, third_day))
+        if score >= 40:
+            high_score_stocks.append((symbol))
         #     save_to_stock_rating_history(symbol, stock_data["stockname"], alert_date, score, second_day, third_day)
         #
     # 按照 second_day 和 third_day 的比例倒序排列
     high_score_stocks.sort(key=lambda x: max(x[1], x[2]), reverse=True)
+    print(high_score_stocks)
     save_to_tdx_block(block_name, [stock[0] for stock in high_score_stocks])
 
 if __name__ == '__main__':
@@ -564,5 +650,5 @@ if __name__ == '__main__':
     # 单个股票评分
     # calculate_symbol_score("002570","20250408")
 
-    block_name = "0402"
+    block_name = "0401"
     process_block(block_name)
