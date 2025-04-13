@@ -573,10 +573,15 @@ def calculate_second_and_third_day_ratio(stock_data, alert_date):
     # 计算这两条数据的最高价
     # second_day_high = max(entry["high"] for entry in next_two_days) if next_two_days else 0
     # second_day_high = next((entry["high"] for entry in stock_history if datetime.strptime(entry["date"], "%Y-%m-%d") > cur_date_dt), 0)
-    second_day_high = first_data["high"]
+    second_day_high = 0
+    if first_data:
+        second_day_high = first_data["high"]
     print(f"正在计算 {second_day_high} 第二日")
-    third_day_high = second_data["high"]  # 由于只取了两条数据，第三日与第二日相同
-    print(f"正在计算 {third_day_high} 第三日")
+
+    third_day_high = 0
+    if  second_data:
+        third_day_high = second_data["high"]  # 由于只取了两条数据，第三日与第二日相同
+        print(f"正在计算 {third_day_high} 第三日")
 
     second_day_ratio = ((second_day_high-buy_price) / buy_price) * 100 if second_day_high else 0
     third_day_ratio = ((third_day_high-buy_price) / buy_price) * 100 if third_day_high else 0
@@ -640,9 +645,9 @@ def process_block(block_name):
         #     save_to_stock_rating_history(symbol, stock_data["stockname"], alert_date, score, second_day, third_day)
         #
     # 按照 second_day 和 third_day 的比例倒序排列
-    high_score_stocks.sort(key=lambda x: max(x[1], x[2]), reverse=True)
+    # high_score_stocks.sort(key=lambda x: max(x[1], x[2]), reverse=True)
     print(high_score_stocks)
-    save_to_tdx_block(block_name, [stock[0] for stock in high_score_stocks])
+    save_to_tdx_block(block_name,  high_score_stocks)
 
 if __name__ == '__main__':
 
@@ -650,5 +655,5 @@ if __name__ == '__main__':
     # 单个股票评分
     # calculate_symbol_score("002570","20250408")
 
-    block_name = "0401"
+    block_name = "0411"
     process_block(block_name)
