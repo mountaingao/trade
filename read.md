@@ -35,4 +35,13 @@ pip install gradio
 自动计算所有符合条件的股票，通过UI自动加入到板块中
 实现自动化加入自选板块预选中，供最后的分析和挑选
 
+再完善和测试条件：彩带之上，绿色不考虑
+彩带是上涨的
+无长上影线
+macd 趋势向上
+连续放量
+
+SMA(C,6.5,1)>SMA(C,13.5,1) AND
+MA(VOL,5) / REF(MA(VOL,5),5)>2 AND  REF(MA(VOL,5),1)/ REF(MA(VOL,5),5)>1.5 AND  REF(MA(VOL,5),2)/ REF(MA(VOL,5),5)>1.5
+
 

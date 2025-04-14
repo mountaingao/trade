@@ -159,7 +159,7 @@ SCORE_RULES = {
     "amplitude": {"weight": 0.10, "levels": [(50, 100), (30, 50), (0, 0)]},  # 振幅 +5
     "jgcyd": {"weight": 0.10, "levels": [(50, 0), (42, 100), (30, 80), (0, 0)]},  # 机构参与度
     "lspf": {"weight": 0.10, "levels": [(67, 100), (60, 50), (0, 0)]},  # 历史评分
-    "focus": {"weight": 0.10, "levels": [(87, 100), (80, 80), (0, 0)]},  # 用户关注指数
+    "focus": {"weight": 0.10, "levels": [(87, 100), (80, 80),(70, 50), (0, 0)]},  # 用户关注指数
     "desire_daily": {"weight": 0.10, "levels": [(5, 100), (3, 50), (0, 0)]},  # 日度市场参与意愿  意义不大，可替换
     "dragon_tiger": {"weight": 0.00, "levels": [("inflow", 100), ("small_inflow", 50), ("outflow", 0)]},  # 龙虎榜
     "news_analysis": {"weight": 0.00, "levels": [(True, 100), (False, 0)]},  # 新闻报道分析
@@ -655,5 +655,5 @@ if __name__ == '__main__':
     # 单个股票评分
     # calculate_symbol_score("002570","20250408")
 
-    block_name = "0414"
+    block_name = "0410"
     process_block(block_name)
