@@ -32,7 +32,7 @@ pip install gradio
 
 1、macd 红柱缩短的不考虑，大幅上涨过的不考虑
 
-下载 talib
-https://github.com/cgohlke/talib-build/releases
-安装 talib
-pip install .\ta_lib-0.6.3-cp310-cp310-win_amd64.whl
+自动计算所有符合条件的股票，通过UI自动加入到板块中
+实现自动化加入自选板块预选中，供最后的分析和挑选
+
+
