@@ -380,10 +380,10 @@ def calculate_symbol_score(symbol,date):
             + increase_score * SCORE_RULES["recent_increase"]["weight"]
             + market_cap_score * SCORE_RULES["market_cap"]["weight"]
             + amplitude_score * SCORE_RULES["amplitude"]["weight"]
-            + stock_data["avg_jgcyd"] * SCORE_RULES["jgcyd"]["weight"]
-            + stock_data["avg_lspf"] * SCORE_RULES["lspf"]["weight"]
-            + stock_data["avg_focus"] * SCORE_RULES["focus"]["weight"]
-            # + stock_data["last_desire_daily"] * SCORE_RULES["desire_daily"]["weight"]
+            + jgcyd_score * SCORE_RULES["jgcyd"]["weight"]
+            + lspf_score * SCORE_RULES["lspf"]["weight"]
+            + focus_score * SCORE_RULES["focus"]["weight"]
+            # + desire_daily_score * SCORE_RULES["desire_daily"]["weight"]
             # + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
             + high_rating
             # + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
@@ -655,5 +655,5 @@ if __name__ == '__main__':
     # 单个股票评分
     # calculate_symbol_score("002570","20250408")
 
-    block_name = "0411"
+    block_name = "0414"
     process_block(block_name)
