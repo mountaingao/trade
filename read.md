@@ -20,6 +20,7 @@
 2、彩带上轨上涨，绿色不考虑
 3、macd 红柱向上，启动初期
 
+SELECT * FROM `trade`.`stock_rating` WHERE rating_date =20250408 ORDER BY total_score desc
 
 用法：
 2025年4月11日
@@ -27,3 +28,11 @@
 
 
 pip install gradio
+
+
+1、macd 红柱缩短的不考虑，大幅上涨过的不考虑
+
+下载 talib
+https://github.com/cgohlke/talib-build/releases
+安装 talib
+pip install .\ta_lib-0.6.3-cp310-cp310-win_amd64.whl

@@ -72,6 +72,7 @@ def calculate_and_save_block_scores(block_name):
 if __name__ == "__main__":
     # 获取当前日期并格式化为"MMdd"形式
     current_date = datetime.datetime.now().strftime("%m%d")
+
     block_name = f"{current_date}YU"
     block_name = "0328YU"
     block_name = "1Y".encode('GBK')  # 修改字符集为GBK

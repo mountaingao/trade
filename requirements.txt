@@ -28,3 +28,4 @@ pyautogui
 easytrader
 pywin32
 gradio
+pandas_ta
