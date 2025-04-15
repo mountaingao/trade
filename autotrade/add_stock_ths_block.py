@@ -1,28 +1,29 @@
 import pyautogui
 import time
 
-import pyautogui
-import time
-
 # 启动同花顺或通达信
 # 假设它们的图标在桌面上，你可以通过图标位置来启动
 pyautogui.click(x=100, y=100)  # 修改坐标以匹配你的桌面图标位置
 time.sleep(2)  # 等待软件启动
-
+pyautogui.displayMousePosition()
 # 切换到软件窗口（如果它在后台）
 pyautogui.hotkey('alt', 'z')
 
 time.sleep(1)
 pyautogui.hotkey('alt', 'tab')
 # pyautogui.press('tab')  # 选择同花顺或通达信窗口
-time.sleep(1)
-pyautogui.typewrite('000001')
-# pyautogui.hotkey('enter')  # 切换到窗口
 
+pyautogui.click(x=100, y=100)  # 修改坐标以匹配你的桌面图标位置
+
+time.sleep(1)
+pyautogui.typewrite('600540')
+time.sleep(1)
+pyautogui.hotkey('enter')  # 切换到窗口
+time.sleep(1)
 # 打开一个股票的K线图
 # 假设快捷键是Ctrl+K，你可以通过查找快捷键或使用鼠标点击来实现
-# pyautogui.hotkey('ctrl', 'k')
-time.sleep(2)
+pyautogui.hotkey('ins')
+time.sleep(1)
 
 # 执行其他操作，例如切换到另一个股票的K线图
 # 这里你可以使用鼠标点击或键盘快捷键来切换股票
