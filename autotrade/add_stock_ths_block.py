@@ -1,20 +1,37 @@
 import pyautogui
 import time
+import json
+import os
 
-import pyautogui
-import time
+# 新增代码：读取配置文件
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
+with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
+    config = json.load(config_file)
 
-# 启动同花顺或通达信
-x, y = pyautogui.position()
-print(x, y)
+ths_positon = config['ths_positon']
+
 # 假设它们的图标在桌面上，你可以通过图标位置来启动
 # pyautogui.click(x=1076, y=1411)  # 修改坐标以匹配你的桌面图标位置
 # time.sleep(2)  # 等待软件启动
 def start_open_ths(stock_codes):
-    # 切换到软件窗口（如果它在后台）
-    pyautogui.hotkey('alt', 'z')
+    # 假设你知道应用窗口的某个特定图标的位置
+    try:
+        icon_location = pyautogui.locateOnScreen('../image/ths_icon.png')
+        if icon_location:
+            print("应用已经打开")
+        else:
+            print("应用未打开")
+            # 切换到软件窗口（如果它在后台）300001
+            pyautogui.hotkey('alt', 'z')
+    except pyautogui.ImageNotFoundException:
+        print("未找到应用图标，请检查路径或图标是否匹配")
+        # 切换到软件窗口（如果它在后台）
+        pyautogui.hotkey('alt', 'z')
+
+
     time.sleep(2)
-    pyautogui.click(x=1080, y=1410)  # 修改坐标以匹配你的桌面图标位置
+    print(ths_positon)
+    pyautogui.click(x=ths_positon['x'], y=ths_positon['y'])  # 修改坐标以匹配你的桌面图标位置
     time.sleep(2)  # 等待软件启动
 
 def add_stocks_to_ths_block(stock_codes):
@@ -32,7 +49,7 @@ def add_stocks_to_block(stock_codes):
         time.sleep(1)
         pyautogui.hotkey('enter')  # 切换到窗口
         time.sleep(1)
-        pyautogui.click(x=1200, y=300)  # 修改坐标以匹配你的桌面图标位置
+        pyautogui.click(x=ths_positon['c_x'], y=ths_positon['c_y'])  # 修改坐标以匹配你的桌面图标位置
         time.sleep(1)
         pyautogui.hotkey('insert')  # 加入
         time.sleep(1)
@@ -92,10 +109,21 @@ def main():
     buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
 
 if __name__ == '__main__':
+
+    # 启动同花顺或通达信
+    time.sleep(3)
+    x, y = pyautogui.position()
+    print(x, y)
+    # 屏幕
+    x, y = pyautogui.size()
+    print(x, y)
+
+
+
+    # 实时显示鼠标位置
+    # pyautogui.displayMousePosition()
     # 使用示例
-    stock_codes = ['603128', '300001']
+    stock_codes = ['600697', '300001']
     add_stocks_to_ths_block(stock_codes)
 
 
-
-    main()

@@ -1,5 +1,5 @@
 {
-    "tdxdir": "D:/zd_haitong/",
+    "tdxdir": "D:/new_haitong/",
     "tempdir": "D:\\temp",
     "istest": 1,
     "file_path_test": "alert1.txt",
@@ -9,5 +9,11 @@
         "user": "root",
         "password": "111111",
         "database": "trade"
+    },
+    "ths_positon": {
+        "x": 960,
+        "y": 1060,
+        "c_x": 1100,
+        "c_y": 300
     }
 }
