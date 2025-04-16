@@ -5,65 +5,38 @@ import pyautogui
 import time
 
 # 启动同花顺或通达信
+x, y = pyautogui.position()
+print(x, y)
 # 假设它们的图标在桌面上，你可以通过图标位置来启动
-pyautogui.click(x=100, y=100)  # 修改坐标以匹配你的桌面图标位置
-time.sleep(2)  # 等待软件启动
+# pyautogui.click(x=1076, y=1411)  # 修改坐标以匹配你的桌面图标位置
+# time.sleep(2)  # 等待软件启动
+def start_open_ths(stock_codes):
+    # 切换到软件窗口（如果它在后台）
+    pyautogui.hotkey('alt', 'z')
+    time.sleep(2)
+    pyautogui.click(x=1080, y=1410)  # 修改坐标以匹配你的桌面图标位置
+    time.sleep(2)  # 等待软件启动
 
-# 切换到软件窗口（如果它在后台）
-pyautogui.hotkey('alt', 'z')
+def add_stocks_to_ths_block(stock_codes):
+    if not stock_codes:
+        print("没有要添加的股票代码")
+        return
+    print(stock_codes)
+    start_open_ths(stock_codes)
+    add_stocks_to_block(stock_codes)
+    pyautogui.hotkey('alt', 'z')
 
-time.sleep(1)
-pyautogui.hotkey('alt', 'tab')
-# pyautogui.press('tab')  # 选择同花顺或通达信窗口
-time.sleep(1)
-pyautogui.typewrite('000001')
-# pyautogui.hotkey('enter')  # 切换到窗口
+def add_stocks_to_block(stock_codes):
+    for stock_code in stock_codes:
+        pyautogui.typewrite(stock_code)
+        time.sleep(1)
+        pyautogui.hotkey('enter')  # 切换到窗口
+        time.sleep(1)
+        pyautogui.click(x=1200, y=300)  # 修改坐标以匹配你的桌面图标位置
+        time.sleep(1)
+        pyautogui.hotkey('insert')  # 加入
+        time.sleep(1)
 
-# 打开一个股票的K线图
-# 假设快捷键是Ctrl+K，你可以通过查找快捷键或使用鼠标点击来实现
-# pyautogui.hotkey('ctrl', 'k')
-time.sleep(2)
-
-# 执行其他操作，例如切换到另一个股票的K线图
-# 这里你可以使用鼠标点击或键盘快捷键来切换股票
-# pyautogui.click(x=500, y=300)  # 示例点击位置
-exit()
-
-# print(pyautogui.displayMousePosition())
-# 等待同花顺客户端打开
-# time.sleep(5)
-
-pyautogui.hotkey('alt', 'z')  # 关闭当前窗口（如果需要）
-
-# 1. 点击股票代码输入框
-# 假设股票代码输入框的坐标为 (x1, y1)
-x1, y1 = 100, 150
-pyautogui.click(x1, y1)
-
-# 2. 输入股票代码
-# 假设要添加的股票代码为 '000001'
-pyautogui.typewrite('000001')
-
-# 3. 按下回车键
-pyautogui.press('enter')
-
-# 4. 等待股票信息加载
-time.sleep(2)
-
-# 5. 点击自定义板块
-# 假设自定义板块的坐标为 (x2, y2)
-x2, y2 = 200, 250
-pyautogui.click(x2, y2)
-
-# 6. 点击添加到自定义板块的按钮
-# 假设添加到自定义板块的按钮坐标为 (x3, y3)
-x3, y3 = 300, 350
-pyautogui.click(x3, y3)
-
-# 7. 等待操作完成
-time.sleep(1)
-
-exit()
 
 
 def login_to_tonghuashun():
@@ -119,4 +92,10 @@ def main():
     buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
 
 if __name__ == '__main__':
+    # 使用示例
+    stock_codes = ['603128', '300001']
+    add_stocks_to_ths_block(stock_codes)
+
+
+
     main()

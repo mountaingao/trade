@@ -6,6 +6,7 @@ import os
 import datetime
 import pandas as pd
 from stockrating.stock_rating_ds import evaluate_stock
+from autotrade.add_stock_ths_block import add_stocks_to_ths_block
 from stockrating.get_stock_block import process_stock_concept_data
 from mootdx.reader import Reader
 import json
@@ -69,6 +70,9 @@ def calculate_and_save_block_scores(block_name):
         # 直接写入整个 result 列表
         f.writelines([f"{item[0]}\t{item[1]}\t{item[2]}\n" for item in result])
 
+     #保存到同花顺自选股
+    add_stocks_to_ths_block(stock_codes)
+
 if __name__ == "__main__":
     # 获取当前日期并格式化为"MMdd"形式
     current_date = datetime.datetime.now().strftime("%m%d")
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     block_name = f"{current_date}YU"
     block_name = "0328YU"
     block_name = "1Y".encode('GBK')  # 修改字符集为GBK
-    block_name = "0414"
+    block_name = "0416"
     calculate_and_save_block_scores(block_name)
 
     # 读取当日的评分数据，倒序展示

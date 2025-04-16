@@ -1,7 +1,6 @@
 import os
 import time
 import tkinter as tk
-from tkinter import messagebox
 from playsound import playsound
 from pydub import AudioSegment
 from pydub.playback import play
@@ -14,6 +13,7 @@ from stockrating.get_stock_block import process_stock_concept_data
 from stockrating.read_local_info_tdx import expected_calculate_total_amount
 import tempfile
 import json
+from autotrade.add_stock_ths_block import add_stocks_to_ths_block
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
@@ -278,6 +278,13 @@ def format_result(result,conn):
                         formatted_lines.append(f"| 注: 上轨有效！                   ")
 
     return "\n".join(formatted_lines)
+def get_stock_codes(result):
+    stock_codes = []
+    for item in result:
+        if len(item) >= 1:  # 确保每行至少有一个字段
+            stock_code = item[0].strip()
+            stock_codes.append(stock_code)
+    return stock_codes
 
 def monitor_file(mp3_path,db_config):
     global last_modified_time, last_content
@@ -322,8 +329,21 @@ def monitor_file(mp3_path,db_config):
                 alertInfo = format_result(result,conn)
                 if len(alertInfo)>0:
                     print(alertInfo)
+                    #加入到ths自选股中
+                    stock_codes=get_stock_codes(result)
+                    # 加入到ths自选股中
+                    try:
+                        add_stocks_to_ths_block(stock_codes=stock_codes)
+                        print("股票已成功添加到同花顺自选股中")
+                    except Exception as e:
+                        print(f"添加股票到同花顺自选股时出错: {e}")
+
                     # 弹出提示信息
-                    popup_status = show_alert(alertInfo,mp3_path)
+                    try:
+                        popup_status = show_alert(alertInfo, mp3_path)
+                        print("提示信息已弹出")
+                    except Exception as e:
+                        print(f"弹出提示信息时出错: {e}")
 
                 # print(df)
                 import_to_database(result,  conn)
