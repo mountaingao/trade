@@ -131,10 +131,10 @@ def get_stock_data(symbol):
     获取股票的基本数据、历史数据和龙虎榜数据
     """
     # 检查缓存中是否有数据
-    # cached_data = load_cache(symbol)
-    # if cached_data:
-    #     print(f"从缓存中获取 {symbol} 的数据")
-    #     return cached_data
+    cached_data = load_cache(symbol)
+    if cached_data:
+        print(f"从缓存中获取 {symbol} 的数据")
+        return cached_data
 
     # 定义返回数据字典
     return_data = {}
