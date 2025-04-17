@@ -41,7 +41,7 @@ def add_stocks_to_ths_block(stock_codes):
     print(stock_codes)
     start_open_ths(stock_codes)
     add_stocks_to_block(stock_codes)
-    pyautogui.hotkey('alt', 'z')
+    # pyautogui.hotkey('alt', 'z')
 
 def add_stocks_to_block(stock_codes):
     for stock_code in stock_codes:
