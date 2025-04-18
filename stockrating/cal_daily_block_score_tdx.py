@@ -45,6 +45,9 @@ def read_tdx_block_data(block_name):
 #     return block_data
 
 def save_tdx_block_data(block_name, stock_list):
+    if custom.search(block_name):
+        custom.update(block_name, symbol=stock_list)
+        return True
     # 新建自定义板块
     return custom.create(name=block_name, symbol=stock_list)
 
@@ -80,7 +83,7 @@ if __name__ == "__main__":
     block_name = f"{current_date}YU"
     block_name = "0328YU"
     block_name = "1Y".encode('GBK')  # 修改字符集为GBK
-    block_name = "0416"
+    block_name = "0418"
     calculate_and_save_block_scores(block_name)
 
     # 读取当日的评分数据，倒序展示
