@@ -84,6 +84,45 @@ def is_new_high(stock_data):
     else:
         high_rating = 0
     return high_rating
+
+
+def calculate_volume_score(stock_history):
+    """
+    计算成交放量分数
+    :param stock_history: 包含历史成交量数据的字典列表
+    :return: 成交放量分数
+    """
+    # 将历史数据转换为DataFrame以便处理
+    df = pd.DataFrame(stock_history)
+    df['volume'] = pd.to_numeric(df['volume'])  # 确保成交量是数值类型
+
+    # 定义计算放量的函数
+    def calculate_ratio(recent_days, previous_days):
+        recent_volume = df['volume'].iloc[-recent_days:].sum()
+        previous_volume = df['volume'].iloc[-recent_days-previous_days:-recent_days].sum()
+        if previous_volume == 0:
+            return 0
+        return recent_volume / previous_volume
+
+    # 计算不同时间段的放量倍数
+    ratio_3 = calculate_ratio(3, 3)
+    ratio_5 = calculate_ratio(5, 5)
+    ratio_8 = calculate_ratio(8, 8)
+    ratio_13 = calculate_ratio(13, 13)
+
+    # 根据放量倍数计算分数
+    score = 0
+    if ratio_3 >= 2:
+        score += 10
+    if ratio_5 >= 2:
+        score += 10
+    if ratio_8 >= 2:
+        score += 5
+    if ratio_13 >= 2:
+        score += 5
+
+    return score
+
 #
 # 1、近期成交额（15%），分成3个级别：5日内平均成交额10亿以上100分，5-10亿 60分，5亿以下0分
 # 2、近期涨幅（10%），分成3个级别：20日内涨幅30%以上 100分，20%以内 50分 10%以内 0分
@@ -301,8 +340,6 @@ def evaluate_stock(symbol):
     increase_score = calculate_score(recent_increase, SCORE_RULES["recent_increase"])
 
     # 3. 流通市值（10%） f117
-    # print("流通市值：", stock_data["free_float_value"])
-    # market_cap = stock_data["free_float_value"] / 1e8  # 转换为亿
     market_cap = float(stock_data["free_float_value"])
     market_cap_score = calculate_score(market_cap, SCORE_RULES["market_cap"])
 
@@ -311,11 +348,6 @@ def evaluate_stock(symbol):
     low_prices = np.array([entry["low"] for entry in stock_history[-20:]])  # 修改为最近20天
     amplitude = (high_prices.max() - low_prices.min()) / low_prices.min() * 100
     amplitude_score = calculate_score(amplitude, SCORE_RULES["amplitude"])
-
-    # 机构参与度
-    # 历史评分
-    # 用户关注指数
-    # 日度市场参与意愿
 
     # 5. 机构参与度（5%）
     jgcyd_score = calculate_score(stock_data['avg_jgcyd'], SCORE_RULES["jgcyd"])
@@ -330,28 +362,19 @@ def evaluate_stock(symbol):
     desire_daily_score = calculate_score(stock_data['last_desire_daily'], SCORE_RULES["desire_daily"])
 
     # 9. 龙虎榜分析（5%）
-    # if not dragon_tiger_data.empty:
-    #     net_inflow = dragon_tiger_data["净买入额"].sum() / 1e4  # 转换为万元
-    #     if net_inflow > 0:
-    #         dragon_tiger_score = 100
-    #     elif net_inflow > -1000:
-    #         dragon_tiger_score = 50
-    #     else:
-    #         dragon_tiger_score = 0
-    # else:
-    #     dragon_tiger_score = 0
     dragon_tiger_score = 0
 
     # 10. 新闻报道分析（20%）
-    # 假设通过某种方式获取新闻报道数量（这里用随机值模拟）
-    # news_count = np.random.randint(0, 10)  # 模拟新闻报道数量
     news_score = 0
 
-    #11 增加当日收盘价创1年新高的评分（盘中数据，和预测相关）
+    # 11. 增加当日收盘价创1年新高的评分（盘中数据，和预测相关）
     high_rating = is_new_high(stock_data)
 
+    # 12. 成交放量分数
+    volume_score = calculate_volume_score(stock_history)
+
     # 13. 预估成交量和金额（25%）
-    estimated_turnover = recent_turnover/10  # 假设预估成交额等于近期成交额
+    estimated_turnover = recent_turnover / 10  # 假设预估成交额等于近期成交额
     estimated_score = calculate_score(estimated_turnover, SCORE_RULES["estimated_turnover"])
 
     # 计算各项得分
@@ -363,12 +386,10 @@ def evaluate_stock(symbol):
             + jgcyd_score * SCORE_RULES["jgcyd"]["weight"]
             + lspf_score * SCORE_RULES["lspf"]["weight"]
             + focus_score * SCORE_RULES["focus"]["weight"]
-            # + desire_daily_score * SCORE_RULES["desire_daily"]["weight"]
-            # + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
             + high_rating
-            # + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
             + news_score * SCORE_RULES["news_analysis"]["weight"]
             + estimated_score * SCORE_RULES["estimated_turnover"]["weight"]
+            + volume_score  # 添加成交放量分数
     )
 
     # 构建返回结果
@@ -388,6 +409,7 @@ def evaluate_stock(symbol):
             "dragon_tiger": dragon_tiger_score,
             "news_analysis": news_score,
             "estimated_turnover": estimated_score,
+            "volume_score": volume_score  # 添加成交放量分数
         },
         "source_data": {
             "avg_jgcyd": stock_data['avg_jgcyd'],
