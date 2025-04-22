@@ -39,8 +39,8 @@ def add_stocks_to_ths_block(stock_codes):
         print("没有要添加的股票代码")
         return
     print(stock_codes)
-    start_open_ths(stock_codes)
     add_stocks_to_block(stock_codes)
+    start_open_ths(stock_codes)
     # pyautogui.hotkey('alt', 'z')
 
 def add_stocks_to_block(stock_codes):

@@ -44,4 +44,6 @@ macd 趋势向上
 SMA(C,6.5,1)>SMA(C,13.5,1) AND
 MA(VOL,5) / REF(MA(VOL,5),5)>2 AND  REF(MA(VOL,5),1)/ REF(MA(VOL,5),5)>1.5 AND  REF(MA(VOL,5),2)/ REF(MA(VOL,5),5)>1.5
 
+最近3日、5日、8日、13日 相对前3日、5日、8日、13日 放量的计算，分数比重可超过30分
+
 
