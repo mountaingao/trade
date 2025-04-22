@@ -53,18 +53,8 @@
 
 ### 5. **实现步骤**
 #### （1）数据加载与预处理
-```python
-import pandas as pd
+300203
 
-# 加载历史行情数据
-historical_data = pd.read_csv("historical_data.csv")
-
-# 加载评分信号数据
-signal_data = pd.read_csv("signal_data.csv")
-
-# 数据预处理
-historical_data["date"] = pd.to_datetime(historical_data["date"])
-signal_data["signal_date"] = pd.to_datetime(signal_data["signal_date"])
 ```
 
 #### （2）信号表现分析

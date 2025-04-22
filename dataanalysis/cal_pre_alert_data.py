@@ -3,25 +3,17 @@ import pandas as pd
 import mysql.connector
 from datetime import datetime
 from stockrating.read_local_info_tdx import  calculate_stock_profit_from_date
+from stockrating.stock_block_tdx import  get_tdx_custom_block_from_date
 import json
 
-# 数据库连接配置
-db_config = {
-    "host": "localhost",  # 数据库主机地址
-    "user": "root",  # 数据库用户名
-    "password": "111111",  # 数据库密码
-    "database": "trade"  # 数据库名称
-}
+
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
     config = json.load(config_file)
 
-# 目标目录路径
-directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202503"  # 替换为你的文件所在目录
-# directory_path = "F:/baidu/BaiduSyncdisk/个人/通达信/202501"  # 替换为你的文件所在目录
-# directory_path = "D:/BaiduSyncdisk/个人/通达信/202502"
-# 读取目录下的所有 CSV 文件
+
+
 def get_csv_files(directory):
     return [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith(('.xls', '.xlsx'))]
 
@@ -123,8 +115,10 @@ def import_alert_data(df, file_date, db_config,file_name):
         cursor.close()
         conn.close()
 
-# 主程序
-if __name__ == "__main__":
+# 读取所有的文件数据进行分析
+def get_csv_file_stock_data(file_path):
+    # 读取所有的提前选取的板块数据，获得当日的各项数据，并计算各个需要参考的技术指标，以便做出正确决策
+    directory_path = config['directory_path']
     # 获取目录下的所有 CSV 文件
     csv_files = get_csv_files(directory_path)
     if not csv_files:
@@ -145,3 +139,42 @@ if __name__ == "__main__":
                 # 计算数据
                 import_alert_data(df, file_date, db_config,xls_name)
             # exit() b
+
+def get_date_from_name(file_name):
+    # 假设文件名格式为 "20250223_alert_data.csv"，提取日期部分
+    date_str = os.path.splitext(file_name)[0].split('_')[0]  # 提取文件名中的日期部分并去除扩展名
+    try:
+        # 将日期字符串转换为日期对象
+        date_obj = datetime.strptime(date_str, "%m%d").date()
+        current_year = datetime.now().year
+        final_date = date_obj.replace(year=current_year).strftime("%Y%m%d")
+        return final_date
+    except ValueError:
+        print(f"无法从文件名中提取日期：{file_name}")
+        return None
+
+def get_tdx_block_pre_data():
+    stocks = get_tdx_custom_block_from_date(401,430)
+    print(stocks)
+    result = {}
+    for index, stock in stocks.iterrows():
+        date = get_date_from_name(stock['blockname'])  # 日期需要完善
+        stock_code = stock['code']
+        print(f"Processing stock: {stock_code} {date} ")
+        return_data = calculate_stock_profit_from_date(stock_code, date, 100)
+        if return_data is not None:
+            result[stock_code] = return_data
+        else:
+            print(f"无法计算收益率：{stock_code}")
+    
+    # 将 result 数据写入 Excel 文件
+    result_df = pd.DataFrame.from_dict(result, orient='index')
+    xls_name = "tdx_block_pre_data.xlsx"
+    result_df.to_excel(xls_name, index=False)
+    print(f"数据写入成功！{xls_name}")
+
+# 主程序
+if __name__ == "__main__":
+
+    # get_csv_file_stock_data(directory_path)
+    get_tdx_block_pre_data()

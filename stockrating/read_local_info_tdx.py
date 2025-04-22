@@ -338,7 +338,7 @@ def read_tdx_block_data(block_name):
     # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
     return block_data
 
-def calculate_stock_profit_from_date(symbol, date, price, days=5):
+def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
     """
     给出当日信号价格，计算后续第1-days天的最高价、最低价和收盘价的盈利比例。
     :param symbol: 股票代码
