@@ -51,3 +51,20 @@ todo
 最近3日、5日、8日、13日 相对前3日、5日、8日、13日 放量的计算，分数比重可超过30分
 
 
+上轨:= MA(CLOSE,60)+ 2*STD(CLOSE,60),LINETHICK1,COLORFFFF00;
+主板:=   (SUBSTR(CODE,1,2) == '60' OR SUBSTR(CODE,1,2) == '00')  AND C*1.1>= HHV(C,50) AND C*1.1>= 上轨 ;
+创业板:= (SUBSTR(CODE,1,2) == '30' OR SUBSTR(CODE,1,2) == '68')  AND C*1.2>= HHV(C,50)  AND C*1.2>= 上轨  ;
+北证:= (SUBSTR(CODE,1,1) == '8' OR SUBSTR(CODE,1,1) == '9' OR SUBSTR(CODE,1,1) == '4' ) AND C*1.3>= HHV(C,50)   AND C*1.3>= 上轨  ;
+
+{SMA(C,6.5,1)>SMA(C,13.5,1) AND
+}
+(COUNT(C/REF(C,1)>=1.095,50)>=2 OR COUNT(C/REF(C,1)>=1.145,90)>=1 )
+AND HHV(C,50) >  C
+AND 上轨<= C
+AND MA(VOL,5) / REF(MA(VOL,5),5)>A AND  REF(MA(VOL,5),1)/ REF(MA(VOL,5),5)>A AND  REF(MA(VOL,5),2)/ REF(MA(VOL,5),5)>A
+
+{AND( AMOUNT>500000000 AND C/REF(C,1)>1.095)}
+AND (主板 OR 创业板  )
+;
+
+
