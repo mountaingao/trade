@@ -51,6 +51,7 @@ def save_tdx_block_data(block_name, stock_list):
     # 新建自定义板块
     return custom.create(name=block_name, symbol=stock_list)
 
+
 def calculate_and_save_block_scores(block_name):
     # 读取板块数据
     stock_list = read_tdx_block_data(block_name)
@@ -73,17 +74,17 @@ def calculate_and_save_block_scores(block_name):
         # 直接写入整个 result 列表
         f.writelines([f"{item[0]}\t{item[1]}\t{item[2]}\n" for item in result])
 
-     #保存到同花顺自选股
+     #保存到同花顺自选股，通过UI操作添加
     add_stocks_to_ths_block(stock_codes)
 
 if __name__ == "__main__":
     # 获取当前日期并格式化为"MMdd"形式
     current_date = datetime.datetime.now().strftime("%m%d")
 
-    block_name = f"{current_date}YU"
-    block_name = "0328YU"
-    block_name = "1Y".encode('GBK')  # 修改字符集为GBK
-    block_name = "0418"
+    block_name = f"{current_date}"
+    # block_name = "0328YU"
+    # block_name = "1Y".encode('GBK')  # 修改字符集为GBK
+    # block_name = "0418"
     calculate_and_save_block_scores(block_name)
 
     # 读取当日的评分数据，倒序展示
