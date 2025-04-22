@@ -47,7 +47,7 @@ def get_stock_history_by_remote( symbol='', begin=None, end=None, **kwargs):
 # 实时行情，列表形式返回
 def get_stock_quotes_by_remote(symbols):
     client_data = client.quotes(symbol=symbols)
-    print(client_data)
+    # print(client_data)
     return client_data
 
 
@@ -228,7 +228,7 @@ def expected_calculate_total_amount(symbol, num ,date):
 
     return total_amount,current_amount
 
-def calculate_stock_profit_from_date(symbol, date, price, days=5):
+def calculate_stock_profit_from_date_old(symbol, date, price, days=5):
     """
     给出当日信号价格，计算后续第1-days天的最高价、最低价和收盘价的盈利比例。
     :param symbol: 股票代码
@@ -243,7 +243,7 @@ def calculate_stock_profit_from_date(symbol, date, price, days=5):
 
     history_data = get_stock_history_by_local(symbol)
     print(f"date:{date}")
-    print(f"history_data:{history_data.head()}")
+    # print(f"history_data:{history_data.head()}")
     # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
     if date not in history_data.index:
         print(f"日期 {date} 不在历史数据中")
@@ -337,7 +337,7 @@ def read_tdx_block_data(block_name):
     print(block_data)
     # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
     return block_data
-
+#
 def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
     """
     给出当日信号价格，计算后续第1-days天的最高价、最低价和收盘价的盈利比例。
@@ -353,7 +353,7 @@ def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
 
     history_data = get_stock_history_by_local(symbol)
     print(f"date:{date}")
-    print(f"history_data:{history_data.head()}")
+    # print(f"history_data:{history_data.head()}")
     # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
     if date not in history_data.index:
         print(f"日期 {date} 不在历史数据中")
@@ -366,7 +366,8 @@ def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
     profit_ratios = {}
 
     # 获取当日的数据
-
+    profit_ratios["date"] = date
+    profit_ratios["code"] = symbol
     # 计算后续第1-days天的最高价、最低价和收盘价的盈利比例
     for day in range(0, days + 1):
         if date_index + day >= len(history_data):
@@ -408,6 +409,9 @@ def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
         profit_ratios[f"{day}_day_close"] = close_profit_ratio
 
     return profit_ratios
+
+
+
 if __name__ == '__main__':
 
     # expected_calculate_total_amount("300134", 235)

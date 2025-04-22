@@ -153,23 +153,28 @@ def get_date_from_name(file_name):
         print(f"无法从文件名中提取日期：{file_name}")
         return None
 
-def get_tdx_block_pre_data():
-    stocks = get_tdx_custom_block_from_date(401,430)
+def get_tdx_block_pre_data(start,end):
+    stocks = get_tdx_custom_block_from_date(start,end)
     print(stocks)
     result = {}
     for index, stock in stocks.iterrows():
         date = get_date_from_name(stock['blockname'])  # 日期需要完善
         stock_code = stock['code']
         print(f"Processing stock: {stock_code} {date} ")
-        return_data = calculate_stock_profit_from_date(stock_code, date, 100)
+        return_data = calculate_stock_profit_from_date(stock_code, date,0,3)
         if return_data is not None:
-            result[stock_code] = return_data
+            result[f"{stock_code}-{date}"] = return_data
         else:
             print(f"无法计算收益率：{stock_code}")
-    
+
+        # print(result)
+        # exit()
+        # print(result)
+
     # 将 result 数据写入 Excel 文件
     result_df = pd.DataFrame.from_dict(result, orient='index')
-    xls_name = "tdx_block_pre_data.xlsx"
+    # 文件名为固定+日期+后缀
+    xls_name = f"tdx_block_pre_data_{start}-{end}.xlsx"
     result_df.to_excel(xls_name, index=False)
     print(f"数据写入成功！{xls_name}")
 
@@ -177,4 +182,6 @@ def get_tdx_block_pre_data():
 if __name__ == "__main__":
 
     # get_csv_file_stock_data(directory_path)
-    get_tdx_block_pre_data()
+    get_tdx_block_pre_data(401,430)
+
+    # 可以根据条件过滤掉部分无效数据以后再进行数据分析和判断，如上轨以上，放量的比较
