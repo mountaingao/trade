@@ -141,6 +141,50 @@ def sma(data, val, window, weight=1):
 
     return data
 
+def sma_base(data, period, weight,val='close'):
+    """
+    计算通达信公式中的SMA（加权移动平均）。
+
+    参数:
+        data (list): 数据列表，例如收盘价列表。
+        period (float): 计算周期，例如6.5。
+        weight (float): 权重参数，例如1。
+
+    返回:
+        list: 计算得到的SMA值列表。
+    """
+    if len(data) < period:
+        raise ValueError("数据长度必须大于或等于周期")
+    print(data)
+    sma_values = []
+    # 初始值使用前几个数据点的平均值
+    initial_value = sum(data[:int(period)][val]) / int(period)
+    # sma_values.append(initial_value)
+    for i in range(len(data)):
+        if i < int(period):
+            # 在周期内，使用简单的平均值
+            sma_values.append(sum(data[:i+1][val]) / (i+1))
+            # 初始值为第一个数据点
+            # sma_values.append(data.iloc[i][val])
+        else:
+            # 使用递推公式计算SMA .round(3)
+            sma_values.append(((weight * data.iloc[i][val] + (period - weight) * sma_values[i - 1]) / period).round(3))
+    print(sma_values)
+    data['sma'] = sma_values
+    return data
+
+
+# # 示例数据
+# data = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+#
+# # 计算SMA(C, 6.5, 1)
+# period = 6.5
+# weight = 1
+# sma_result = sma(data, period, weight)
+#
+# # 输出结果
+# print(f"SMA(C, {period}, {weight}) 的结果是: {sma_result}")
+
 def weighted_sma_manual(data, val, window, weight):
     """
     手动计算加权移动平均 (Weighted Simple Moving Average)
@@ -182,21 +226,31 @@ def cal_boll(data,date):
         return 1
     else:
         return 0
+def MA(DF, N):
+    return pd.Series.rolling(DF, N).mean().round(2)
+
+def EMA(DF, N):
+    return pd.Series(DF).ewm(alpha=2/(N+1), adjust=True).mean().round(2)
+
+def SMA(DF, N, M):
+    return pd.Series(DF).ewm(alpha=M / N, adjust=True).mean().round(2)
 
 if __name__ == '__main__':
     from stockrating.read_local_info_tdx import get_stock_history_by_local
-    # data = get_stock_history_by_local('300100')
-    data = get_stock_history_by_local('300005')
+    data = get_stock_history_by_local('300100')
+    # data = get_stock_history_by_local('300005')
 
     # 假设data是包含股票历史数据的DataFrame，'close'是收盘价列
-    data = sma(data, 'close', 6, 1)
-    print(data.head())
-
-    data = weighted_sma_manual(data, 'close', 6.5, 1)
-    print(data.head())
-
-    result =  cal_ma_amount(data, '2025-04-21', 'amount')
+    result = sma_base(data, 6.5, 1)
     print(result)
+    data = SMA(data['close'], 6.5, 1)
+    print(data)
+
+    # data = weighted_sma_manual(data, 'close', 6.5, 1)
+    # print(data.head())
+
+    # result =  cal_ma_amount(data, '2025-04-21', 'amount')
+    # print(result)
     exit()
     result = cal_boll(data, '2025-04-21')
     print(result)
