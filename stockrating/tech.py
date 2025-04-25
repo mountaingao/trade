@@ -216,16 +216,20 @@ def weighted_sma_manual(data, val, window, weight):
     return data
 
 
-def cal_boll(data,date):
-    result = boll(data, 'close',60)
+def cal_boll(data, date):
+    # 将日期转换为字符串格式，确保与DataFrame索引中的日期格式一致
+    date_str = str(date)
+    result = boll(data, 'close', 60)
     # 查找和定位到该日期数据
-    date_index = result.index.get_loc(date)
+    date_index = result.index.get_loc(date_str)
     # 返回当日数据,上轨以上，返回1
-    date_data =  result.iloc[date_index]
+    date_data = result.iloc[date_index]
     if date_data['close'] > date_data['upper']:
         return 1
     else:
         return 0
+
+
 def MA(DF, N):
     return pd.Series.rolling(DF, N).mean().round(2)
 
