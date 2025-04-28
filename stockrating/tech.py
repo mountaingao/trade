@@ -73,6 +73,7 @@ def ma(data,val,window=5):
 
 def cal_ma_amount(data, date, val='close'):
     # 查找和定位到该日期数据
+    date = date.strftime('%Y-%m-%d')
     date_index = data.index.get_loc(date)
     
     # 计算3日、5日、8日、11日的成交金额数据

@@ -1,5 +1,6 @@
 import datetime
 import time
+import os
 
 from stockrating.tech import get_macd,sma_base,cal_ma_amount,cal_boll
 
@@ -20,34 +21,47 @@ def process_stock_data(input_file, output_file):
 
     # 创建一个空的 DataFrame 用于存储结果
     results = []
+    print(df_input)
 
     # 逐行处理数据
     for index, row in df_input.iterrows():
-        date = row['date']
+        date = str(row['date'])
         code = str(row['code'])  # 将code转换为字符串
+        print(row)
 
         # 获取股票历史数据
         data = get_stock_history_by_local(code)
-
+        # date 转化为时间格式
+        date = datetime.datetime.strptime(date, '%Y%m%d')
         # 计算技术指标
-        sma_result = sma_base(data, 6.5, 1)
-        macd_result = get_macd(data)
-        boll_result = cal_boll(data, date)
-        ma_amount_result = cal_ma_amount(data, date, 'amount')
 
-        # 将结果添加到列表中
+        data = sma_base(data, 6.5, 1)
+        data = get_macd(data)
+        print(data)
+
+        ma_result = cal_ma_amount(data, date, 'amount')
+        print(data)
+        boll_result = cal_boll(data, date)
+
+        date_index = data.index.get_loc(date)
+        date_data = data.iloc[date_index]
+        print(date_data)
+
+    # 将结果添加到列表中
         results.append({
             'date': date,
             'code': code,
-            'sma': sma_result['sma'].iloc[-1],
-            'macd': macd_result['MACD'].iloc[-1],
+            'sma': data['sma'].iloc[-1],
+            'macd': data['MACD'].iloc[-1],
             'boll': boll_result,
-            'ma_amount_3_days_ratio': ma_amount_result['3_days_ratio'],
-            'ma_amount_5_days_ratio': ma_amount_result['5_days_ratio'],
-            'ma_amount_8_days_ratio': ma_amount_result['8_days_ratio'],
-            'ma_amount_11_days_ratio': ma_amount_result['11_days_ratio']
+            'ma_amount_3_days_ratio': ma_result['3_days_ratio'],
+            'ma_amount_5_days_ratio': ma_result['5_days_ratio'],
+            'ma_amount_8_days_ratio': ma_result['8_days_ratio'],
+            'ma_amount_11_days_ratio': ma_result['11_days_ratio']
         })
 
+        print(results)
+        exit()
     # 将结果转换为 DataFrame
     df_results = pd.DataFrame(results)
 
@@ -58,5 +72,9 @@ def process_stock_data(input_file, output_file):
 if __name__ == '__main__':
 
     file_path = r"202504.txt"
+    # output_file 为输入文件去除文件扩展名后增加后缀.xlsx
+    base_name = os.path.splitext(file_path)[0]  # 去除文件扩展名
+    output_file = base_name + '.xlsx'  # 增加 .xlsx 后缀
 
-    process_stock_data(file_path, 'output.xlsx')
+
+    process_stock_data(file_path, output_file)
