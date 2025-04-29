@@ -171,7 +171,7 @@ def sma_base(data, period, weight,val='close'):
             # 使用递推公式计算SMA .round(3)
             sma_values.append(((weight * data.iloc[i][val] + (period - weight) * sma_values[i - 1]) / period).round(3))
     print(sma_values)
-    data['sma'] = sma_values
+    data[f"sma-{period}"] = sma_values
     return data
 
 

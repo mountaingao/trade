@@ -35,7 +35,8 @@ def process_stock_data(input_file, output_file):
         date = datetime.datetime.strptime(date, '%Y%m%d')
         # 计算技术指标
 
-        data = sma_base(data, 6.5, 1)
+        data = sma_base(data, 6.5, 1) #上轨
+        data = sma_base(data, 13.5, 1)  #下轨
         data = get_macd(data)
         print(data)
 
@@ -46,13 +47,20 @@ def process_stock_data(input_file, output_file):
         date_index = data.index.get_loc(date)
         date_data = data.iloc[date_index]
         print(date_data)
+        #比较date_data['close'] 和 date_data['sma'] ，大于0，则返回1，否则为0
+        sma_result_up = 1 if date_data['close'] > date_data['sma-6.5'] else 0
+        sma_result_down = 1 if date_data['close'] > date_data['sma-13.5'] else 0
+
 
     # 将结果添加到列表中
         results.append({
             'date': date,
             'code': code,
-            'sma': data['sma'].iloc[-1],
-            'macd': data['MACD'].iloc[-1],
+            'close': date_data['close'],
+            'amount': date_data['amount'],
+            'sma_up': sma_result_up,
+            'sma_down': sma_result_down,
+            'macd': date_data['MACD'],
             'boll': boll_result,
             'ma_amount_3_days_ratio': ma_result['3_days_ratio'],
             'ma_amount_5_days_ratio': ma_result['5_days_ratio'],
@@ -60,8 +68,8 @@ def process_stock_data(input_file, output_file):
             'ma_amount_11_days_ratio': ma_result['11_days_ratio']
         })
 
-        print(results)
-        exit()
+        # print(results)
+        # exit()
     # 将结果转换为 DataFrame
     df_results = pd.DataFrame(results)
 
@@ -78,3 +86,8 @@ if __name__ == '__main__':
 
 
     process_stock_data(file_path, output_file)
+
+
+#分析结论：下面几种情况
+# 1、 当 sma-up 小于0时， ma 必须在3倍以上，sma-down 必须大于0
+# 2、 当 boll 为1 时，短期3日涨幅 或 10日涨幅大于100%的过滤掉，风险大
