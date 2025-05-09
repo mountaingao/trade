@@ -675,6 +675,6 @@ if __name__ == '__main__':
     calculate_symbol_score("300541")
 
 # 样本数据
-#     5月6日：主板 600744 600396  创业板
+#     5月6日：主板 600744 600396  创业板 300281
     # 多个股票评分
     calculate_symbols_score()
