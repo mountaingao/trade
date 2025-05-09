@@ -75,7 +75,9 @@ def cal_ma_amount(data, date, val='close'):
     # 查找和定位到该日期数据
     date = date.strftime('%Y-%m-%d')
     date_index = data.index.get_loc(date)
-    
+
+    yestaday=data.iloc[date_index - 1]
+    today = data.iloc[date_index]
     # 计算3日、5日、8日、11日的成交金额数据
     ma_amount_3 = ma(data, val, 3)
     ma_amount_5 = ma(data, val, 5)
@@ -87,13 +89,16 @@ def cal_ma_amount(data, date, val='close'):
     
     # 计算3日前的数据
     amount_3_days_ago = ma_amount_3.iloc[date_index - 3]
-    print(ma_amount_3)
+
+    # print(ma_amount_3)
     # 计算比值
     ratio_3 = current_amount / amount_3_days_ago
-    print(f"3日比值: {ratio_3} = {current_amount}/{amount_3_days_ago}")
+    # print(f"3日比值: {ratio_3} = {current_amount}/{amount_3_days_ago}")
     # 返回结果
     result = {
         'date': date,
+        'zhang':(today['close']-yestaday['close'])/yestaday['close'],
+        'zhen':(today['high']-today['low'])/today['low'],
         '3_days_ratio': ratio_3.round(3),
         '5_days_ratio': (ma_amount_5.iloc[date_index]/ma_amount_5.iloc[date_index - 5]).round(3),
         '8_days_ratio': (ma_amount_8.iloc[date_index]/ma_amount_8.iloc[date_index - 8]).round(3),
@@ -156,7 +161,7 @@ def sma_base(data, period, weight,val='close'):
     """
     if len(data) < period:
         raise ValueError("数据长度必须大于或等于周期")
-    print(data)
+    # print(data)
     sma_values = []
     # 初始值使用前几个数据点的平均值
     initial_value = sum(data[:int(period)][val]) / int(period)
@@ -170,7 +175,7 @@ def sma_base(data, period, weight,val='close'):
         else:
             # 使用递推公式计算SMA .round(3)
             sma_values.append(((weight * data.iloc[i][val] + (period - weight) * sma_values[i - 1]) / period).round(3))
-    print(sma_values)
+    # print(sma_values)
     data[f"sma-{period}"] = sma_values
     return data
 
