@@ -38,10 +38,10 @@ def process_stock_data(input_file, output_file):
         data = sma_base(data, 6.5, 1) #上轨
         data = sma_base(data, 13.5, 1)  #下轨
         data = get_macd(data)
-        # print(data)
+        print(data)
 
         ma_result = cal_ma_amount(data, date, 'amount')
-        print(ma_result.head())
+        print(ma_result)
         boll_result = cal_boll(data, date)
 
         date_index = data.index.get_loc(date)
@@ -82,7 +82,7 @@ def process_stock_data(input_file, output_file):
 # 筛选符合条件的行（每隔1分钟）
 if __name__ == '__main__':
 
-    file_path = r"202504.txt"
+    file_path = r"20250501.txt"
     # output_file 为输入文件去除文件扩展名后增加后缀.xlsx
     base_name = os.path.splitext(file_path)[0]  # 去除文件扩展名
     output_file = base_name + '1.xlsx'  # 增加 .xlsx 后缀
