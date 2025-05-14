@@ -114,6 +114,10 @@ def boll(data,val,window=20):
     data['ma'] = ma.round(2)
     data['upper'] = upper
     data['lower'] = lower
+    # data['isupper'] = 1 if upper <= data[f"{val}"] else 0
+    data['isupper'] = 0  # 默认赋值为 0
+    data.loc[upper <= data[f"{val}"], 'isupper'] = 1
+
     return data
 
 
@@ -222,18 +226,44 @@ def weighted_sma_manual(data, val, window, weight):
     return data
 
 
-def cal_boll(data, date):
+def cal_boll(data, date,days=10):
     # 将日期转换为字符串格式，确保与DataFrame索引中的日期格式一致
     date_str = str(date)
     result = boll(data, 'close', 60)
     # 查找和定位到该日期数据
     date_index = result.index.get_loc(date_str)
     # 返回当日数据,上轨以上，返回1
-    date_data = result.iloc[date_index]
-    if date_data['close'] > date_data['upper']:
-        return 1
-    else:
-        return 0
+    print(data)
+    is_up= result['isupper'].iloc[date_index]
+
+    # 获取历史 isupper 序列
+    isupper_series = result['isupper'].iloc[:date_index + 1]
+    print(isupper_series.tail(10))
+
+    # 计算连续为 1 的天数（从后往前直到第一个不是1的位置）
+    consecutive_count = 0
+    for val in isupper_series.values[::-1]:
+        if val == 1:
+            consecutive_count += 1
+        else:
+            break
+
+    # 统计最近 days 天内 isupper = 1 的数量
+    recent_days = result['isupper'].iloc[date_index - days + 1: date_index + 1]
+    count_in_days = recent_days.sum()
+
+    return {
+        'date': date_str,
+        'is_up': is_up,
+        'consecutive_upper_days': consecutive_count,
+        'upper_count_in_days': int(count_in_days)
+    }
+    #
+    # date_data = result.iloc[date_index]
+    # if date_data['close'] > date_data['upper']:
+    #     return 1
+    # else:
+    #     return 0
 
 
 def MA(DF, N):
@@ -247,9 +277,13 @@ def SMA(DF, N, M):
 
 if __name__ == '__main__':
     from stockrating.read_local_info_tdx import get_stock_history_by_local
-    data = get_stock_history_by_local('300100')
+    data = get_stock_history_by_local('300879')
     # data = get_stock_history_by_local('300005')
 
+    # result = boll(data, 'close', 60)
+    result = cal_boll(data, '2025-05-08')
+    print(result)
+    exit()
     # 假设data是包含股票历史数据的DataFrame，'close'是收盘价列
     result = sma_base(data, 6.5, 1)
     print(result)

@@ -3,7 +3,8 @@ import time
 import os
 
 from stockrating.tech import get_macd,sma_base,cal_ma_amount,cal_boll
-
+import pandas as pd
+from stockrating.read_local_info_tdx import get_stock_history_by_local
 
 
 def process_stock_data(input_file, output_file):
@@ -13,8 +14,7 @@ def process_stock_data(input_file, output_file):
     :param input_file: 输入文件路径，包含日期和股票代码
     :param output_file: 输出文件路径，用于保存计算结果
     """
-    import pandas as pd
-    from stockrating.read_local_info_tdx import get_stock_history_by_local
+
 
     # 读取输入文件
     df_input = pd.read_csv(input_file, sep='\t')
@@ -64,7 +64,9 @@ def process_stock_data(input_file, output_file):
             'sma_up': sma_result_up,
             'sma_down': sma_result_down,
             'macd': date_data['MACD'],
-            'boll': boll_result,
+            'is_up': boll_result['is_up'],
+            'consecutive_upper_days': boll_result['consecutive_upper_days'],
+            'upper_count_in_days': boll_result['upper_count_in_days'],
             'ma_amount_3_days_ratio': ma_result['3_days_ratio'],
             'ma_amount_5_days_ratio': ma_result['5_days_ratio'],
             'ma_amount_8_days_ratio': ma_result['8_days_ratio'],
