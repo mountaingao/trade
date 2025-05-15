@@ -182,13 +182,63 @@ def get_tdx_block_pre_data(start,end):
     #统计数据
     calculate_positive_percentage(xls_name)
 
+def analyze_custom_date_code_data(file_path):
+    """
+    读取指定格式的日期和股票代码数据，并计算每个股票的收益率等信息。
+
+    参数:
+        file_path (str): 文件路径，文件内容格式为每行 "date code"。
+    """
+    result = {}
+    xls_name = f"custom_date_code_analysis_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
+    try:
+        # 读取文件
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # 分割每一行为 date 和 code
+            parts = line.split()
+            if len(parts) < 2:
+                print(f"跳过无效行: {line}")
+                continue
+
+            date_str = parts[0].strip()
+            stock_code = parts[1].strip()
+
+            print(f"Processing stock: {stock_code} on date: {date_str}")
+
+            # 调用 calculate_stock_profit_from_date 函数获取收益率数据
+            return_data = calculate_stock_profit_from_date(stock_code, date_str, 0, 3)
+            if return_data is not None:
+                result[f"{stock_code}-{date_str}"] = return_data
+            else:
+                print(f"无法计算收益率：{stock_code}")
+
+        # 将结果写入 Excel 文件
+        result_df = pd.DataFrame.from_dict(result, orient='index')
+        result_df.to_excel(xls_name, index=False)
+        print(f"数据写入成功！{xls_name}")
+
+        # 统计分析（可选）
+        calculate_positive_percentage(xls_name)
+
+    except Exception as e:
+        print(f"处理文件时出错: {e}")
+
 # 主程序
 if __name__ == "__main__":
 
     # get_csv_file_stock_data(directory_path)
     #1、通达信的板块数据
-    get_tdx_block_pre_data(401,430)
+    # get_tdx_block_pre_data(401,430)
 
     # 可以根据条件过滤掉部分无效数据以后再进行数据分析和判断，如上轨以上，放量的比较
     # 2、本地的日期+代码数据
     # 2、本地的日期+代码数据
+    analyze_custom_date_code_data("20250501.txt")
