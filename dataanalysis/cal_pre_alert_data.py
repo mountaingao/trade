@@ -4,6 +4,7 @@ import mysql.connector
 from datetime import datetime
 from stockrating.read_local_info_tdx import  calculate_stock_profit_from_date
 from stockrating.stock_block_tdx import  get_tdx_custom_block_from_date
+from dataanalysis.cal_excel_per import  calculate_positive_percentage
 import json
 
 
@@ -178,10 +179,16 @@ def get_tdx_block_pre_data(start,end):
     result_df.to_excel(xls_name, index=False)
     print(f"数据写入成功！{xls_name}")
 
+    #统计数据
+    calculate_positive_percentage(xls_name)
+
 # 主程序
 if __name__ == "__main__":
 
     # get_csv_file_stock_data(directory_path)
+    #1、通达信的板块数据
     get_tdx_block_pre_data(401,430)
 
     # 可以根据条件过滤掉部分无效数据以后再进行数据分析和判断，如上轨以上，放量的比较
+    # 2、本地的日期+代码数据
+    # 2、本地的日期+代码数据
