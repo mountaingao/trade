@@ -1,7 +1,8 @@
 {
-    "tdxdir": "D:/new_haitong/",
+    "tdxdir": "D:/zd_haitong/",
     "tempdir": "D:\\temp",
-    "istest": 1,
+    "istest": 0,
+    "debug": "True",
     "file_path_test": "alert1.txt",
     "file_path": "D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt",
     "db_config": {
@@ -11,9 +12,10 @@
         "database": "trade"
     },
     "ths_positon": {
-        "x": 960,
-        "y": 1060,
-        "c_x": 1100,
+        "x": 1080,
+        "y": 1410,
+        "c_x": 1200,
         "c_y": 300
     }
+
 }

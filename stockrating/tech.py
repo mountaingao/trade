@@ -7,12 +7,6 @@ import os
 
 
 
-# 新增代码：读取配置文件
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
-with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
-    config = json.load(config_file)
-
-db_config = config['db_config']
 
 
 def get_macd(data):
@@ -233,12 +227,12 @@ def cal_boll(data, date,days=10):
     # 查找和定位到该日期数据
     date_index = result.index.get_loc(date_str)
     # 返回当日数据,上轨以上，返回1
-    print(data)
+    # print(data)
     is_up= result['isupper'].iloc[date_index]
 
     # 获取历史 isupper 序列
     isupper_series = result['isupper'].iloc[:date_index + 1]
-    print(isupper_series.tail(10))
+    # logging.debug(isupper_series.tail(10))
 
     # 计算连续为 1 的天数（从后往前直到第一个不是1的位置）
     consecutive_count = 0
@@ -276,6 +270,14 @@ def SMA(DF, N, M):
     return pd.Series(DF).ewm(alpha=M / N, adjust=True).mean().round(2)
 
 if __name__ == '__main__':
+
+
+# 新增代码：读取配置文件
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'config.json')
+    with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
+        config = json.load(config_file)
+
+    db_config = config['db_config']
     from stockrating.read_local_info_tdx import get_stock_history_by_local
     data = get_stock_history_by_local('300879')
     # data = get_stock_history_by_local('300005')

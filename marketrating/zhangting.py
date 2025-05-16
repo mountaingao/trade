@@ -14,6 +14,10 @@ pd.set_option('display.expand_frame_repr', False)
 pd.set_option('display.max_colwidth', 100)
 
 
+# 使用命令执行
+# streamlit run D:/project/trade/marketrating/zhangting.py
+# 打开浏览器就可以看到这个数据 http://172.16.10.23:8501
+
 def get_previous_trading_day(date):
     previous_date = date - timedelta(days=1)
     while not is_workday(previous_date) or is_holiday(previous_date):

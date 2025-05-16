@@ -38,7 +38,9 @@ def read_tdx_block_data(block_name):
 #     custom = Customize(tdxdir=config['tdxdir'])
 #     # 读取通达信板块数据，返回股票列表
 #     # 读取板块数据
-#     block_data = custom.search(block_name)
+#     block_data = custom.search(block_name)300099603109300466605068300339
+
+
 #     # 打印板块数据
 #     print(block_data)
 #     # 这里假设板块数据已经以某种方式存储，具体实现需要根据实际情况调整
@@ -65,7 +67,8 @@ def calculate_and_save_block_scores(block_name):
         if score >= 50:
             result.append((stock_code, score, datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
 
-    # 修改代码：只取 result 的第一列数据（股票代码）
+    # 修改代码：只取 result 的第一列数据（股票代码）300663
+
     stock_codes = [item[0] for item in result]
     save_tdx_block_data(f"{block_name}01", stock_codes)
     # 保存到文件

@@ -66,8 +66,23 @@ def get_tdx_custom_block_from_date(start=101,end=1231):
     # print(filtered_df)
     return filtered_df
 
+def get_tdx_custom_block_from_name(block):
+    # 获取当前日期并格式化为"MMdd"形式
+    block_names = get_tdx_custom_block()
+    # print(block_names)
+    df_filtered = block_names[['blockname', 'code']]
+    # print(df_filtered)
+    df_all = df_filtered[(df_filtered['blockname'].str.len() == 4) & (df_filtered['blockname'].str.isdigit())]
+    # print(df_filtered)
+    # 过滤 blockname
+    filtered_df = df_all[(df_all['blockname'] == block)]
+
+    # print(filtered_df)
+    return filtered_df
+
 if __name__ == "__main__":
 
-    get_tdx_custom_block_from_date(401,430)
-
+    # get_tdx_custom_block_from_date(401,430)
+    result = get_tdx_custom_block_from_name("0506")
+    print(result)
     # 读取当日的评分数据，倒序展示

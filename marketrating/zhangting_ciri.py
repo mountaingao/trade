@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 
 # 利用tushare、wencai分析某天涨停股票次日涨跌幅情况
+# 使用命令执行
+# streamlit run D:/project/trade/marketrating/zhangting_ciri.py
+# 打开浏览器就可以看到这个数据 http://172.16.10.23:8501
+
 
 # Initialize Tushare with your token from environment variable or config file
 import os

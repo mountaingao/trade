@@ -5,6 +5,9 @@ import requests
 import json
 import pandas as pd
 
+
+# streamlit run D:/project/trade/marketrating/wencai.py
+
 df = pywencai.get(query="短线复盘")
 try:
     # ================== 核心指标看板 ==================
