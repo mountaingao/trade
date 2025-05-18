@@ -68,7 +68,10 @@ def ma(data,val,window=5):
 def cal_ma_amount(data, date, val='close'):
     # 查找和定位到该日期数据
     date = date.strftime('%Y-%m-%d')
+    if date not in data.index:
+        return None
     date_index = data.index.get_loc(date)
+
 
     yestaday=data.iloc[date_index - 1]
     today = data.iloc[date_index]

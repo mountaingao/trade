@@ -69,7 +69,8 @@ def process_single_stock(code,date):
     data = sma_base(data, 13.5, 1)  #下轨
     data = get_macd(data)
     # logging.debug(data)
-
+    if date not in data.index:
+        return None
     ma_result = cal_ma_amount(data, date, 'amount')
     # logging.debug(ma_result)
     boll_result = cal_boll(data, date)

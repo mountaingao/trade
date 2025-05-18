@@ -161,12 +161,17 @@ def get_tdx_block_pre_data(block):
     stocks = get_tdx_custom_block_from_name(block)
     print(stocks)
     result = {}
+    date = get_date_from_name(block)  # 日期需要完善
+    # 截取前四位date
+    # date = date[:4]
     for index, stock in stocks.iterrows():
-        date = get_date_from_name(stock['blockname'])  # 日期需要完善
         stock_code = stock['code']
         logging.info(f"Processing stock: {stock_code} {date} ")
         # 计算积分项和技术指标
         tech = process_single_stock(stock_code, date)
+        if tech is None:
+            print(f"无法计算技术指标：{stock_code}")
+            continue
         logging.debug(tech)  # 仅在 DEBUG 为 True 时输出
 
         # 积分
@@ -184,18 +189,19 @@ def get_tdx_block_pre_data(block):
             print(f"无法计算收益率或数据格式错误：{stock_code}")
 
         print(result)
-        exit()
+        # exit()
         # print(result)
 
-    # 将 result 数据写入 Excel 文件
-    result_df = pd.DataFrame.from_dict(result, orient='index')
-    # 文件名为固定+日期+后缀
-    xls_name = f"result/tdx_block_pre_data_{block}.xlsx"
-    result_df.to_excel(xls_name, index=False)
-    print(f"数据写入成功！{xls_name}")
+    if result:
+        # 将 result 数据写入 Excel 文件
+        result_df = pd.DataFrame.from_dict(result, orient='index')
+        # 文件名为固定+日期+后缀
+        xls_name = f"result/tdx_block_pre_data_{block}.xlsx"
+        result_df.to_excel(xls_name, index=False)
+        print(f"数据写入成功！{xls_name}")
 
-    #统计数据
-    calculate_positive_percentage(xls_name)
+        #统计数据
+        calculate_positive_percentage(xls_name)
 
 def analyze_custom_date_code_data(file_path):
     """
@@ -252,8 +258,8 @@ def process_file_stock_data(file_path, output_file):
 # 主程序
 if __name__ == "__main__":
 
-    #1、通达信的板块数据
-    block= "0506"
+    #1、通达信的板块数据 不能超过4位，有做限制
+    block= "0508"
     get_tdx_block_pre_data(block)
 
     # 一种是读取预警文件

@@ -29,3 +29,5 @@ easytrader
 pywin32
 gradio
 pandas_ta
+scikit-learn
+xgboost

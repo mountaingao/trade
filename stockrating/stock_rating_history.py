@@ -309,21 +309,21 @@ def calculate_symbol_score(symbol,date):
     # 截取date日期以前的数据
     stock_history = [entry for entry in stock_history if datetime.strptime(entry["date"], "%Y-%m-%d") <= date]
 
-    # 1. 近期成交额（15%） 成交量*均价 = 成交额  3天 有效
+    # 1. 近期成交额（15%） 成交量*均价 = 成交额  3天平均 有效
     turnover_array = np.array([entry["amount"] for entry in stock_history[-3:]])
-    recent_turnover = turnover_array.mean() / 1e8  # 转换为亿
-    turnover_score = calculate_score(recent_turnover, SCORE_RULES["recent_turnover"])
+    amount = turnover_array.mean() / 1e8  # 转换为亿
+    amount_score = calculate_score(amount, SCORE_RULES["recent_turnover"])
 
-    # 2. 近期涨幅（10%）
+    # 2. 近期涨幅（10%） 20日内涨幅
     close_prices = np.array([entry["close"] for entry in stock_history])
-    recent_increase = (close_prices[-1] - close_prices[-20]) / close_prices[-20] * 100
-    increase_score = calculate_score(recent_increase, SCORE_RULES["recent_increase"])
+    increase = (close_prices[-1] - close_prices[-20]) / close_prices[-20] * 100
+    increase_score = calculate_score(increase, SCORE_RULES["recent_increase"])
 
     # 3. 流通市值（10%） f117
     # print("流通市值：", stock_data["free_float_value"])
     # market_cap = stock_data["free_float_value"] / 1e8  # 转换为亿
-    market_cap = float(stock_data["free_float_value"])
-    market_cap_score = calculate_score(market_cap, SCORE_RULES["market_cap"])
+    free_amount = float(stock_data["free_float_value"])
+    free_amount_score = calculate_score(free_amount, SCORE_RULES["market_cap"])
 
     # 4. 振幅（10%）
     high_prices = np.array([entry["high"] for entry in stock_history[-20:]])  # 修改为最近20天
@@ -370,15 +370,15 @@ def calculate_symbol_score(symbol,date):
     #11 增加当日收盘价创1年新高的评分（盘中数据，和预测相关）
     high_rating = is_new_high(stock_data)
 
-    # 13. 预估成交量和金额（25%）
-    estimated_turnover = recent_turnover/10  # 假设预估成交额等于近期成交额
-    estimated_score = calculate_score(estimated_turnover, SCORE_RULES["estimated_turnover"])
+    # # 13. 预估成交量和金额（25%）
+    # expect_amount = amount/10  # 假设预估成交额等于近期成交额
+    # expect_score = calculate_score(expect_amount, SCORE_RULES["estimated_turnover"])
 
-    # 计算各项得分
+    # 计算各项得分之和
     total_score = (
-            turnover_score * SCORE_RULES["recent_turnover"]["weight"]
+            amount_score * SCORE_RULES["recent_turnover"]["weight"]
             + increase_score * SCORE_RULES["recent_increase"]["weight"]
-            + market_cap_score * SCORE_RULES["market_cap"]["weight"]
+            + free_amount_score * SCORE_RULES["market_cap"]["weight"]
             + amplitude_score * SCORE_RULES["amplitude"]["weight"]
             + jgcyd_score * SCORE_RULES["jgcyd"]["weight"]
             + lspf_score * SCORE_RULES["lspf"]["weight"]
@@ -388,7 +388,7 @@ def calculate_symbol_score(symbol,date):
             + high_rating
             # + dragon_tiger_score * SCORE_RULES["dragon_tiger"]["weight"]
             + news_score * SCORE_RULES["news_analysis"]["weight"]
-            + estimated_score * SCORE_RULES["estimated_turnover"]["weight"]
+            # + expect_score * SCORE_RULES["estimated_turnover"]["weight"]
     )
 
     # 将 numpy 数值类型转换为 Python 原生类型
@@ -402,12 +402,37 @@ def calculate_symbol_score(symbol,date):
     last_desire_daily = float(stock_data['last_desire_daily']) if stock_data['last_desire_daily'] is not None else None
     free_float_value = float(stock_data['free_float_value']) if stock_data['free_float_value'] is not None else None
 
-    # rating_date = datetime.date.strftime(datetime.date.today(),"%Y%m%d")
     rating_date = date
 
     second_day, third_day = calculate_second_and_third_day_ratio(stock_data, date)
     print(second_day,third_day)
 
+
+    # 构建返回结果
+    result = {
+        "code": symbol,
+        "date": date,
+        "total_score": total_score,
+        "amount": amount,
+        "amount_score": amount_score,
+        "free_amount": stock_data['free_float_value'],
+        "free_amount_score": free_amount_score,
+        "increase": increase,
+        "increase_score": increase_score,
+        "amplitude": amplitude,
+        "amplitude_score": amplitude_score,
+
+        "jgcyd": stock_data['avg_jgcyd'],
+        "jgcyd_score": jgcyd_score,
+        "lspf": stock_data['avg_lspf'],
+        "lspf_score": lspf_score,
+        "focus": stock_data['avg_focus'],
+        "focus_score": focus_score,
+        "last_desire_daily": stock_data['last_desire_daily'],
+        "desire_daily_score": desire_daily_score,
+
+        "high_rating": high_rating,
+    }
     macd = calculate_macd(stock_data["stock_history"],date)
     print(macd)
     # 比较前一天macd，为正则是1，为负则是0
@@ -422,9 +447,9 @@ def calculate_symbol_score(symbol,date):
             last_desire_daily,free_float_value,macd
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
-        symbol, stockname, rating_date, turnover_score, increase_score, market_cap_score, amplitude_score,
+        symbol, stockname, rating_date, amount_score, increase_score, free_amount_score, amplitude_score,
         jgcyd_score, lspf_score, focus_score, desire_daily_score,dragon_tiger_score,
-        news_score, estimated_score, total_score,second_day,third_day,
+        news_score, increase_score, total_score,second_day,third_day,
         stock_data["avg_jgcyd"], stock_data["avg_lspf"], stock_data["avg_focus"], stock_data["last_desire_daily"],stock_data['free_float_value'],macd
     ))
 
@@ -432,11 +457,8 @@ def calculate_symbol_score(symbol,date):
     conn.close()
 
     print(f" {symbol} 的评分：{total_score}")
-    return total_score
-
-
-
-
+    print(f" {result} 的评分：{result}")
+    return result
 
 
 def get_stock_codes():
@@ -638,8 +660,8 @@ def process_block(block_name):
         # stock_data = get_stock_data(symbol,"20250408")
         year = datetime.today().strftime("%Y")
         # second_day, third_day = calculate_second_and_third_day_ratio(stock_data, alert_date)
-        score =  calculate_symbol_score(symbol, f"{year}{block_name}")
-        
+        result =  calculate_symbol_score(symbol, f"{year}{block_name}")
+        score = result["total_score"]
         if score >= 40:
             high_score_stocks.append((symbol))
         #     save_to_stock_rating_history(symbol, stock_data["stockname"], alert_date, score, second_day, third_day)
