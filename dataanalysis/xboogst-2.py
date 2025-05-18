@@ -5,7 +5,7 @@ from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import accuracy_score, f1_score
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import xgboost as xgb  # 习惯缩写为 xgb
 
@@ -70,6 +70,6 @@ print("F1 Score:", f1_score(y_test, y_pred))
 
 # 绘制特征重要性
 xgb.plot_importance(best_model)
-plt.show()
+# plt.show()
 plt.savefig('feature_importance.png')  # 添加保存图片功能替代显示
 plt.close()  # 清理图形资源
