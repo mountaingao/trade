@@ -12,16 +12,19 @@ import xgboost as xgb  # 习惯缩写为 xgb
 
 
 # 加载数据
-df = pd.read_excel("source/0508-1.xlsx")
+# df = pd.read_excel("source/0508-1.xlsx")
+df = pd.read_excel("source/0509-1.xlsx")
 
 # 选择特征（技术指标 + 评分指标）
 features = [
     'sma_up', 'sma_down', 'macd', 'is_up', 'consecutive_upper_days',
-    'upper_count_in_days', 'ma_amount_3_days_ratio', 'ma_amount_5_days_ratio',
-    'ma_amount_8_days_ratio', 'ma_amount_11_days_ratio',
+    'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5',
+    'ma_amount_days_ratio_8', 'ma_amount_days_ratio_11',
     'amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
     'last_desire_daily', 'high_rating'
 ]
+# date	code	close	amount	zhang	zhen	sma_up	sma_down	macd	is_up	consecutive_upper_days	upper_days_counts	ma_amount_days_ratio_3
+# ma_amount_days_ratio_5	ma_amount_days_ratio_8	ma_amount_days_ratio_11	total_score	amount_score	free_amount	free_amount_score	increase	increase_score	amplitude	amplitude_score	jgcyd	jgcyd_score	lspf	lspf_score	focus	focus_score	last_desire_daily	desire_daily_score	high_rating	0_open	0_high	0_low	0_close	0_amount	0_day_open	0_day_max	0_day_min	0_day_close	1_open	1_high	1_low	1_close	1_amount	1_day_open	1_day_max	1_day_min	1_day_close	2_open	2_high	2_low	2_close	2_amount	2_day_open	2_day_max	2_day_min	2_day_close	3_open	3_high	3_low	3_close	3_amount	3_day_open	3_day_max	3_day_min	3_day_close
 
 # 目标变量：1_day_close是否为正（1=正，0=非正）
 df['target'] = (df['1_day_close'] > 0).astype(int)

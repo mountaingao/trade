@@ -96,11 +96,11 @@ def process_single_stock(code,date):
         'macd': date_data['MACD'],
         'is_up': boll_result['is_up'],
         'consecutive_upper_days': boll_result['consecutive_upper_days'],
-        'upper_count_in_days': boll_result['upper_count_in_days'],
-        'ma_amount_3_days_ratio': ma_result['3_days_ratio'],
-        'ma_amount_5_days_ratio': ma_result['5_days_ratio'],
-        'ma_amount_8_days_ratio': ma_result['8_days_ratio'],
-        'ma_amount_11_days_ratio': ma_result['11_days_ratio']
+        'upper_days_counts': boll_result['upper_count_in_days'],
+        'ma_amount_days_ratio_3': ma_result['3_days_ratio'],
+        'ma_amount_days_ratio_5': ma_result['5_days_ratio'],
+        'ma_amount_days_ratio_8': ma_result['8_days_ratio'],
+        'ma_amount_days_ratio_11': ma_result['11_days_ratio']
     }
 
 # 筛选符合条件的行（每隔1分钟）
