@@ -10,15 +10,16 @@ from sklearn.metrics import accuracy_score, f1_score
 # Best parameters: {'colsample_bytree': 0.6, 'gamma': 0.2, 'learning_rate': 0.3, 'max_depth': 7, 'n_estimators': 50, 'reg_alpha': 0, 'reg_lambda': 0, 'subsample': 0.6}
 # Best F1 score: 0.22999999999999998
 df = pd.read_excel("source/0508-1.xlsx")
+df = pd.read_excel("source/0516-1.xlsx")
 # Best parameters: {'colsample_bytree': 0.6, 'gamma': 0, 'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 50, 'reg_alpha': 1, 'reg_lambda': 0, 'subsample': 1.0}
 # Best F1 score: 0.5142857142857142
 
 # 选择特征（技术指标 + 评分指标）
 features = [
     'sma_up', 'sma_down', 'macd', 'is_up', 'consecutive_upper_days',
-    'upper_count_in_days', 'ma_amount_3_days_ratio', 'ma_amount_5_days_ratio',
-    'ma_amount_8_days_ratio', 'ma_amount_11_days_ratio', 'total_score',
-    'amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
+    # 'upper_count_in_days', 'ma_amount_3_days_ratio', 'ma_amount_5_days_ratio',
+    # 'ma_amount_8_days_ratio', 'ma_amount_11_days_ratio',
+    'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
     'last_desire_daily', 'high_rating'
 ]
 

@@ -259,7 +259,7 @@ def process_file_stock_data(file_path, output_file):
 if __name__ == "__main__":
 
     #1、通达信的板块数据 不能超过4位，有做限制
-    block= "0512"
+    block= "0516"
     get_tdx_block_pre_data(block)
 
     # 一种是读取预警文件
