@@ -31,3 +31,4 @@ gradio
 pandas_ta
 scikit-learn
 xgboost
+graphviz

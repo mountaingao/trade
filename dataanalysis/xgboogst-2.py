@@ -67,6 +67,8 @@ def train_and_evaluate_model(df):
     # 绘制特征重要性
     xgb.plot_importance(best_model)
     plt.savefig('feature_importance.png')  # 添加保存图片功能替代显示
+    # plt.savefig('feature_importance.txt')  # 添加保存图片功能替代显示
+
     plt.close()  # 清理图形资源
 
 if __name__ == "__main__":

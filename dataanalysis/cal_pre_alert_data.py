@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
     # get_csv_file_stock_data(directory_path)
     #1、通达信的板块数据
-    # get_tdx_block_pre_data(401,430)
+    get_tdx_block_pre_data(401,430)
 
     # 可以根据条件过滤掉部分无效数据以后再进行数据分析和判断，如上轨以上，放量的比较
     # 2、本地的日期+代码数据

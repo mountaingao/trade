@@ -157,40 +157,49 @@ def get_date_from_name(file_name):
         print(f"无法从文件名中提取日期：{file_name}")
         return None
 
+# 新增处理单个股票的函数
+def process_single_stock_data(stock_code, date):
+    # stock_code = stock['code']
+    logging.info(f"stock: {stock_code} {date} ")
+
+    # 计算技术指标
+    tech = process_single_stock(stock_code, date)
+    if tech is None:
+        print(f"无法计算技术指标：{stock_code}")
+        return None
+
+    # 计算收益率
+    return_data = calculate_stock_profit_from_date(stock_code, date, 0, 3)
+    if return_data is None:
+        return None
+
+    # 积分
+    score = calculate_symbol_score(stock_code, date)
+    # logging.debug(score)  # 仅在 DEBUG 为 True 时输出
+
+    #计算收益率
+    return_data = calculate_stock_profit_from_date(stock_code, date,0,3)
+
+    if return_data is not None and isinstance(tech, dict) and isinstance(score, dict):
+        # 合并 tech, score, return_data 到 result
+        merged_data = {**tech, **score, **return_data}
+        # result[f"{stock_code}-{date}"] = merged_data
+        return merged_data
+    else:
+        print(f"无法计算收益率或数据格式错误：{stock_code}")
+    return None
 def get_tdx_block_pre_data(block):
     stocks = get_tdx_custom_block_from_name(block)
     print(stocks)
     result = {}
     date = get_date_from_name(block)  # 日期需要完善
-    # 截取前四位date
-    # date = date[:4]
+
     for index, stock in stocks.iterrows():
-        stock_code = stock['code']
-        logging.info(f"Processing stock: {stock_code} {date} ")
-        # 计算积分项和技术指标
-        tech = process_single_stock(stock_code, date)
-        if tech is None:
-            print(f"无法计算技术指标：{stock_code}")
-            continue
-        logging.debug(tech)  # 仅在 DEBUG 为 True 时输出
-
-        # 积分
-        score = calculate_symbol_score(stock_code, date)
-        logging.debug(score)  # 仅在 DEBUG 为 True 时输出
-
-        #计算收益率
-        return_data = calculate_stock_profit_from_date(stock_code, date,0,3)
-
-        if return_data is not None and isinstance(tech, dict) and isinstance(score, dict):
-            # 合并 tech, score, return_data 到 result
-            merged_data = {**tech, **score, **return_data}
-            result[f"{stock_code}-{date}"] = merged_data
+        merged_data = process_single_stock_data(stock, date)
+        if merged_data:
+            result[f"{stock['code']}-{date}"] = merged_data
         else:
-            print(f"无法计算收益率或数据格式错误：{stock_code}")
-
-        print(result)
-        # exit()
-        # print(result)
+            print(f"无法处理股票数据：{stock['code']}")
 
     if result:
         # 将 result 数据写入 Excel 文件
@@ -202,6 +211,32 @@ def get_tdx_block_pre_data(block):
 
         #统计数据
         calculate_positive_percentage(xls_name)
+
+def get_tdx_block_pre_data_between_dates(start,end):
+    stocks = get_tdx_custom_block_from_date(start,end)
+    print(stocks)
+    result = {}
+    for index, stock in stocks.iterrows():
+        date = get_date_from_name(stock['blockname'])  # 日期需要完善
+        stock_code = stock['code']
+        merged_data = process_single_stock_data(stock_code, date)
+        if merged_data:
+            # 提取有效数据
+            if merged_data['1_day_close'] > 5 or merged_data['1_day_max'] > 8  or merged_data['2_day_close'] >10 or merged_data['2_day_max'] >18 :
+                result[f"{stock['code']}-{date}"] = merged_data
+            # print(f"{stock_code} {date} {merged_data['alert_time']}")
+        else:
+            print(f"无法处理股票数据：{stock['code']}")
+
+    if result:
+        result_df = pd.DataFrame.from_dict(result, orient='index')
+        # 文件名为固定+日期+后缀
+        xls_name = f"result/tdx_block_pre_data_{start}-{end}.xlsx"
+        result_df.to_excel(xls_name, index=False)
+        print(f"数据写入成功！{xls_name}")
+
+    #统计数据
+    calculate_positive_percentage(xls_name)
 
 def analyze_custom_date_code_data(file_path):
     """
@@ -260,8 +295,10 @@ if __name__ == "__main__":
 
     #1、通达信的板块数据 不能超过4位，有做限制
     block= "0516"
-    get_tdx_block_pre_data(block)
+    # get_tdx_block_pre_data(block)
 
+    #1、通达信的板块数据
+    get_tdx_block_pre_data_between_dates(401,430)
     # 一种是读取预警文件
     # file_path = r"202504.txt"
     # # output_file 为输入文件去除文件扩展名后增加后缀.xlsx

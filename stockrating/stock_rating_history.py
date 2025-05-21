@@ -75,7 +75,7 @@ def save_cache(code, data):
     try:
         with open(cache_file, "w") as file:
             json.dump(cache_data, file, ensure_ascii=False, indent=4)
-            print(f"成功保存缓存文件 {cache_file}")
+            # print(f"成功保存缓存文件 {cache_file}")
     except Exception as e:
         print(f"警告：无法保存缓存文件 {cache_file}，错误信息：{e}")
 
@@ -188,11 +188,11 @@ def get_stock_data(symbol,date):
 
     # 从 stock_rating 表中读取机构参与度、历史评分、用户关注指数和日度市场参与意愿
     rating_data = get_stock_rating_data(symbol,date)
-    print(rating_data)
+    # print(rating_data)
     return_data.update(rating_data)
 
     info = get_stock_info(result_data,symbol)
-    print( info)
+    # print( info)
     # print(info)
     return_data["stockname"] = info["name"].values[0]
     # return_data["free_float_value"] = info["circulating_market_value"].values[0] / 1e8
@@ -252,6 +252,8 @@ def calculate_score(value, rule):
     """
     根据规则计算分数
     """
+    if value  is None  or value == 0:
+        return 0
     for threshold, score in rule["levels"]:
         if isinstance(threshold, str):  # 处理龙虎榜等非数值规则
             if value == threshold:
@@ -269,11 +271,11 @@ def calculate_macd(stock_history, date):
     macd = get_macd(stock_history_df)
     # 将 alert_date 转换为 datetime 对象
     cur_date = date.strftime("%Y-%m-%d")
-    print(f"cur_date {cur_date}")
+    # print(f"cur_date {cur_date}")
 
     # 从 DataFrame 中获取指定日期的 MACD 值
     macd_value = macd.loc[macd.index == cur_date, 'MACD'].values[0] if cur_date in macd.index else None
-    print(f"macd_value {macd_value} ")
+    # print(f"macd_value {macd_value} ")
 
     # 获取第二日
     # 将日期转换为 datetime 对象以便比较
@@ -282,7 +284,7 @@ def calculate_macd(stock_history, date):
     prev_days = macd[macd.index < cur_date].tail(1)
     # 得到第一条数据
     prev_macd_value = prev_days['MACD'].values[0] if not prev_days.empty else None
-    print(f"prev_macd_value {prev_macd_value}")
+    # print(f"prev_macd_value {prev_macd_value}")
 
     if macd_value is not None and prev_macd_value is not None and macd_value > prev_macd_value:
         return 1
@@ -296,7 +298,7 @@ def calculate_symbol_score(symbol,date):
     """
     # 将date转换为时间
     date = datetime.strptime(date, "%Y%m%d")
-    print( date)
+    # print( date)
 
     stock_data = get_stock_data(symbol,date)
     # print( stock_data)
@@ -405,7 +407,7 @@ def calculate_symbol_score(symbol,date):
     rating_date = date
 
     second_day, third_day = calculate_second_and_third_day_ratio(stock_data, date)
-    print(second_day,third_day)
+    # print(second_day,third_day)
 
 
     # 构建返回结果
@@ -434,7 +436,7 @@ def calculate_symbol_score(symbol,date):
         "high_rating": high_rating,
     }
     macd = calculate_macd(stock_data["stock_history"],date)
-    print(macd)
+    # print(macd)
     # 比较前一天macd，为正则是1，为负则是0
     # 插入数据到 stock_rating_history 表
     conn = mysql.connector.connect(**db_config)
@@ -456,8 +458,8 @@ def calculate_symbol_score(symbol,date):
     conn.commit()
     conn.close()
 
-    print(f" {symbol} 的评分：{total_score}")
-    print(f" {result} 的评分：{result}")
+    # print(f" {symbol} 的评分：{total_score}")
+    # print(f" {result} 的评分：{result}")
     return result
 
 
@@ -576,9 +578,9 @@ def calculate_second_and_third_day_ratio(stock_data, alert_date):
         alert_date = alert_date.strftime("%Y%m%d")
     # 将 alert_date 转换为 datetime 对象
     cur_date = datetime.strptime(alert_date, "%Y%m%d").strftime("%Y-%m-%d")
-    print(f"cur_date {cur_date}")
+    # print(f"cur_date {cur_date}")
     buy_price = next((entry["close"] for entry in stock_history if entry["date"] == cur_date), None)
-    print(f"buy_price {buy_price} ")
+    # print(f"buy_price {buy_price} ")
 
     if not buy_price:
         return 0, 0
@@ -598,12 +600,12 @@ def calculate_second_and_third_day_ratio(stock_data, alert_date):
     second_day_high = 0
     if first_data:
         second_day_high = first_data["high"]
-    print(f"正在计算 {second_day_high} 第二日")
+    # print(f"正在计算 {second_day_high} 第二日")
 
     third_day_high = 0
     if  second_data:
         third_day_high = second_data["high"]  # 由于只取了两条数据，第三日与第二日相同
-        print(f"正在计算 {third_day_high} 第三日")
+        # print(f"正在计算 {third_day_high} 第三日")
 
     second_day_ratio = ((second_day_high-buy_price) / buy_price) * 100 if second_day_high else 0
     third_day_ratio = ((third_day_high-buy_price) / buy_price) * 100 if third_day_high else 0

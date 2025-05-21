@@ -352,7 +352,7 @@ def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
         date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
 
     history_data = get_stock_history_by_local(symbol)
-    print(f"date:{date}")
+    # print(f"date:{date}")
     # print(f"history_data:{history_data.head()}")
     # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
     if date not in history_data.index:
