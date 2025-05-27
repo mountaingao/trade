@@ -13,7 +13,8 @@ data = datasets.load_iris()
 X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3,
                                                     random_state=123)
 
-# print(len(X_test))
+print(len(X_test))
+print(len(X_train))
 
 # y_train = [1 if y > 0 else 0 for y in y_train]
 #

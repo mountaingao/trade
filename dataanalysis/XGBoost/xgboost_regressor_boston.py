@@ -6,8 +6,12 @@ from sklearn.metrics import r2_score, mean_squared_error
 import xgboost as xgb
 
 """波士顿房价数据集导入"""
-data = datasets.load_boston()
+# data = datasets.load_boston()
 # print(data)
+from sklearn.datasets import fetch_california_housing
+data = fetch_california_housing()
+
+
 
 """训练集 验证集构建"""
 X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.2,
