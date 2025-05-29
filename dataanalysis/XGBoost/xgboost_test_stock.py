@@ -17,10 +17,19 @@ import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import pandas as pd
-
+import matplotlib
+matplotlib.use('Agg')
 
 # 1. 数据加载
 df = pd.read_excel("../result/tdx_block_pre_data_401-403.xlsx")
+# 数据信息
+df.info()
+print(df.head())
+# 数据计算统计 ，需要列出所有字段
+df.describe()
+print(df.describe().round(2))
+df.plot(figsize=(12, 6))
+exit()
 
 # 选择特征和标签（技术指标 + 评分指标） # 选择特征和标签
 features = [

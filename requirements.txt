@@ -33,3 +33,4 @@ scikit-learn
 xgboost
 graphviz
 feedparser
+jupyterlab
