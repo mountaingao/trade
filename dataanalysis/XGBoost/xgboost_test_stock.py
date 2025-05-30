@@ -22,13 +22,15 @@ matplotlib.use('Agg')
 
 # 1. 数据加载
 df = pd.read_excel("../result/tdx_block_pre_data_401-403.xlsx")
+# df = pd.read_excel("dataanalysis/result/tdx_block_pre_data_401-403.xlsx")
+# df = pd.read_excel("dataanalysis/result/tdx_block_pre_data_401-430.xlsx")
 # 数据信息
 df.info()
 print(df.head())
 # 数据计算统计 ，需要列出所有字段
 df.describe()
 print(df.describe().round(2))
-df.plot(figsize=(12, 6))
+df.plot(figsize=(32, 12))
 exit()
 
 # 选择特征和标签（技术指标 + 评分指标） # 选择特征和标签
@@ -114,3 +116,36 @@ y_pred_max = np.argmax(y_pred, axis=1)
 # 计算准确率
 accuracy = accuracy_score(y_test, y_pred_max)
 print(f'准确率: {accuracy}')
+
+
+
+
+# 数据分析，特征分析
+
+df = pd.read_excel("dataanalysis/result/tdx_block_pre_data_401-430.xlsx")
+
+
+
+
+# 选择特征和标签（技术指标 + 评分指标） # 选择特征和标签
+features = [
+    'sma_up', 'sma_down', 'macd', 'is_up', 'consecutive_upper_days',
+    # 'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5',
+    # 'ma_amount_days_ratio_8', 'ma_amount_days_ratio_11',
+    # 'amount', 'free_amount', 'increase', 'amplitude',
+    # 'jgcyd', 'lspf', 'focus',
+    # 'last_desire_daily', 'high_rating'
+]
+
+X = df[features]
+
+# 数据信息
+X.info()
+
+# 数据计算统计 ，需要列出所有字段
+X.describe()
+
+# 画图
+X.plot(figsize=(32, 12))
+exit()
+

@@ -2,7 +2,7 @@ import datetime
 import time
 import os
 import json
-from stockrating.tech import get_macd,sma_base,cal_ma_amount,cal_boll
+from stockrating.tech import get_macd,sma_base,cal_ma_amount,cal_boll,cal_ema
 import pandas as pd
 from stockrating.read_local_info_tdx import get_stock_history_by_local
 import logging
@@ -74,6 +74,8 @@ def process_single_stock(code,date):
     ma_result = cal_ma_amount(data, date, 'amount')
     # logging.debug(ma_result)
     boll_result = cal_boll(data, date)
+
+    ema_result = cal_ema(data, date)
 
     date_index = data.index.get_loc(date)
     date_data = data.iloc[date_index]
