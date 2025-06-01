@@ -34,3 +34,5 @@ xgboost
 graphviz
 feedparser
 jupyterlab
+notebook
+ipympl  # 新增：增强JupyterLab交互式绘图支持
