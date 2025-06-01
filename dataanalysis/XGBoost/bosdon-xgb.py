@@ -133,7 +133,7 @@ clf = XGBRegressor()
 clf.load_model('xgb_regressor_boston.json')  # 保持加载文件名一致
 
 """模型参数打印"""
-bst = xgb.Booster(model_file='xgb_regressor_boston.model')
+bst = xgb.Booster(model_file='xgb_regressor_boston.json')  # 同步修改扩展名
 
 # print(bst.attributes())
 print('模型参数值-开始'.center(20, '='))

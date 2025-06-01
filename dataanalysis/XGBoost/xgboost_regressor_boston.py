@@ -4,17 +4,19 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import r2_score, mean_squared_error
 import xgboost as xgb
+import pandas as pd
 
 """波士顿房价数据集导入"""
 # data = datasets.load_boston()
 # print(data)
-from sklearn.datasets import fetch_california_housing
-data = fetch_california_housing()
-
+# from sklearn.datasets import fetch_california_housing
+# data = fetch_california_housing()
+# 修改后（正确解析CSV格式）
+data = pd.read_csv('boston_house_prices.csv', sep=',', skiprows=1,header=0)
 
 
 """训练集 验证集构建"""
-X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.2,
+X_train, X_test, y_train, y_test = train_test_split(data, data['MEDV'], test_size=0.2,
                                                     random_state=42)
 
 
@@ -68,14 +70,14 @@ model = XGBRegressor(booster='gbtree',  # gblinear
 model.fit(X_train, y_train, verbose=True)
 
 """模型保存"""
-model.save_model('xgb_regressor_boston.model')
+model.save_model('xgb_regressor_boston.json')  # 将.model改为.json显式指定格式
 
 """模型加载"""
 clf = XGBRegressor()
-clf.load_model('xgb_regressor_boston.model')
+clf.load_model('xgb_regressor_boston.json')  # 同步修改加载时的扩展名
 
 """模型参数打印"""
-bst = xgb.Booster(model_file='xgb_regressor_boston.model')
+bst = xgb.Booster(model_file='xgb_regressor_boston.json')  # 同步修改扩展名
 
 print(bst.attributes())
 print('模型参数值-开始'.center(20, '='))

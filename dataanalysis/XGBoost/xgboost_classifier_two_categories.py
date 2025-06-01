@@ -280,7 +280,7 @@ if __name__ == '__main__':
     # 模型训练
     model_xgb_clf = model_fit()
     # 模型保存：model和txt两种格式
-    model_save_type(model_xgbclf)
+    model_save_type(model_xgb_clf)
 
     """
         模型加载与数据预测
