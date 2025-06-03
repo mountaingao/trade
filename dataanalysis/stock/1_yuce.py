@@ -53,6 +53,16 @@ model_clf.fit(X_train, y_clf)
 feat_importance_reg = model_reg.feature_importances_
 feat_importance_clf = model_clf.feature_importances_
 
+
+# 3. 标准化为权重（总和为1）
+feature_weights_clf = feat_importance_clf / feat_importance_clf.sum()
+
+# 3. 标准化为权重（总和为1）
+feature_weights_reg = feat_importance_reg / feat_importance_reg.sum()
+
+print( '特征权重：', feature_weights_reg)
+print( '特征权重：', feature_weights_clf)
+
 # 可视化
 plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
