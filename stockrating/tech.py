@@ -275,15 +275,17 @@ def cal_boll(data, date,days=10):
 def cal_ema(data, date,days=7):
     # 将日期转换为字符串格式，确保与DataFrame索引中的日期格式一致
     date_str = str(date)
-    result = EMA(data['close'], 7)
+    data['ema'] = EMA(data['close'], 7)
     # 查找和定位到该日期数据
-    date_index = result.index.get_loc(date_str)
+    date_index = data.index.get_loc(date_str)
+
     # 返回当日数据,上轨以上，返回1
-    # print(data)
-    is_up= result['ema'].iloc[date_index]
+    print(data)
+    print(date_index)
+    is_up= data['ema'].iloc[date_index]
 
     # 获取历史 isupper 序列
-    isupper_series = result['isupper'].iloc[:date_index + 1]
+    isupper_series = data['close'].iloc[:date_index + 1]
     # logging.debug(isupper_series.tail(10))
 
     # 计算连续为 1 的天数（从后往前直到第一个不是1的位置）
@@ -295,7 +297,7 @@ def cal_ema(data, date,days=7):
             break
 
     # 统计最近 days 天内 isupper = 1 的数量
-    recent_days = result['isupper'].iloc[date_index - days + 1: date_index + 1]
+    recent_days = data['isupper'].iloc[date_index - days + 1: date_index + 1]
     count_in_days = recent_days.sum()
 
     return {
@@ -332,9 +334,15 @@ if __name__ == '__main__':
 
     db_config = config['db_config']
     from stockrating.read_local_info_tdx import get_stock_history_by_local
+
+
+
+
     data = get_stock_history_by_local('300879')
     # data = get_stock_history_by_local('300005')
-
+    result = cal_ema(data, '2025-05-08')
+    print(result)
+    exit()
     # result = boll(data, 'close', 60)
     result = cal_boll(data, '2025-05-08')
     print(result)

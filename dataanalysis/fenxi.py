@@ -13,8 +13,8 @@ data_filtered = data[data["is_up"] == 1]
 
 # 定义特征和标签
 features = [
-    "sma_up", "sma_down", "macd", "consecutive_upper_days", "upper_count_in_days",
-    "ma_amount_3_days_ratio", "ma_amount_5_days_ratio", "ma_amount_8_days_ratio", "ma_amount_11_days_ratio",
+    "sma_up", "sma_down", "macd", "consecutive_upper_days",
+    'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
     "total_score", "amount", "free_amount", "increase", "amplitude",
     "jgcyd", "lspf", "focus", "last_desire_daily", "high_rating"
 ]

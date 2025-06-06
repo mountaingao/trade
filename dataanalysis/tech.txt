@@ -26,7 +26,7 @@
 301209
 
 此表是某一天的所有相关数据，字段说明如下：
-sma_up	sma_down	macd	is_up	consecutive_upper_days	upper_count_in_days	ma_amount_3_days_ratio	ma_amount_5_days_ratio	ma_amount_8_days_ratio	ma_amount_11_days_ratio 	是技术指标
+sma_up	sma_down	macd	is_up	consecutive_upper_days	'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11", 	是技术指标
 
 total_score	amount_score	free_amount	free_amount_score	increase	increase_score	amplitude	amplitude_score	jgcyd	jgcyd_score	lspf	lspf_score	focus	focus_score	last_desire_daily	desire_daily_score	high_rating 是一个评分指标
 

@@ -17,23 +17,22 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-df = pd.read_excel("../source/0508-1.xlsx")
-df2 = pd.read_excel("../source/0516-1.xlsx")
+df = pd.read_excel("../data/0604.xlsx")
+# df2 = pd.read_excel("../source/0516-1.xlsx")
 
-# 选择特征（技术指标 + 评分指标）
+# 选择特征（技术指标 + 评分指标） consecutive_upper_days 连续天数
 features = [
     'sma_up', 'sma_down', 'macd', 'is_up', 'consecutive_upper_days',
-    # 'upper_count_in_days', 'ma_amount_3_days_ratio', 'ma_amount_5_days_ratio',
-    # 'ma_amount_8_days_ratio', 'ma_amount_11_days_ratio',
+    'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
     'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
     'last_desire_daily', 'high_rating'
 ]
 
 features = [
-    'macd', 'is_up','consecutive_upper_days',
-    'upper_count_in_days', 'ma_amount_3_days_ratio', 'ma_amount_5_days_ratio',
-    'ma_amount_8_days_ratio',
-    'amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus'
+    'sma_up', 'sma_down', 'macd', 'is_up',
+    'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
+    'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
+    'last_desire_daily'
 ]
 
 X_train = df[features]
@@ -84,6 +83,18 @@ plt.show()
 # 0.8 - 技术指标（RSI、MACD）
 # 0.6 - 市场情绪指标
 # 0.4 - 基本面指标
+
+# 将权重features 和 feature_weights_reg 保存为文件，作为预测模型的输入
+
+# 构造 DataFrame
+weights_df = pd.DataFrame({
+    'Feature': features,
+    'Weight': feature_weights_reg
+})
+
+# 保存为 CSV 文件
+weights_df.to_csv('../data/feature_weights.csv', index=False)
+print("特征权重已保存为 CSV 文件")
 
 
 def calculate_stock_score(features):

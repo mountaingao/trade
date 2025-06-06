@@ -160,6 +160,10 @@ def get_date_from_name(file_name):
 # 新增处理单个股票的函数
 def process_single_stock_data(stock_code, date):
     # stock_code = stock['code']
+    # 如果时间格式是 2025-03-03，需要改成 20250303，则需要将日期格式转换为 datetime 对象
+    if '-' in date:
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+
     logging.info(f"stock: {stock_code} {date} ")
 
     # 计算技术指标

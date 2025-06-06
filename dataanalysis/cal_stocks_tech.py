@@ -75,7 +75,9 @@ def process_single_stock(code,date):
     # logging.debug(ma_result)
     boll_result = cal_boll(data, date)
 
-    ema_result = cal_ema(data, date)
+    # 7日ema计算和收盘价比较
+    # ema_result = cal_ema(data, date)
+    # ema 和上轨比较
 
     date_index = data.index.get_loc(date)
     date_data = data.iloc[date_index]
