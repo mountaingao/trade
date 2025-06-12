@@ -16,9 +16,11 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
 
 df = pd.read_excel("../data/0604.xlsx")
-# df2 = pd.read_excel("../source/0516-1.xlsx")
+
 
 # 选择特征（技术指标 + 评分指标） consecutive_upper_days 连续天数
 features = [
@@ -61,6 +63,50 @@ feature_weights_reg = feat_importance_reg / feat_importance_reg.sum()
 
 print( '特征权重：', feature_weights_reg)
 print( '特征权重：', feature_weights_clf)
+# 构造 DataFrame
+weights_reg = pd.DataFrame({
+    'Feature': features,
+    'Weight': feature_weights_reg
+})
+
+# 保存为 CSV 文件
+weights_reg.to_csv('../data/feature_weights_reg.csv', index=False)
+print("特征权重已保存为 CSV 文件")
+
+# 构造 DataFrame
+weights_clf = pd.DataFrame({
+    'Feature': features,
+    'Weight': feature_weights_clf
+})
+
+# 保存为 CSV 文件
+weights_clf.to_csv('../data/feature_weights_clf.csv', index=False)
+print("特征权重已保存为 CSV 文件")
+
+
+# 预测
+# df2 = pd.read_excel("../source/0516-1.xlsx")
+df2 = pd.read_excel("../data/0610.xlsx")
+X_test = df2[features]
+y_pred_proba = model_reg.predict_proba(X_test)[:, 1]  # 获取正类的概率
+
+# 预测概率
+y_pred_proba = model_reg.predict_proba(X_test)[:, 1]
+
+# 默认阈值（0.5）
+y_pred_default = model_reg.predict(X_test)
+
+# 调整阈值（如0.6）
+custom_threshold = 0.6
+y_pred_custom = (y_pred_proba >= custom_threshold).astype(int)
+
+# 评估
+print("Default Threshold (0.5):")
+print(classification_report(y_test, y_pred_default))
+
+print(f"Custom Threshold ({custom_threshold}):")
+print(classification_report(y_test, y_pred_custom))
+
 
 # 可视化
 plt.figure(figsize=(12, 6))
@@ -86,15 +132,8 @@ plt.show()
 
 # 将权重features 和 feature_weights_reg 保存为文件，作为预测模型的输入
 
-# 构造 DataFrame
-weights_df = pd.DataFrame({
-    'Feature': features,
-    'Weight': feature_weights_reg
-})
 
-# 保存为 CSV 文件
-weights_df.to_csv('../data/feature_weights.csv', index=False)
-print("特征权重已保存为 CSV 文件")
+
 
 
 def calculate_stock_score(features):

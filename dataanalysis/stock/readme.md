@@ -77,3 +77,6 @@ AND 周
 
 
 4、 jupyter notebook  检测参数和条件
+启动 jupyter notebook ，在命令行输入：
+cd .\dataanalysis\stock\
+jupyter notebook
