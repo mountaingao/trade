@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report,r2_score,mean_squared_error
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score
 
 
 
@@ -128,12 +128,13 @@ def metrics_sklearn(y_valid, y_pred_):
 
 """模型效果评估"""
 metrics_sklearn(y2_clf, y_pred)
-
+print("准确率:", accuracy_score(y2_clf, y_pred))
+print("精确率:", precision_score(y2_clf, y_pred))
+print(classification_report(y2_clf, y_pred))
 
 # 预测涨幅
 y_pred = model_reg.predict(y_test)
-print(y_pred)
-
+# print(y_pred)
 
 y2_reg = df2['1_day_close']
 # print('1_day_close：', y2_reg)
@@ -154,7 +155,6 @@ for m, n in zip(y_pred, y2_reg):
 # i/len(y2_clf)
 print('预测结果偏差大于20%的比例：', i/len(y2_reg))
 metrics_sklearn(y2_reg, y_pred)
-
 exit()
 
 # 默认阈值（0.5）
