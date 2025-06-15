@@ -16,8 +16,10 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report,r2_score,mean_squared_error
 from sklearn.model_selection import train_test_split
+
+
 
 df = pd.read_excel("../data/0604.xlsx")
 
@@ -87,14 +89,76 @@ print("特征权重已保存为 CSV 文件")
 # 预测
 # df2 = pd.read_excel("../source/0516-1.xlsx")
 df2 = pd.read_excel("../data/0610.xlsx")
-X_test = df2[features]
-y_pred_proba = model_reg.predict_proba(X_test)[:, 1]  # 获取正类的概率
+y_test = df2[features]
+# y_pred_proba = model_clf.predict_proba(X_test)[:, 1]  # 获取正类的概率
 
-# 预测概率
-y_pred_proba = model_reg.predict_proba(X_test)[:, 1]
+# 预测是
+y_pred = model_clf.predict(y_test)
+# print(y_pred)
+
+
+y2_clf = (df2['1_day_close'] > 0).astype(int)
+# y2_clf = df2['1_day_close']
+# print('1_day_close：', y2_clf)
+
+# 比较 y_pred 和 y2_clf 中的值，统计他们之中当预测正确的比例；
+print('整体预测正确的比例：', sum(y_pred == y2_clf) / len(y2_clf))
+
+# 统计当预测值为1时的预测结果正确的比例（精确率）
+true_positives = sum((y_pred == 1) & (y2_clf == 1))
+predicted_positives = sum(y_pred == 1)
+precision = true_positives / predicted_positives if predicted_positives > 0 else 0
+print('当预测值为1时预测正确的比例（精确率）:', precision)
+
+# 列出所有的预测结果，逐行遍历打印出来
+for m, n in zip(y_pred, y2_clf):
+    print('预测值为{0}, 真实结果为{1}'.format(m, n))
+    # if m / n - 1 > 0.2:
+    #     print('预测值为{0}, 真是结果为{1}, 预测结果偏差大于20%'.format(m, n))
+
+
+def metrics_sklearn(y_valid, y_pred_):
+    """模型效果评估"""
+    r2 = r2_score(y_valid, y_pred_)
+    print('r2_score:{0}'.format(r2))
+
+    mse = mean_squared_error(y_valid, y_pred_)
+    print('mse:{0}'.format(mse))
+
+
+"""模型效果评估"""
+metrics_sklearn(y2_clf, y_pred)
+
+
+# 预测涨幅
+y_pred = model_reg.predict(y_test)
+print(y_pred)
+
+
+y2_reg = df2['1_day_close']
+# print('1_day_close：', y2_reg)
+# 列出所有的预测结果，逐行遍历打印出来
+i = 0
+for m, n in zip(y_pred, y2_reg):
+    print('预测值为{0}, 真实结果为{1}'.format(m, n))
+    # 添加防除零保护
+    if n == 0:
+        print('真实结果为0，跳过偏差计算')
+        continue
+    
+    # 检查预测偏差
+    if m / n - 1 > 0.2:
+        print('预测值为{0}, 真实结果为{1}, 预测结果偏差大于20%'.format(m, n))
+        i = i + 1
+
+# i/len(y2_clf)
+print('预测结果偏差大于20%的比例：', i/len(y2_reg))
+metrics_sklearn(y2_reg, y_pred)
+
+exit()
 
 # 默认阈值（0.5）
-y_pred_default = model_reg.predict(X_test)
+y_pred_default = model_clf.predict(X_test)
 
 # 调整阈值（如0.6）
 custom_threshold = 0.6
