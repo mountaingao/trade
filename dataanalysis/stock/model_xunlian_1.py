@@ -19,13 +19,7 @@ import numpy as np
 from sklearn.metrics import classification_report, r2_score, mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score
 
-# 特征选择
-features = [
-    'sma_up', 'sma_down', 'macd', 'is_up',
-    'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
-    'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
-    'last_desire_daily'
-]
+
 
 def generate_model_data(input_file):
     """
@@ -36,7 +30,34 @@ def generate_model_data(input_file):
     """
     df = pd.read_excel(input_file)
     
+    # 新增数据清洗步骤：处理标签列中的无效值
+    # ======= 新增开始 =======
+    # 检查并处理NaN值
+    nan_mask = df['1_day_close'].isna()
+    if nan_mask.any():
+        print(f"警告：发现{nan_mask.sum()}个NaN值，已删除对应行")
+        df = df[~nan_mask]
+    
+    # 检查并处理无穷大值
+    inf_mask = np.isinf(df['1_day_close'])
+    if inf_mask.any():
+        print(f"警告：发现{inf_mask.sum()}个无穷大值，已删除对应行")
+        df = df[~inf_mask]
+    
+    # 检查过大值（假设大于1e10为无效）
+    large_mask = np.abs(df['1_day_close']) > 1e10
+    if large_mask.any():
+        print(f"警告：发现{large_mask.sum()}个过大值，已删除对应行")
+        df = df[~large_mask]
+    # ======= 新增结束 =======
 
+    # 特征选择
+    features = [
+        'sma_up', 'sma_down', 'macd', 'is_up',
+        'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
+        'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
+        'last_desire_daily'
+    ]
     
     X_train = df[features]
     y_reg = df['1_day_close']
@@ -156,9 +177,10 @@ def calculate_model_data(input_file):
 # 示例调用
 if __name__ == "__main__":
     # 使用示例文件生成模型数据
-    generate_model_data("../data/0401-0531.xlsx")
-    
+    # generate_model_data("../data/0401-0531.xlsx")
+    generate_model_data("../data/0601-0619.xlsx")
+
     # 预测示例
-    calculate_model_data("../data/0610.xlsx")
+    # calculate_model_data("../data/0610.xlsx")
 
 
