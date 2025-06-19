@@ -247,7 +247,7 @@ def analyze_tdx_reslut_file_data(file_name):
     xls_name = os.path.join("data/", f"{os.path.splitext(os.path.basename(file_name))[0]}.xlsx")
     try:
         # 读取文件
-        with open(file_name, 'r', encoding='gb2312') as file:
+        with open(file_name, 'r', encoding='gb2312', errors='ignore') as file:
             lines = file.readlines()
 
         for line in lines:
