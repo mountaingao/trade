@@ -1,3 +1,6 @@
+
+
+
 """
 提取重要特征参数
 一、特征重要性分析与关键参数识别
@@ -99,6 +102,22 @@ def generate_model_data(input_file):
     weights_clf.to_csv(clf_filename, index=False)
     print(f"分类模型特征权重已保存至: {clf_filename}")
 
+    # 保存模型
+    model_save_type(model_reg, file_prefix,type='reg')
+    model_save_type(model_clf, file_prefix,type='clf')
+
+    return file_prefix
+
+
+def model_save_type(base_model, file_prefix,type='reg'):
+    # 模型训练完成后做持久化，模型保存为model模式，便于调用预测
+    base_modelname = f'../data/{file_prefix}_model_{type}.json'
+    base_model.save_model(base_modelname)
+
+    # 模型保存为文本格式，便于分析、优化和提供可解释性
+    base = base_model.get_booster()
+    base.dump_model(f'../data/{file_prefix}_model_{type}_dump.txt')
+
 # 模型效果评估
 def metrics_sklearn(y_valid, y_pred_):
     """模型效果评估"""
@@ -108,15 +127,49 @@ def metrics_sklearn(y_valid, y_pred_):
     mse = mean_squared_error(y_valid, y_pred_)
     print('mse:{0}'.format(mse))
 
-def calculate_model_data(input_file):
+def clf_model_save_load(model, x_transform):
+    # 模型加载
+    clf = xgb.XGBClassifier()
+    booster = xgb.Booster()
+    booster.load_model(model)
+    clf._Booster = booster
+
+    # 数据预测
+    y_pred = [round(value) for value in clf.predict(x_transform)]
+    y_pred_proba = clf.predict_proba(x_transform)
+    print('y_pred：', y_pred)
+    print('y_pred_proba：', y_pred_proba)
+
+def reg_model_save_load(model, x_transform):
+    # 模型加载
+    reg = xgb.XGBRegressor()
+    booster = xgb.Booster()
+    booster.load_model(model)
+    reg._Booster = booster
+
+    # 数据预测
+    y_pred = [round(value) for value in reg.predict(x_transform)]
+    y_pred_proba = reg.predict_proba(x_transform)
+    print('y_pred：', y_pred)
+    print('y_pred_proba：', y_pred_proba)
+
+
+def calculate_model_data(input_file,model):
     # 预测
     df2 = pd.read_excel(input_file)
+    features = [
+        'sma_up', 'sma_down', 'macd', 'is_up',
+        'upper_days_counts', 'ma_amount_days_ratio_3', 'ma_amount_days_ratio_5','ma_amount_days_ratio_8',"ma_amount_days_ratio_11",
+        'total_score','amount', 'free_amount', 'increase', 'amplitude', 'jgcyd', 'lspf', 'focus',
+        'last_desire_daily'
+    ]
+
     y_test = df2[features]
     # y_pred_proba = model_clf.predict_proba(X_test)[:, 1]  # 获取正类的概率
 
-    model_reg = xgb.XGBRegressor()
+    model_reg = reg_model_save_load(model, y_test)
 
-    model_clf = xgb.XGBClassifier()
+    model_clf = clf_model_save_load(model, y_test)
 
     # 预测是
     y_pred = model_clf.predict(y_test)
@@ -178,9 +231,9 @@ def calculate_model_data(input_file):
 if __name__ == "__main__":
     # 使用示例文件生成模型数据
     # generate_model_data("../data/0401-0531.xlsx")
-    generate_model_data("../data/0601-0619.xlsx")
+    model = generate_model_data("../data/0601-0619.xlsx")
 
     # 预测示例
-    # calculate_model_data("../data/0610.xlsx")
+    calculate_model_data("../data/0610.xlsx",model)
 
 
