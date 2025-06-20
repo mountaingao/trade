@@ -21,7 +21,8 @@ from sklearn.metrics import accuracy_score, precision_score
 
 
 
-df = pd.read_excel("../data/0604.xlsx")
+# df = pd.read_excel("../data/0604.xlsx")
+df = pd.read_excel("../data/0401-0531.xlsx")
 
 
 # 选择特征（技术指标 + 评分指标） consecutive_upper_days 连续天数
@@ -88,7 +89,8 @@ print("特征权重已保存为 CSV 文件")
 
 # 预测
 # df2 = pd.read_excel("../source/0516-1.xlsx")
-df2 = pd.read_excel("../data/0610.xlsx")
+# df2 = pd.read_excel("../data/0601-0619.xlsx")
+df2 = pd.read_excel("../data/0619.xlsx")
 y_test = df2[features]
 # y_pred_proba = model_clf.predict_proba(X_test)[:, 1]  # 获取正类的概率
 
@@ -133,10 +135,15 @@ print("精确率:", precision_score(y2_clf, y_pred))
 print(classification_report(y2_clf, y_pred))
 
 # 预测涨幅
-y_pred = model_reg.predict(y_test)
+y2_reg = model_reg.predict(y_test)
 # print(y_pred)
 
-y2_reg = df2['1_day_close']
+# 将y_pred 与 y2_reg 中的值，合并到df2中，写入一个新文件中
+df2['y2_clf'] = y_pred
+df2['1_day_close_pred'] = y2_reg
+
+df2.to_excel("../data/0601-0619-y.xlsx", index=False)
+
 # print('1_day_close：', y2_reg)
 # 列出所有的预测结果，逐行遍历打印出来
 i = 0
