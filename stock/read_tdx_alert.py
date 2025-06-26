@@ -65,7 +65,7 @@ def show_alert(new_content, mp3_path):
     # playsound("alarm.mp3")
 
     # 设置定时器，10秒后关闭窗口
-    root.after(10000, root.destroy)
+    root.after(15000, root.destroy)
 
     # 播放音频
     sound = AudioSegment.from_mp3(mp3_path)
@@ -242,8 +242,8 @@ def format_result(result,conn):
                 score = evaluate_stock(stock_code)
                 #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
                 total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( item[2].strip()),alert_date)
-                # 如果评分大于50，添加到格式化结果中
-                if score >= 50:
+                # 如果评分大于50，添加到格式化结果中 如果为 预选 也不用评分
+                if score >= 50 or item[6].strip() == '预选':
                     # 将 block 列表转换为字符串
                     formatted_lines.append("-------------------------------------")
                     formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}   【{item[6].strip()}】")
@@ -333,7 +333,7 @@ def monitor_file(mp3_path,db_config):
                     stock_codes=get_stock_codes(result)
                     # 加入到ths自选股中
                     try:
-                        add_stocks_to_ths_block(stock_codes=stock_codes)
+                        # add_stocks_to_ths_block(stock_codes=stock_codes) 同花顺自选股
                         print("股票已成功添加到同花顺自选股中")
                     except Exception as e:
                         print(f"添加股票到同花顺自选股时出错: {e}")
