@@ -165,7 +165,7 @@ def reg_model_save_load(model, x_transform):
     print('y_pred_proba：', y_pred_proba)
 
 
-def calculate_model_data(input_file,model):
+def checking_model_data(input_file,model):
     # 预测 准备数据
     df2 = pd.read_excel(input_file)
     features = [
@@ -176,6 +176,7 @@ def calculate_model_data(input_file,model):
     df2['是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
     y_test = df2[features]
 
+    print(df2.head(10))
     # 加载模型
     model_reg = xgb.XGBRegressor()
     model_reg.load_model(model['reg_model'])
@@ -196,7 +197,7 @@ def calculate_model_data(input_file,model):
 
     # y2_clf = (df2['value'] > 0).astype(int)
     y2_clf = df2['value']
-    # print('value：', y2_clf)
+    print('value：', y2_clf)
 
     # 比较 y_pred 和 y2_clf 中的值，统计他们之中当预测正确的比例；
     print('整体预测正确的比例：', sum(y_pred == y2_clf) / len(y2_clf))
@@ -224,8 +225,8 @@ def calculate_model_data(input_file,model):
     y_pred = model_reg.predict(y_test)
     # print(y_pred)
 
-    y2_reg = df2['value']
-    # print('value：', y2_reg)
+    y2_reg = df2['次日最高涨幅']
+    print('value：', y2_reg)
     # 列出所有的预测结果，逐行遍历打印出来
     i = 0
     for m, n in zip(y_pred, y2_reg):
@@ -251,7 +252,47 @@ def calculate_model_data(input_file,model):
     result_df['回归预测_y_pred_reg'] = y_pred_reg
 
     # 保存为 Excel 文件
-    output_file = f'../data/predictions_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
+    output_file = f'../data/checking_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
+    result_df.to_excel(output_file, index=False)
+
+    print(f"预测结果已保存至: {output_file}")
+
+    exit()
+
+def calculate_model_data(input_file,model):
+    # 预测 准备数据
+    df2 = pd.read_excel(input_file)
+    features = [
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
+    ]
+
+    df2['value'] = df2['最高价'].map({'是': 1, '否': 0})
+    df2['是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
+    y_test = df2[features]
+
+    print(df2.head(10))
+    # 加载模型
+    model_reg = xgb.XGBRegressor()
+    model_reg.load_model(model['reg_model'])
+
+    model_clf = xgb.XGBClassifier()
+    model_clf.load_model(model['clf_model'])
+
+    # 预测
+    y_pred_clf = model_clf.predict(y_test)
+    y_pred_reg = model_reg.predict(y_test)
+
+    print(y_pred_clf)
+    print(y_pred_reg)
+
+
+    # 构造结果 DataFrame
+    result_df = df2[features].copy()
+    result_df['分类预测_y_pred_clf'] = y_pred_clf
+    result_df['回归预测_y_pred_reg'] = y_pred_reg
+
+    # 保存为 Excel 文件
+    output_file = f'../data/calculate_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
@@ -260,11 +301,15 @@ def calculate_model_data(input_file,model):
 
 # 示例调用
 if __name__ == "__main__":
-    # 使用示例文件生成模型数据
+    # 使用数据集训练并生成模型
     # generate_model_data("../data/0401-0531.xlsx")
     model = generate_model_data("../alert/0630.xlsx")
 
-    # 预测示例
+    # 验证
+    checking_model_data("../alert/0701.xlsx",model)
+
+    #预测
     calculate_model_data("../alert/0702.xlsx",model)
+
 
 
