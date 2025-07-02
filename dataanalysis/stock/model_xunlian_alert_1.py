@@ -67,9 +67,10 @@ def generate_model_data(input_file):
 
     
     X_train = df[features]
-    y_reg = df['value']
-    y_clf = (df['value'] > 0).astype(int)
-    
+    y_reg = df['次日最高涨幅']
+    # y_clf = (df['value'] > 0).astype(int)
+    y_clf = df['value']
+
     # 训练模型
     model_reg = xgb.XGBRegressor()
     model_reg.fit(X_train, y_reg)
