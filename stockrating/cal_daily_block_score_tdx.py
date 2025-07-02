@@ -86,7 +86,7 @@ if __name__ == "__main__":
     current_date = datetime.datetime.now().strftime("%m%d")
 
     block_name = f"{current_date}"
-    # block_name = "0519"
+    block_name = "0626"
     # block_name = "1Y".encode('GBK')  # 修改字符集为GBK
     # block_name = "0513"
     calculate_and_save_block_scores(block_name)

@@ -62,7 +62,7 @@ def generate_model_data(input_file):
 
     # 特征选择
     features = [
-        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨','次日最高涨幅'
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
     ]
 
     
@@ -169,7 +169,7 @@ def checking_model_data(input_file,model):
     # 预测 准备数据
     df2 = pd.read_excel(input_file)
     features = [
-        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨','次日最高涨幅'
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
     ]
 
     df2['value'] = df2['最高价'].map({'是': 1, '否': 0})
@@ -257,8 +257,6 @@ def checking_model_data(input_file,model):
 
     print(f"预测结果已保存至: {output_file}")
 
-    exit()
-
 def calculate_model_data(input_file,model):
     # 预测 准备数据
     df2 = pd.read_excel(input_file)
@@ -296,8 +294,6 @@ def calculate_model_data(input_file,model):
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
-
-    exit()
 
 # 示例调用
 if __name__ == "__main__":
