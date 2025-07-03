@@ -21,14 +21,19 @@ from sklearn.metrics import accuracy_score, precision_score
 import os
 
 
-def generate_model_data(input_file):
+def generate_model_data(input_files):
     """
-    根据输入文件生成模型数据并保存特征权重
+    根据输入文件列表生成模型数据并保存特征权重
     
     参数:
-        input_file (str): 输入Excel文件路径
+        input_files (list): 输入Excel文件路径列表
     """
-    df = pd.read_excel(input_file)
+    # 读取并合并所有文件
+    dfs = []
+    for file in input_files:
+        df_part = pd.read_excel(file)
+        dfs.append(df_part)
+    df = pd.concat(dfs, ignore_index=True)
 
     # df['value'] = (df['value'] > 0).astype(int)
     df['value'] = df['最高价'].map({'是': 1, '否': 0})
@@ -83,8 +88,8 @@ def generate_model_data(input_file):
     feature_weights_reg = feat_importance_reg / feat_importance_reg.sum()
     feature_weights_clf = feat_importance_clf / feat_importance_clf.sum()
     
-    # 生成文件名前缀（从输入路径提取）
-    file_prefix = input_file.split('/')[-1].split('.')[0]
+    # 生成文件名前缀（使用组合文件名）
+    file_prefix = "_".join([f.split('/')[-1].split('.')[0] for f in input_files])
     
     # 保存回归模型特征权重
     weights_reg = pd.DataFrame({
@@ -296,17 +301,21 @@ def predictions_model_data(input_file,model):
 
     print(f"预测结果已保存至: {output_file}")
 
-# 示例调用
+# 示例调用修改
 if __name__ == "__main__":
-    # 使用数据集训练并生成模型
-    # generate_model_data("../data/0401-0531.xlsx")
-    model = generate_model_data("../alert/0630.xlsx")
-
+    # 使用多个数据集训练并生成模型
+    files= [
+        "../alert/0630.xlsx",
+        "../alert/0701.xlsx",
+        "../alert/0702.xlsx",
+     ]
+    model = generate_model_data(files)
+    
     # 验证
     # checking_model_data("../alert/0701.xlsx",model)
 
     #预测
-    predictions_model_data("../alert/0701.xlsx",model)
+    predictions_model_data("../alert/0703.xlsx",model)
 
 
 
