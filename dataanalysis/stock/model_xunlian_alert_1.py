@@ -1,6 +1,3 @@
-
-
-
 """
 提取重要特征参数
 一、特征重要性分析与关键参数识别
@@ -21,7 +18,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report, r2_score, mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score
-
+import os
 
 
 def generate_model_data(input_file):
@@ -246,29 +243,32 @@ def checking_model_data(input_file,model):
     metrics_sklearn(y2_reg, y_pred)
 
     # 构造结果 DataFrame
-    result_df = df2[features].copy()
+    result_df = df2.copy()
     result_df['实际标签_value'] = y2_clf
     result_df['分类预测_y_pred_clf'] = y_pred_clf
     result_df['回归预测_y_pred_reg'] = y_pred_reg
 
-    # 保存为 Excel 文件
-    output_file = f'../data/checking_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
+    # 保存为 Excel 文件  predictions_202507021753.xlsx
+    # output_file = f'../data/checking_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
+    file_name = os.path.basename(input_file)
+    output_file = f'../data/checking_{pd.Timestamp.now().strftime("%H%M")}_{file_name}'
     result_df.to_excel(output_file, index=False)
 
-    print(f"预测结果已保存至: {output_file}")
+    print(f"验证结果已保存至: {output_file}")
 
-def calculate_model_data(input_file,model):
+def predictions_model_data(input_file,model):
+    print(input_file)
     # 预测 准备数据
-    df2 = pd.read_excel(input_file)
+    df_calculate = pd.read_excel(input_file)
     features = [
         '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
     ]
 
-    df2['value'] = df2['最高价'].map({'是': 1, '否': 0})
-    df2['是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
-    y_test = df2[features]
+    df_calculate['value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
+    df_calculate['是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
+    y_test = df_calculate[features]
 
-    print(df2.head(10))
+    print(df_calculate.head(10))
     # 加载模型
     model_reg = xgb.XGBRegressor()
     model_reg.load_model(model['reg_model'])
@@ -285,12 +285,13 @@ def calculate_model_data(input_file,model):
 
 
     # 构造结果 DataFrame
-    result_df = df2[features].copy()
+    result_df = df_calculate.copy()
     result_df['分类预测_y_pred_clf'] = y_pred_clf
     result_df['回归预测_y_pred_reg'] = y_pred_reg
 
     # 保存为 Excel 文件
-    output_file = f'../data/calculate_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
+    file_name = os.path.basename(input_file)
+    output_file = f'../data/predictions_{pd.Timestamp.now().strftime("%H%M")}_{file_name}'
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
@@ -302,10 +303,10 @@ if __name__ == "__main__":
     model = generate_model_data("../alert/0630.xlsx")
 
     # 验证
-    checking_model_data("../alert/0701.xlsx",model)
+    # checking_model_data("../alert/0701.xlsx",model)
 
     #预测
-    calculate_model_data("../alert/0702.xlsx",model)
+    predictions_model_data("../alert/0701.xlsx",model)
 
 
 
