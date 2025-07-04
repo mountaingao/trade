@@ -315,7 +315,7 @@ if __name__ == "__main__":
     # checking_model_data("../alert/0701.xlsx",model)
 
     #预测
-    predictions_model_data("../alert/0703.xlsx",model)
+    predictions_model_data("../alert/0704.xlsx",model)
 
 
 
