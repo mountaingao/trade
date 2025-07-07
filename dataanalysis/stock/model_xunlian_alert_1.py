@@ -308,6 +308,8 @@ if __name__ == "__main__":
         "../alert/0630.xlsx",
         "../alert/0701.xlsx",
         "../alert/0702.xlsx",
+        "../alert/0703.xlsx",
+        "../alert/0704.xlsx",
      ]
     model = generate_model_data(files)
     
@@ -315,7 +317,7 @@ if __name__ == "__main__":
     # checking_model_data("../alert/0701.xlsx",model)
 
     #预测
-    predictions_model_data("../alert/0704.xlsx",model)
+    predictions_model_data("../alert/0707.xlsx",model)
 
 
 
