@@ -24,7 +24,7 @@ def start_open_ths(stock_codes):
         else:
             print("应用未打开")
             # 切换到软件窗口（如果它在后台）300001
-            pyautogui.hotkey('alt', 'z')
+            # pyautogui.hotkey('alt', 'z')
     except pyautogui.ImageNotFoundException:
         print("未找到应用图标，请检查路径或图标是否匹配")
         # 切换到软件窗口（如果它在后台）
@@ -41,11 +41,12 @@ def add_stocks_to_ths_block(stock_codes):
         print("没有要添加的股票代码")
         return
     print(stock_codes)
-    add_stocks_to_block(stock_codes)
     start_open_ths(stock_codes)
+
+    add_stocks_to_ths_zxg(stock_codes)
     # pyautogui.hotkey('alt', 'z')
 
-def add_stocks_to_block(stock_codes):
+def add_stocks_to_ths_zxg(stock_codes):
     for stock_code in stock_codes:
         pyautogui.typewrite(stock_code)
         time.sleep(1)
@@ -101,47 +102,73 @@ def buy_stock(stock_code, price, quantity):
     time.sleep(1)
 
 def export_stock_data(stock):
-    # 点击屏幕上的自选股坐标
-    pyautogui.click(195, 705)
+    # 使用全局配置的坐标
+    global ths_positon
+    
+    # 屏幕分辨率检测
+    x, y = pyautogui.size()
+    print(x, y)
+    
+    # 如果配置中没有当前分辨率的设置，使用默认值并更新配置
+    resolution_key = f"{x}x{y}"
+    if resolution_key not in ths_positon:
+        print(f"未找到{resolution_key}分辨率的配置，使用默认值")
+        ths_positon[resolution_key] = {
+            'self_selection': {'x': 195, 'y': 705},
+            'content_panel': {'x': 320, 'y': 129},
+            'menu_item1': {'x': 477, 'y': 530},
+            'menu_item2': {'x': 638, 'y': 530},
+            'dialog_confirm': {'x': 1178, 'y': 374},
+            'select_button': {'x': 1449, 'y': 705},
+            'save_button': {'x': 1086, 'y': 723}
+        }
+        # 更新配置文件
+        config['ths_positon'] = ths_positon
+        with open(config_path, 'w', encoding='utf-8') as config_file:
+            json.dump(config, config_file, indent=4, ensure_ascii=False)
+    
+    # 获取当前分辨率的配置
+    res_config = ths_positon[resolution_key]
+    
+    # 点击屏幕上的自选股坐标2507090030
+    pyautogui.click(res_config['self_selection']['x'], res_config['self_selection']['y'])
     time.sleep(1)
 
     # 点击内容板块
-    pyautogui.click(320, 129)
-    time.sleep(0.5)  # 添加短暂延迟确保点击生效
+    pyautogui.click(res_config['content_panel']['x'], res_config['content_panel']['y'])
+    time.sleep(0.5)
     
     # 右键弹出菜单
-    pyautogui.rightClick(320, 129)  # 在指定位置右键点击弹出菜单
-    time.sleep(1)  # 等待菜单弹出
+    pyautogui.rightClick(res_config['content_panel']['x'], res_config['content_panel']['y'])
+    time.sleep(1)
     
-    # 滑动鼠标停留在下面这个位置
-    pyautogui.moveTo(477, 530, duration=0.5)  # 平滑移动到目标位置
-    time.sleep(1)  # 在目标位置停留1秒
+    # 滑动鼠标
+    pyautogui.moveTo(res_config['menu_item1']['x'], res_config['menu_item1']['y'], duration=0.5)
+    time.sleep(1)
     
-    # 继续移动到下一个位置
-    pyautogui.moveTo(638, 530, duration=0.5)
+    pyautogui.moveTo(res_config['menu_item2']['x'], res_config['menu_item2']['y'], duration=0.5)
     time.sleep(1)
 
-    pyautogui.click(638, 530)
+    pyautogui.click(res_config['menu_item2']['x'], res_config['menu_item2']['y'])
     # 弹出对话框
-    pyautogui.click(1178, 374)
+    pyautogui.click(res_config['dialog_confirm']['x'], res_config['dialog_confirm']['y'])
     time.sleep(0.5)
     # 输入文件名
-    filename= pd.Timestamp.now().strftime("%y%m%d%H%M");
-    print( filename)
+    filename= pd.Timestamp.now().strftime("%y%m%d%H%M")
+    print(filename)
     pyautogui.typewrite(filename)
 
-    pyautogui.click(1449, 705)
+    pyautogui.click(res_config['select_button']['x'], res_config['select_button']['y'])
 
-
-    pyautogui.click(1086, 723)
+    pyautogui.click(res_config['save_button']['x'], res_config['save_button']['y'])
     time.sleep(0.5)
 
-    pyautogui.click(1086, 723)
+    pyautogui.click(res_config['save_button']['x'], res_config['save_button']['y'])
     time.sleep(0.5)
 
-    pyautogui.click(1086, 723)
+    pyautogui.click(res_config['save_button']['x'], res_config['save_button']['y'])
 
-    return  filename+'.xls'
+    return filename+'.xls'
 
 
 
@@ -178,8 +205,10 @@ if __name__ == '__main__':
     # pyautogui.displayMousePosition()
     # exit()688291688291
     # 使用示例
-    stock_codes = ['688291']
-    # add_stocks_to_ths_block(stock_codes)
+    # stock_codes = ['688291']
+    stock_codes = ['300123']
+
+    add_stocks_to_ths_block(stock_codes)
 
 
     # 得到预警股票，综合评价所有数据，给出结果
