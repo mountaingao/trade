@@ -88,15 +88,15 @@ def generate_model_data(input_files):
     feature_weights_reg = feat_importance_reg / feat_importance_reg.sum()
     feature_weights_clf = feat_importance_clf / feat_importance_clf.sum()
     
-    # 生成文件名前缀（使用组合文件名）
-    file_prefix = "_".join([f.split('/')[-1].split('.')[0] for f in input_files])
-    
+    # 生成文件名前缀（使用组合文件名）,每日一个文件
+    # file_prefix = "_".join([f.split('/')[-1].split('.')[0] for f in input_files])
+    file_prefix = pd.Timestamp.now().strftime("%y%m%d")
     # 保存回归模型特征权重
     weights_reg = pd.DataFrame({
         'Feature': features,
         'Weight': feature_weights_reg
     })
-    reg_filename = f'../data/{file_prefix}_feature_weights_reg.csv'
+    reg_filename = f'../models/{file_prefix}_feature_weights_reg.csv'
     weights_reg.to_csv(reg_filename, index=False)
     print(f"回归模型特征权重已保存至: {reg_filename}")
     
@@ -105,7 +105,7 @@ def generate_model_data(input_files):
         'Feature': features,
         'Weight': feature_weights_clf
     })
-    clf_filename = f'../data/{file_prefix}_feature_weights_clf.csv'
+    clf_filename = f'../models/{file_prefix}_feature_weights_clf.csv'
     weights_clf.to_csv(clf_filename, index=False)
     print(f"分类模型特征权重已保存至: {clf_filename}")
 
@@ -123,12 +123,12 @@ def generate_model_data(input_files):
 
 def model_save_type(base_model, file_prefix,type='reg'):
     # 模型训练完成后做持久化，模型保存为model模式，便于调用预测
-    base_modelname = f'../data/{file_prefix}_model_{type}.json'
+    base_modelname = f'../models/{file_prefix}_model_{type}.json'
     base_model.save_model(base_modelname)
 
     # 模型保存为文本格式，便于分析、优化和提供可解释性
     base = base_model.get_booster()
-    base.dump_model(f'../data/{file_prefix}_model_{type}_dump.txt')
+    base.dump_model(f'../models/{file_prefix}_model_{type}_dump.txt')
     return base_modelname
 
 # 模型效果评估
@@ -258,12 +258,12 @@ def checking_model_data(input_file,model):
     file_name = os.path.basename(input_file)
     # output_file = f'../data/checking_{pd.Timestamp.now().strftime("%H%M")}_{file_name}'
     file_root, file_ext = os.path.splitext(file_name)  # 分离文件名和后缀
-    output_file = f'../data/predictions_{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
+    output_file = f'../data/checking/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
     result_df.to_excel(output_file, index=False)
 
     print(f"验证结果已保存至: {output_file}")
 
-def predictions_model_data(input_file,model):
+def predictions_model_data_file(input_file,model):
     print(input_file)
     # 预测 准备数据
     df_calculate = pd.read_excel(input_file)
@@ -299,14 +299,47 @@ def predictions_model_data(input_file,model):
     # 保存为 Excel 文件
     file_name = os.path.basename(input_file)
     file_root, file_ext = os.path.splitext(file_name)  # 分离文件名和后缀
-    output_file = f'../data/predictions_{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
+    output_file = f'../data/predictions/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
 
+def predictions_model_data(data, model):
+    # 将单行数据转换为DataFrame
+    df_calculate = pd.DataFrame([data])
+    
+    features = [
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
+    ]
+    
+    # 特征映射处理
+    df_calculate['value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
+    df_calculate['是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
+    
+    # 提取特征
+    X_test = df_calculate[features]
+    
+    # 加载模型
+    model_reg = xgb.XGBRegressor()
+    model_reg.load_model(model['reg_model'])
+    
+    model_clf = xgb.XGBClassifier()
+    model_clf.load_model(model['clf_model'])
+    
+    # 预测
+    y_pred_clf = model_clf.predict(X_test)
+    y_pred_reg = model_reg.predict(X_test)
+    
+    # 返回预测结果
+    return {
+        '分类预测': y_pred_clf[0],
+        '回归预测': y_pred_reg[0]
+    }
+
 # 示例调用修改
 if __name__ == "__main__":
-    # 使用多个数据集训练并生成模型
+    # 使用多个数据集训练并生成模型 ,
+
     files= [
         "../alert/0630.xlsx",
         "../alert/0701.xlsx",
@@ -317,12 +350,13 @@ if __name__ == "__main__":
         "../alert/0708.xlsx",
      ]
     model = generate_model_data(files)
-    
+    print(model)
+    # todo 模型调优还没有做
     # 验证
     # checking_model_data("../alert/0701.xlsx",model)
 
     #预测
-    predictions_model_data("../alert/070903.xlsx",model)
+    predictions_model_data_file("../alert/0709.xlsx",model)
 
 
 
