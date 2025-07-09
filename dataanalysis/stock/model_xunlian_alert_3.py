@@ -307,14 +307,9 @@ def predictions_model_data(input_file,model):
 # 示例调用修改
 if __name__ == "__main__":
     # 使用多个数据集训练并生成模型
+    # 此训练集是更少更有效的数据集合，趋势为追涨停，成功率在70%以上，适合做自动化交易的选股模型
     files= [
-        "../alert/0630.xlsx",
-        "../alert/0701.xlsx",
-        "../alert/0702.xlsx",
-        "../alert/0703.xlsx",
-        "../alert/0704.xlsx",
-        "../alert/0707.xlsx",
-        "../alert/0708.xlsx",
+        "../alert/070803.xlsx",
      ]
     model = generate_model_data(files)
     

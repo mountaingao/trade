@@ -1,10 +1,10 @@
 {
-    "tdxdir": "D:/new_haitong/",
+    "tdxdir": "D:/zd_haitong/",
     "tempdir": "D:\\temp",
     "istest": 0,
     "debug": "True",
     "file_path_test": "alert1.txt",
-    "file_path": "F:/baidu/BaiduSyncdisk/个人/通达信/home/alert.txt",
+    "file_path": "D:/BaiduSyncdisk/个人/通达信/ALERT/alert.txt",
     "db_config": {
         "host": "localhost",
         "user": "root",
@@ -44,6 +44,36 @@
             "save_button": {
                 "x": 1086,
                 "y": 723
+            }
+        },
+        "2560x1440": {
+            "self_selection": {
+                "x": 193,
+                "y": 333
+            },
+            "content_panel": {
+                "x": 425,
+                "y": 189
+            },
+            "menu_item1": {
+                "x": 500,
+                "y": 664
+            },
+            "menu_item2": {
+                "x": 740,
+                "y": 664
+            },
+            "dialog_confirm": {
+                "x": 1506,
+                "y": 556
+            },
+            "select_button": {
+                "x": 1971,
+                "y": 1077
+            },
+            "save_button": {
+                "x": 1407,
+                "y": 914
             }
         }
     }

@@ -80,3 +80,8 @@ AND 周
 启动 jupyter notebook ，在命令行输入：
 cd .\dataanalysis\stock\
 jupyter notebook
+
+
+
+pip install pynput 
+

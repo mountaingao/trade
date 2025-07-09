@@ -5,6 +5,18 @@ import os
 from pynput import mouse, keyboard
 import threading
 import datetime
+# 记录点 1: (193, 333) - Button.left - 09:11:57.830
+# 记录点 2: (425, 189) - Button.right - 09:11:59.054
+# 记录点 3: (740, 664) - Button.left - 09:12:05.053
+# 记录点 4: (1506, 556) - Button.left - 09:12:10.782
+# 记录点 5: (1971, 1077) - Button.left - 09:12:17.038
+# 记录点 6: (1972, 1086) - Button.left - 09:12:17.758
+# 记录点 7: (1414, 914) - Button.left - 09:12:19.309
+# 记录点 8: (1407, 914) - Button.left - 09:12:20.838
+# 记录点 9: (1407, 914) - Button.left - 09:12:22.270
+# 记录点 10: (474, 1415) - Button.left - 09:12:25.046
+
+
 
 class ScreenPointRecorder:
     def __init__(self):
