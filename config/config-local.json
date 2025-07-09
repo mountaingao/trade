@@ -1,0 +1,14 @@
+{
+    "tdxdir": "D:/zd_haitong/",
+    "tempdir": "D:\\temp",
+    "istest": 1,
+    "debug": "True",
+    "file_path_test": "alert1.txt",
+    "file_path": "D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt",
+    "db_config": {
+        "host": "localhost",
+        "user": "root",
+        "password": "111111",
+        "database": "trade"
+    }
+}

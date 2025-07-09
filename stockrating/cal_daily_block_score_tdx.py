@@ -78,7 +78,7 @@ def calculate_and_save_block_scores(block_name):
         f.writelines([f"{item[0]}\t{item[1]}\t{item[2]}\n" for item in result])
 
      #保存到同花顺自选股
-    add_stocks_to_ths_block(stock_codes)
+    # add_stocks_to_ths_block(stock_codes)
 
 if __name__ == "__main__":
 
