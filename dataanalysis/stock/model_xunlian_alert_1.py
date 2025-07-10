@@ -306,11 +306,23 @@ def predictions_model_data_file(input_file,model):
 
 def predictions_model_data(data, model):
     # 将单行数据转换为DataFrame
-    df_calculate = pd.DataFrame([data])
+    # df_calculate = pd.DataFrame([data])
     
     features = [
         '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
     ]
+
+    # 判断输入类型并做相应处理
+    if isinstance(data, dict):
+        # 处理单个样本
+        df_calculate = pd.DataFrame([data])
+        single_sample = True
+    elif isinstance(data, pd.DataFrame):
+        # 处理DataFrame
+        df_calculate = data.copy()
+        single_sample = False
+    else:
+        raise ValueError("输入数据必须是字典或DataFrame")
     
     # 特征映射处理
     df_calculate['value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
