@@ -36,6 +36,16 @@ class ScreenPointRecorder:
         self.current_position = (x, y)
 
     def on_click(self, x, y, button, pressed):
+
+        # 记录点击位置和时间戳
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        point = {
+            "x": x,
+            "y": y,
+            "button": str(button).split('.')[-1],
+            "timestamp": timestamp,
+            "screen_size": pyautogui.size()
+        }
         # 记录与前一点的间隔时间
         if self.recorded_points:
             last_time = datetime.datetime.strptime(
@@ -49,15 +59,7 @@ class ScreenPointRecorder:
         if not pressed or not self.is_recording:
             return
 
-        # 记录点击位置和时间戳
-        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
-        point = {
-            "x": x,
-            "y": y,
-            "button": str(button).split('.')[-1],
-            "timestamp": timestamp,
-            "screen_size": pyautogui.size()
-        }
+
 
         self.recorded_points.append(point)
         print(f"记录点 {len(self.recorded_points)}: ({x}, {y}) - {button} - {timestamp}")

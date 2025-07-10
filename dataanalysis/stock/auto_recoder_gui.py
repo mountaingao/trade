@@ -12,10 +12,7 @@ class RecorderGUI:
 
         self.create_widgets()
 
-        # 更新GUI的线程
-        self.update_thread = threading.Thread(target=self.update_gui)
-        self.update_thread.daemon = True
-        self.update_thread.start()
+        # 删除后台更新线程，改用主线程定时器更新
 
     def create_widgets(self):
         # 状态显示
@@ -39,36 +36,36 @@ class RecorderGUI:
         self.position_var = tk.StringVar(value="鼠标位置: (0, 0)")
         ttk.Label(self.root, textvariable=self.position_var).grid(row=3, column=0, columnspan=3, padx=5, pady=5)
 
+        # 添加主线程定时器，确保GUI更新在主线程执行
+        self.root.after(100, self.update_gui)  # 100ms后开始第一次更新
+
     def update_gui(self):
-        """更新GUI界面"""
-        while True:
-            try:
-                # 更新状态
-                self.status_var.set("正在记录..." if self.recorder.is_recording else "已停止")
+        """在主线程中更新GUI界面"""
+        # 更新状态
+        self.status_var.set("正在记录..." if self.recorder.is_recording else "已停止")
 
-                # 更新鼠标位置
-                if self.recorder.current_position:
-                    x, y = self.recorder.current_position
-                    self.position_var.set(f"鼠标位置: ({x}, {y})")
+        # 更新鼠标位置
+        if self.recorder.current_position:
+            x, y = self.recorder.current_position
+            self.position_var.set(f"鼠标位置: ({x}, {y})")
 
-                # 更新点列表
-                self.points_tree.delete(*self.points_tree.get_children())
-                for i, point in enumerate(self.recorder.recorded_points):
-                    self.points_tree.insert("", "end", values=(
-                        i+1,
-                        point["x"],
-                        point["y"],
-                        point["button"],
-                        point["timestamp"]
-                    ))
+        # 更新点列表
+        self.points_tree.delete(*self.points_tree.get_children())
+        for i, point in enumerate(self.recorder.recorded_points):
+            self.points_tree.insert("", "end", values=(
+                i+1,
+                point["x"],
+                point["y"],
+                point["button"],
+                point["timestamp"]
+            ))
 
-                time.sleep(0.1)
-            except:
-                break
+        # 设置下一次更新
+        self.root.after(100, self.update_gui)
 
 # 在主程序中使用
 if __name__ == "__main__":
     recorder = ScreenPointRecorder()
     gui = RecorderGUI(recorder)
-    recorder.start()  # 需要在GUI线程之外启动记录器
-    gui.root.mainloop()
+    recorder.start()
+    gui.root.mainloop()  # 确保mainloop在主线程执行
