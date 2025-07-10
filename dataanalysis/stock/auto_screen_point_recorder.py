@@ -36,6 +36,15 @@ class ScreenPointRecorder:
         self.current_position = (x, y)
 
     def on_click(self, x, y, button, pressed):
+        # 记录与前一点的间隔时间
+        if self.recorded_points:
+            last_time = datetime.datetime.strptime(
+                self.recorded_points[-1]["timestamp"], "%H:%M:%S.%f"
+            )
+            current_time = datetime.datetime.strptime(point["timestamp"], "%H:%M:%S.%f")
+            delay = (current_time - last_time).total_seconds()
+            point["delay_since_last"] = delay
+
         """处理鼠标点击事件"""
         if not pressed or not self.is_recording:
             return
@@ -197,6 +206,28 @@ class ScreenPointRecorder:
         print("程序已退出")
         os._exit(0)
 
+    def capture_screen_around_point(self, x, y, radius=100, filename=None):
+        """捕获点击位置周围的屏幕区域"""
+        screen = pyautogui.screenshot()
+
+        # 计算捕获区域
+        left = max(0, x - radius)
+        top = max(0, y - radius)
+        right = min(screen.width, x + radius)
+        bottom = min(screen.height, y + radius)
+
+        # 截取区域
+        region = screen.crop((left, top, right, bottom))
+
+        # 生成文件名
+        if not filename:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"click_{x}_{y}_{timestamp}.png"
+
+        # 保存图片
+        region.save(os.path.join(self.output_dir, filename))
+        print(f"已保存点击位置截图: {filename}")
+
 if __name__ == "__main__":
     recorder = ScreenPointRecorder()
     recorder.start()
@@ -207,3 +238,7 @@ if __name__ == "__main__":
             time.sleep(0.1)
     except KeyboardInterrupt:
         recorder.exit_program()
+
+
+    # 在主程序末尾添加
+    recorder.replay_points()

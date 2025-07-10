@@ -200,8 +200,52 @@ if __name__ == '__main__':
     print(x, y)
 
     # 2、执行选股步骤，填写导出文件目录
+    ctrl_t = pyautogui.hotkey('ctrl', 't')
+    time.sleep(0.5)
+    # 点击加入条件
+    pyautogui.click('ctrl', 't')
+    # 点击选股入板块
+    pyautogui.click('ctrl', 't')
+    time.sleep(0.2)
+    # 点击新建板块
+    pyautogui.click('ctrl', 't')
+    time.sleep(0.2)
+    # 输入文件名
+    blockname = pd.Timestamp.now().strftime("%m%d%H%M")
+    print(blockname)
+    pyautogui.typewrite(blockname)
+    # 点击确定
+    pyautogui.click('ctrl', 't')
+    time.sleep(0.5)
+    # 再点击确定，等待结果
+    pyautogui.click('ctrl', 't')
+    # 等10s 或者等待确认键
+    time.sleep(10)
 
-    # 3、保存文件到临时文件夹，可以通过某个按钮开始执行下面的动作
+    # 导出当前文件内容  tdx 导出功能
+    pyautogui.typewrite('34')
+    # 选择中间项-所有数据
+    pyautogui.click('ctrl', 't')
+    # 点击浏览按钮
+    pyautogui.click('ctrl', 't')
+    # 输入文件名
+    pyautogui.typewrite(blockname)
+    # 点击确定
+    pyautogui.click('ctrl', 't')
+    time.sleep(0.5)
+    # 取消 不打开
+    pyautogui.click('ctrl', 't')
+    # 点击右键
+    pyautogui.rightClick('ctrl', 't')
+    # 移动鼠标
+    pyautogui.moveTo(x, y)
+    pyautogui.click('ctrl', 't') # 点击
+    time.sleep(1)
+    # 继续执行导出 tdx 导出功能
+
+    # 合并数据
+
+# 3、保存文件到临时文件夹，可以通过某个按钮开始执行下面的动作
 
     # 4、打开同花顺，创建新的板块，并导入临时文件夹中的文件，可以手工操作，也可以通过代码实现
 
