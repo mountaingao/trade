@@ -16,8 +16,9 @@ if __name__ == "__main__":
         'clf_model': '../models/250709_model_clf.json'}
 
     #预测文件中的数据
-    # predictions_model_data_file("../alert/070903.xlsx",model)
+    predictions_model_data_file("../alert/0711.xlsx",model)
 
+    exit()
 
     # 比较0709 和070903 两个文件中重合的代码后做数据分析
     # 预测 准备数据

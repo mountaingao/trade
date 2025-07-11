@@ -170,8 +170,153 @@ def export_stock_data(stock):
 
     return filename+'.xls'
 
+def select_tdx_block_list():
 
+# 记录点 1: (1251, 568) - Button.left - 15:38:28.446
+# 记录点 2: (1431, 860) - Button.left - 15:38:30.269
+# 记录点 3: (1497, 570) - Button.left - 15:38:32.246
+# 记录点 4: (1250, 760) - Button.left - 15:38:37.950
+# 记录点 5: (1478, 815) - Button.left - 15:38:39.415
+# 记录点 6: (472, 1412) - Button.left - 15:38:43.030
+# 记录点 1: (1509, 884) - Button.left - 16:05:21.826
+    time.sleep(5)
+    # 2、执行选股步骤，填写导出文件目录07111646
+    ctrl_t = pyautogui.hotkey('ctrl', 't')
+    time.sleep(0.5)
+    # 点击加入条件
+    pyautogui.click(1251, 568)
+    # 点击选股入板块
+    pyautogui.click(1431, 860)
+    time.sleep(0.2)
+    # 点击新建板块
+    pyautogui.click(1497, 570)
+    time.sleep(0.2)
+    # 输入文件名
+    blockname = pd.Timestamp.now().strftime("%m%d%H%M")
+    print(blockname)
+    pyautogui.typewrite(blockname)
+    # 点击确定
+    pyautogui.click(1250, 760)
+    time.sleep(0.5)
+    # 再点击确定，等待结果
+    pyautogui.click(1478, 815)
+    # 等10s 或者等待确认键
+    time.sleep(8)
+    pyautogui.click(1509, 884)
 
+    return blockname
+def export_tdx_block_data(blockname):
+    #
+#     # 导出当前文件内容  tdx 导出功能
+#     开始记录屏幕点击位置... (按F1停止)
+# 记录点 1: (1197, 738) - Button.left - 15:51:20.091
+# 记录点 2: (1462, 788) - Button.left - 15:51:22.172
+# 记录点 3: (1999, 1106) - Button.left - 15:51:29.611
+# 记录点 4: (1402, 828) - Button.left - 15:51:31.852
+# 记录点 5: (1327, 748) - Button.left - 15:51:37.292
+    pyautogui.typewrite('34')
+    # 回车
+    pyautogui.press('enter')
+    # 选择中间项-所有数据
+    pyautogui.click(1200, 738)
+    # 点击浏览按钮
+    pyautogui.click(1462, 788)
+    time.sleep(0.5)
+    # 输入文件名
+    pyautogui.typewrite(blockname)
+    # 点击确定
+    pyautogui.click(1999, 1106)
+    time.sleep(0.5)
+    # 取消 不打开
+    pyautogui.click(1402, 828)
+    time.sleep(0.5)
+    pyautogui.click(1327, 748)
+    time.sleep(1)
+def change_history_list():
+    # 右键切换到列表
+    #     记录点 2: (1091, 1427) - Button.left - 15:47:30.412
+    # 记录点 3: (652, 597) - Button.right - 15:47:33.380
+    # 记录点 4: (725, 779) - Button.left - 15:47:37.909
+    # 点击右键
+    pyautogui.rightClick(652, 597)
+    time.sleep(0.5)
+    # 点击右键
+    pyautogui.moveTo(725, 779)
+    # 点击历史
+    pyautogui.click(725,779)
+    time.sleep(1)
+
+def export_ths_block_data(blockname):
+    # 导出同花顺板块数据
+# 记录点 1: (299, 176) - Button.right - 17:33:22.806
+# 记录点 2: (341, 650) - Button.left - 17:33:29.806
+# 记录点 3: (632, 644) - Button.left - 17:33:32.646
+# 记录点 4: (1513, 557) - Button.left - 17:33:35.862
+# 记录点 5: (1984, 1087) - Button.left - 17:33:54.709
+# 记录点 6: (1412, 911) - Button.left - 17:33:56.926
+# 记录点 7: (1412, 911) - Button.left - 17:33:58.165
+# 记录点 8: (1412, 911) - Button.left - 17:33:59.678
+# 创建同花顺板块
+    pyautogui.click(299, 176)
+    pyautogui.rightClick(299, 176)
+    time.sleep(0.5)
+    pyautogui.moveTo(341, 650)
+    time.sleep(0.5)
+    pyautogui.click(632, 650)
+    time.sleep(0.5)
+    pyautogui.click(1513, 557)
+    time.sleep(0.5)
+    pyautogui.typewrite(blockname)
+    pyautogui.click(1984, 1087)
+    time.sleep(0.5)
+    pyautogui.click(1412, 911)
+    time.sleep(0.5)
+    pyautogui.click(1412, 911)
+    time.sleep(0.5)
+    pyautogui.click(1412, 911)
+
+def create_ths_block_from_file():
+    #导入同花顺板块文件
+#     开始记录屏幕点击位置... (按F1停止)
+# 记录点 1: (289, 36) - Button.left - 17:27:28.711
+# 记录点 2: (337, 316) - Button.left - 17:27:31.062
+# 记录点 3: (1550, 531) - Button.left - 17:27:34.727
+# 记录点 4: (1330, 752) - Button.left - 17:27:44.335
+# 记录点 5: (1559, 657) - Button.left - 17:27:47.559
+# 记录点 6: (1589, 684) - Button.left - 17:27:50.391
+# 记录点 7: (2035, 1060) - Button.left - 17:27:53.903
+# 记录点 8: (2026, 1102) - Button.left - 17:27:55.582
+# 记录点 9: (1185, 713) - Button.left - 17:28:08.014
+# 记录点 10: (1991, 1090) - Button.left - 17:28:09.911
+# 记录点 11: (1381, 834) - Button.left - 17:28:12.958
+# 记录点 12: (1468, 914) - Button.left - 17:28:16.830
+# 记录已停止
+    pyautogui.click(289, 36)
+    time.sleep(0.5)
+    pyautogui.click(337, 316)
+    time.sleep(0.5)
+    pyautogui.click(1550, 531)
+    time.sleep(0.5)
+    pyautogui.click(1330, 752)
+    time.sleep(0.5)
+    pyautogui.click(1559, 657)
+    time.sleep(0.5)
+    pyautogui.click(1589, 684)
+    time.sleep(0.5)
+    pyautogui.click(2035, 1060)
+    time.sleep(0.5)
+    pyautogui.click(2026, 1102)
+    time.sleep(0.5)
+    pyautogui.click(1185, 713)
+    time.sleep(0.5)
+    pyautogui.click(1991, 1090)
+    time.sleep(0.5)
+    pyautogui.click(1381, 834)
+    time.sleep(0.5)
+    pyautogui.click(1468, 914)
+    time.sleep(0.5)
+    # 输入文件名
+    pyautogui.typewrite(blockname)
 
 # stock_data = export_stock_data(stock)
     # return stock_data
@@ -192,57 +337,70 @@ if __name__ == '__main__':
     # 1、启动通达信
     # 启动同花顺或通达信
     pyautogui.FAILSAFE = True
-    time.sleep(3)
+    #
     x, y = pyautogui.position()
     print(x, y)
     # 屏幕
     x, y = pyautogui.size()
     print(x, y)
 
-    # 2、执行选股步骤，填写导出文件目录
-    ctrl_t = pyautogui.hotkey('ctrl', 't')
-    time.sleep(0.5)
-    # 点击加入条件
-    pyautogui.click('ctrl', 't')
-    # 点击选股入板块
-    pyautogui.click('ctrl', 't')
-    time.sleep(0.2)
-    # 点击新建板块
-    pyautogui.click('ctrl', 't')
-    time.sleep(0.2)
-    # 输入文件名
-    blockname = pd.Timestamp.now().strftime("%m%d%H%M")
-    print(blockname)
-    pyautogui.typewrite(blockname)
-    # 点击确定
-    pyautogui.click('ctrl', 't')
-    time.sleep(0.5)
-    # 再点击确定，等待结果
-    pyautogui.click('ctrl', 't')
-    # 等10s 或者等待确认键
-    time.sleep(10)
+    blockname='600000'
+    # # 2、执行选股步骤，填写导出文件目录
+    # blockname = select_tdx_block_list()
+    #
+    # # 可以先选择导出数据
+    # export_tdx_block_data(blockname)
+    #
+    # #右键选择历史数据
+    # change_history_list()
+    #
+    # blockname_01 = blockname+'01'
+    # # 导出数据
+    # export_tdx_block_data(blockname_01)
 
-    # 导出当前文件内容  tdx 导出功能
-    pyautogui.typewrite('34')
-    # 选择中间项-所有数据
-    pyautogui.click('ctrl', 't')
-    # 点击浏览按钮
-    pyautogui.click('ctrl', 't')
-    # 输入文件名
-    pyautogui.typewrite(blockname)
-    # 点击确定
-    pyautogui.click('ctrl', 't')
-    time.sleep(0.5)
-    # 取消 不打开
-    pyautogui.click('ctrl', 't')
-    # 点击右键
-    pyautogui.rightClick('ctrl', 't')
-    # 移动鼠标
-    pyautogui.moveTo(x, y)
-    pyautogui.click('ctrl', 't') # 点击
-    time.sleep(1)
-    # 继续执行导出 tdx 导出功能
 
+    # 读取文件，代码写入到 txt中
+    # file1 = "../data/tdx/"+blockname+'.xls'
+    file1 = "../data/tdx/07111619.xls"
+
+    data = pd.read_csv(file1,encoding='GBK',sep='\t')
+    # 去掉最后一行数据
+    data = data[:-1]
+    # 取列的名称
+
+    # 去掉列名中的括号和数字
+    data.columns = data.columns.str.replace(r'\(\d+\)', '', regex=True)
+
+    columns = data.columns
+    print( columns)
+    # 提取有用的字段并准备和另一个进行合并 代码	名称(83)	涨幅%	现价	最高	量比	总金额	细分行业
+    new_data = data[['代码', '名称', '涨幅%', '现价', '最高', '量比', '总金额', '细分行业']]
+    print( new_data.head(100))
+
+    # file2 = "../data/tdx/"+blockname01+'.xls'
+    file2 = "../data/tdx/0711161920250711.xls"
+    # 读取数据去掉第一行，第二行是列名
+    data_02 = pd.read_csv(file2,encoding='GBK',sep='\t',header=1)
+    print( data_02.head(100))
+
+    # 合并new_data和data_02的数据，按照T列进行合并
+    merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
+    print( merged_data.head(100))
+
+    # 取出代码字段，并且去掉等号和引号
+    stock_codes = merged_data['代码'].str.split('=').str[1].str.replace("'", "")
+
+    # 写入 txt 文件，每行一个代码
+    with open(f"../data/ths/{blockname}.txt", "w", encoding="utf-8") as f:
+        for code in stock_codes:
+            f.write(code + "\n")
+
+
+    exit()
+    # ths导入
+    create_ths_block_from_file(blockname)
+
+    export_ths_block_data(blockname)
     # 合并数据
 
 # 3、保存文件到临时文件夹，可以通过某个按钮开始执行下面的动作
