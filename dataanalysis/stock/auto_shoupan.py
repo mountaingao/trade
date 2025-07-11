@@ -3,6 +3,7 @@ import time
 import json
 import os
 import pandas as pd
+from model_xunlian_alert_1 import predictions_model_data_file,predictions_model_data
 
 
 # 新增代码：读取配置文件
@@ -390,59 +391,47 @@ if __name__ == '__main__':
     # 取出代码字段，并且去掉等号和引号
     stock_codes = merged_data['代码'].str.split('=').str[1].str.replace("'", "")
 
-    # 写入 txt 文件，每行一个代码
+    # 写入 txt 文件，每行一个代码# 3、保存文件到临时文件夹，可以通过某个按钮开始执行下面的动作
     with open(f"../data/ths/{blockname}.txt", "w", encoding="utf-8") as f:
         for code in stock_codes:
             f.write(code + "\n")
 
 
-    exit()
+    # exit()
     # ths导入
-    create_ths_block_from_file(blockname)
-
-    export_ths_block_data(blockname)
-    # 合并数据
-
-# 3、保存文件到临时文件夹，可以通过某个按钮开始执行下面的动作
-
     # 4、打开同花顺，创建新的板块，并导入临时文件夹中的文件，可以手工操作，也可以通过代码实现
-
+    # create_ths_block_from_file(blockname)
     # 5、打开同花顺，导出实时数据，保存下来
+    # export_ths_block_data(blockname)
+    # 合并数据
+    # file3 = "../data/tdx/"+blockname01+'.xls'
 
+    file3 = "../data/ths/07110.xls"
+    data_03 = pd.read_csv(file3,encoding='GBK',sep='\t')
+    print( data_03.head(100))
     # 6、 分析和整合数据，生成需要的数据内容
+# new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
+    # 合并数据 净额	净流入	换手(实)	总金额	净量
+    merged_data = pd.merge(new_data, data_03[['净额', '净流入', '净量']], left_index=True, right_index=True)
+    print( merged_data.head(100))
+
+    # 保存文件
+    merged_data.to_csv(f"../alert/{blockname}.csv", index=False)
 
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
+    # 使用多个数据集训练并生成模型 , 需要按照日期更新到最新的模型
+    model = {
+        'reg_weights': '../models/250709_feature_weights_reg.csv',
+        'clf_weights': '../models/250709_feature_weights_clf.csv',
+        'reg_model': '../models/250709_model_reg.json',
+        'clf_model': '../models/250709_model_clf.json'}
 
-    stock_codes = ['300123']
+    #预测文件中的数据
+    predictions_model_data_file("../alert/0711.xlsx",model)
 
-    add_stocks_to_ths_block(stock_codes)
-
-
-    # 得到预警股票，综合评价所有数据，给出结果
-    export_file = export_stock_data(stock_codes)
-    file = "F:/stock/data/"+export_file
-
-    # 读取数据，得到需要的那条数据
-    # file = "F:/stock/data/2507082357.xls"
-
-    df = pd.read_csv(file,encoding='GBK',sep='\t')
-    # 修改：将'代码'列的值截取后6位
-    # df['代码'] = df['代码'].astype(str).str[-6:]
-    
-    print(df)
-    print(df.columns)
-    # 获取字段”代码“ 为stock_code的行
-    row = df[df['代码'].astype(str).str[-6:] == '688291']
-    print(row)
-    print(row['量比'])
-    print(row['主力净额'])
-    print(row['净流入'])
-    print(row['金额'])
-    print(row['换手(实)'])
-    print(row['主力净量'])
+    # 计算结果，返回符合条件的股票代码
 
 
-   # 根据数据调用大模型，得到结果  弹窗提示
 # 导出数据，保存数据，并获取关键数据
 
 
