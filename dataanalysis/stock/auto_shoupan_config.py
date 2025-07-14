@@ -3,14 +3,50 @@ import time
 import json
 import os
 import pandas as pd
-from model_xunlian_alert_1 import predictions_model_data_file,predictions_model_data
+from model_xunlian_alert_1 import predictions_model_data_file, predictions_model_data
 import keyboard
+from typing import Dict, List, Optional, Tuple
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
     config = json.load(config_file)
 
+# 新增ConfigManager类实现
+class ConfigManager:
+    def __init__(self, config: dict):
+        self.config = config
+        # 获取当前屏幕分辨率
+        screen_width, screen_height = pyautogui.size()
+        self.current_resolution = f"{screen_width}x{screen_height}"
+    
+    def get_coordinate(self, key: str) -> Tuple[int, int]:
+        """根据键名获取坐标"""
+        coordinates = self.config.get('coordinates', {})
+        if key in coordinates:
+            coord = coordinates[key]
+            return coord[0], coord[1]
+        # 如果找不到，返回(0,0)并警告
+        print(f"Warning: Coordinate key '{key}' not found in config")
+        return 0, 0
+    
+    def get_resolution_config(self) -> dict:
+        """获取当前分辨率的配置"""
+        resolutions = self.config.get('resolutions', {})
+        # 尝试获取当前分辨率的配置
+        if self.current_resolution in resolutions:
+            return resolutions[self.current_resolution]
+        # 如果当前分辨率不在配置中，尝试获取第一个配置
+        if resolutions:
+            first_res = next(iter(resolutions.values()))
+            print(f"Warning: Resolution {self.current_resolution} not found, using first available")
+            return first_res
+        # 如果都没有，返回空字典
+        print("Warning: No resolution config found")
+        return {}
+
+# 创建ConfigManager实例
+config_manager = ConfigManager(config)
 ths_positon = config['ths_positon']
 
 # 假设它们的图标在桌面上，你可以通过图标位置来启动
@@ -58,15 +94,20 @@ def add_stocks_to_ths_block(stock_codes):
     add_stocks_to_ths_zxg(stock_codes)
     # pyautogui.hotkey('alt', 'z')
 
-def add_stocks_to_ths_zxg(stock_codes):
+def add_stocks_to_ths_zxg(stock_codes: List[str]):
+    """添加股票到自选股板块"""
     for stock_code in stock_codes:
         pyautogui.typewrite(stock_code)
         time.sleep(1)
-        pyautogui.hotkey('enter')  # 切换到窗口
+        pyautogui.hotkey('enter')
         time.sleep(1)
-        pyautogui.click(x=ths_positon['c_x'], y=ths_positon['c_y'])  # 修改坐标以匹配你的桌面图标位置
+        
+        # 使用配置获取坐标
+        c_x, c_y = config_manager.get_coordinate('add_stock')
+        pyautogui.click(x=c_x, y=c_y)
         time.sleep(1)
-        pyautogui.hotkey('insert')  # 加入
+        
+        pyautogui.hotkey('insert')
         time.sleep(1)
 
 
@@ -114,35 +155,11 @@ def buy_stock(stock_code, price, quantity):
     time.sleep(1)
 
 def export_stock_data(stock):
-    # 使用全局配置的坐标
-    global ths_positon
-    
-    # 屏幕分辨率检测
-    x, y = pyautogui.size()
-    print(x, y)
-    
-    # 如果配置中没有当前分辨率的设置，使用默认值并更新配置
-    resolution_key = f"{x}x{y}"
-    if resolution_key not in ths_positon:
-        print(f"未找到{resolution_key}分辨率的配置，使用默认值")
-        ths_positon[resolution_key] = {
-            'self_selection': {'x': 195, 'y': 705},
-            'content_panel': {'x': 320, 'y': 129},
-            'menu_item1': {'x': 477, 'y': 530},
-            'menu_item2': {'x': 638, 'y': 530},
-            'dialog_confirm': {'x': 1178, 'y': 374},
-            'select_button': {'x': 1449, 'y': 705},
-            'save_button': {'x': 1086, 'y': 723}
-        }
-        # 更新配置文件
-        config['ths_positon'] = ths_positon
-        with open(config_path, 'w', encoding='utf-8') as config_file:
-            json.dump(config, config_file, indent=4, ensure_ascii=False)
-    
+    """导出股票数据"""
     # 获取当前分辨率的配置
-    res_config = ths_positon[resolution_key]
+    res_config = config_manager.get_resolution_config()
     
-    # 点击屏幕上的自选股坐标2507090030
+    # 使用配置中的坐标进行操作
     pyautogui.click(res_config['self_selection']['x'], res_config['self_selection']['y'])
     time.sleep(1)
 
@@ -182,46 +199,22 @@ def export_stock_data(stock):
 
     return filename+'.xls'
 
-def select_tdx_block_list():
-
-# 记录点 1: (1251, 568) - Button.left - 15:38:28.446
-# 记录点 2: (1431, 860) - Button.left - 15:38:30.269
-# 记录点 3: (1497, 570) - Button.left - 15:38:32.246
-# 记录点 4: (1250, 760) - Button.left - 15:38:37.950
-# 记录点 5: (1478, 815) - Button.left - 15:38:39.415
-# 记录点 6: (472, 1412) - Button.left - 15:38:43.030
-# 记录点 1: (1509, 884) - Button.left - 16:05:21.826
-#     time.sleep(5)
-    # 2、执行选股步骤，填写导出文件目录07111646
-    ctrl_t = pyautogui.hotkey('ctrl', 't')
+def select_tdx_block_list() -> str:
+    """通达信选股操作"""
+    # 使用配置获取坐标
+    step1_x, step1_y = config_manager.get_coordinate('tdx_step1')
+    step2_x, step2_y = config_manager.get_coordinate('tdx_step2')
+    # ... 其他步骤坐标 ...
+    
+    pyautogui.hotkey('ctrl', 't')
     time.sleep(0.5)
-    # 点击加入条件
-    pyautogui.click(1251, 568)
-    # 点击选股入板块
-    pyautogui.click(1431, 860)
-    time.sleep(0.2)
-    # 点击新建板块
-    pyautogui.click(1497, 570)
-    time.sleep(0.2)
-    # 输入文件名34
-
-    blockname = pd.Timestamp.now().strftime("%m%d%H%M")
-    print(blockname)
-    pyautogui.typewrite(blockname)
-    # 点击确定
-    pyautogui.click(1250, 760)
-    time.sleep(0.5)
-    # 再点击确定，等待结果
-    pyautogui.click(1478, 815)
-    # 等10s 或者等待确认键
-
-    # time.sleep(15)
-    # 修改为：
-    print("请确认操作已完成，按回车键继续...")
-    wait_for_keypress()
-    pyautogui.click(1509, 884)
+    
+    pyautogui.click(step1_x, step1_y)
+    pyautogui.click(step2_x, step2_y)
+    # ... 其他使用配置坐标的操作 ...
 
     return blockname
+
 def export_tdx_block_data(blockname):
     #
 #     # 导出当前文件内容  tdx 导出功能
@@ -327,29 +320,26 @@ def create_ths_block_from_file(blockname):
 # 记录点 11: (1381, 834) - Button.left - 17:28:12.958
 # 记录点 12: (1468, 914) - Button.left - 17:28:16.830
 # 记录已停止
-#     创建板块
     pyautogui.click(289, 36)
     time.sleep(0.5)
     pyautogui.click(337, 316)
     time.sleep(0.5)
     pyautogui.click(1550, 531)
-    time.sleep(0.5)
     # 输入文件名
     pyautogui.typewrite(blockname)
     time.sleep(0.5)
     pyautogui.click(1330, 752)
     time.sleep(0.5)
-    # 导入数据
     pyautogui.click(1559, 657)
     time.sleep(0.5)
-    pyautogui.moveTo(1563, 682)
-    # pyautogui.click(1589, 684)
+    pyautogui.moveTo(1589, 684)
+    pyautogui.click(1589, 684)
     time.sleep(0.5)
-    pyautogui.click(1977, 1106)
+    pyautogui.click(1955, 1061)
     time.sleep(0.5)
-    pyautogui.click(1977, 1149)
+    pyautogui.click(1971, 1099)
     time.sleep(0.5)
-    pyautogui.click(1315, 620)
+    pyautogui.click(1250, 578)
     time.sleep(0.5)
     pyautogui.click(1972, 1093)
     time.sleep(0.5)
@@ -361,6 +351,9 @@ def create_ths_block_from_file(blockname):
     # return stock_data
 
 def main():
+    # 初始化分辨率配置
+    config_manager.get_resolution_config()
+    
     print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
     print(pyautogui.size())
     # 登录同花顺
@@ -465,7 +458,7 @@ if __name__ == '__main__':
     data_03 = pd.read_csv(file3,encoding='GBK',sep='\t')
     print( data_03.head(100))
 
-    exit()
+    # exit()
     # 6、 分析和整合数据，生成需要的数据内容
 # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
     # 合并数据 净额	净流入	换手(实)	总金额	净量
