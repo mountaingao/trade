@@ -181,7 +181,7 @@ def export_stock_data(stock):
     pyautogui.click(res_config['save_button']['x'], res_config['save_button']['y'])
 
     return filename+'.xls'
-
+# 通达信选股
 def select_tdx_block_list():
 
 # 记录点 1: (1251, 568) - Button.left - 15:38:28.446
@@ -222,6 +222,7 @@ def select_tdx_block_list():
     pyautogui.click(1509, 884)
 
     return blockname
+# 通达信数据导出
 def export_tdx_block_data(blockname):
     #
 #     # 导出当前文件内容  tdx 导出功能
@@ -253,7 +254,7 @@ def export_tdx_block_data(blockname):
     wait_for_keypress()
     pyautogui.click(1327, 748)
     time.sleep(1)
-def change_history_list():
+def tdx_change_history_list():
     # 右键切换到列表
     #     记录点 2: (1091, 1427) - Button.left - 15:47:30.412
     # 记录点 3: (652, 597) - Button.right - 15:47:33.380
@@ -266,7 +267,7 @@ def change_history_list():
     # 点击历史
     pyautogui.click(725,779)
     time.sleep(1)
-
+# 同花顺数据导出
 def export_ths_block_data(blockname):
     # 导出同花顺板块数据
 # 记录点 1: (290, 337) - Button.left - 15:26:20.519
@@ -310,7 +311,7 @@ def export_ths_block_data(blockname):
     pyautogui.click(1407, 916)
     time.sleep(0.5)
     pyautogui.click(1407, 916)
-
+# 同花顺创建板块
 def create_ths_block_from_file(blockname):
     #导入同花顺板块文件
 #     开始记录屏幕点击位置... (按F1停止)
@@ -360,37 +361,9 @@ def create_ths_block_from_file(blockname):
 # stock_data = export_stock_data(stock)
     # return stock_data
 
-def main():
-    print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
-    print(pyautogui.size())
-    # 登录同花顺
-    login_to_tonghuashun()
-    time.sleep(10)
 
-    # 下单示例
-    buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
-
-if __name__ == '__main__':
-
-    # 收盘执行选股，导出数据，保存数据，并获取关键数据
-    # 1、启动通达信
-    # 启动同花顺或通达信
-    pyautogui.FAILSAFE = True
-    # # 增加一个按钮 按 esc 以后程序退出运行
-    # pyautogui.hotkey('alt', 'esc')
-    # print('按 esc 退出程序')
-    # while True:
-    #     if pyautogui.press('esc'):
-    #         break
-    #     time.sleep(1)
-    #位置：
-    x, y = pyautogui.position()
-    print(x, y)
-    # 屏幕
-    x, y = pyautogui.size()
-    print(x, y)
-    wait_for_keypress()
-    blockname='07141725'
+# 通达信数据处理
+def tdx_get_block_data(blockname):
     # 2、执行选股步骤，填写导出文件目录
     blockname = select_tdx_block_list()
 
@@ -398,7 +371,7 @@ if __name__ == '__main__':
     export_tdx_block_data(blockname)
 
     #右键选择历史数据
-    change_history_list()
+    tdx_change_history_list()
 
     blockname_01 = blockname+'01'
     # 导出数据
@@ -448,49 +421,105 @@ if __name__ == '__main__':
     # print("请打开同花顺，按F1键开始执行下面的动作")
     # time.sleep(5)
     # input("请按回车键继续...")
-
-    # time.sleep(3)
-    print("请确认操作已完成，按回车键继续...")
-    wait_for_keypress()
+    return blockname
+# 同花顺数据处理
+def ths_get_block_data( blockname):
     # ths导入
     # 4、打开同花顺，创建新的板块，并导入临时文件夹中的文件，可以手工操作，也可以通过代码实现
     create_ths_block_from_file(blockname)
     # 5、打开同花顺，导出实时数据，保存下来
     export_ths_block_data(blockname)
-    # 合并数据
-    file3 = "../data/ths/"+blockname+'.xls'
 
+# 合并两个文件的数据，并返回需要的格式的数据
+def merge_block_data(blockname):
+    # 判断两个文件是否存在
+    if not os.path.exists("../data/tdx/"+blockname+'.xls'):
+        print("../data/tdx/"+blockname+'.xls'+" 文件不存在")
+        return None
+    if not os.path.exists("../data/ths/"+blockname+'.xls'):
+        print("../data/ths/"+blockname+'.xls'+" 文件不存在")
+        return None
 
-    # file3 = "../data/ths/07110.xls"
-    data_03 = pd.read_csv(file3,encoding='GBK',sep='\t')
-    print( data_03.head(100))
+    tdx_data = pd.read_excel("../data/tdx/"+blockname+'_data..xls',encoding='GBK',sep='\t')
 
-    exit()
-    # 6、 分析和整合数据，生成需要的数据内容
-# new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
+    ths_data = pd.read_csv("../data/ths/"+blockname+'.xls',encoding='GBK',sep='\t')
+
+    data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量']], left_index=True, right_index=True)
+    print( data.head(100))
+    # 打印 columns
+    print(data.columns)
+    # 将columns 按照自己的需求进行排序
+    # 序号	日期	代码	名称	当日涨幅	现价	细分行业	次日涨幅	次日最高价	次日最高涨幅	概念	说明	信号天数	净额	净流入	当日资金流入	是否领涨	预测	是否成功	最高价	AI预测	AI幅度	重合
+    data = data[['序号', '日期', '代码', '名称', '当日涨幅', '现价', '细分行业', '次日涨幅', '次日最高价', '次日最高涨幅', '概念', '说明', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨', '预测', '是否成功', '最高价', 'AI预测', 'AI幅度', '重合']]
+    # 没有的字段均为空置
     # 合并数据 净额	净流入	换手(实)	总金额	净量
-    merged_data = pd.merge(merged_data, data_03[['净额', '净流入', '净量']], left_index=True, right_index=True)
-    print( merged_data.head(100))
+    # merged_data = pd.merge(merged_data, data_03[['净额', '净流入', '净量']], left_index=True, right_index=True)
+    # print( merged_data.head(100))
     # 增加最高价字段
-    merged_data['最高价'] = merged_data['最高'].std.replace(',', '').astype(float)
+    data['最高价'] = data['最高'].std.replace(',', '').astype(float)
 
     # 保存文件
     # result_df.to_excel(output_file, index=False)
-    merged_data.to_excel(f"../alert/{blockname}.xlsx", index=False)
-
+    data.to_excel(f"../alert/{blockname}.xlsx", index=False)
+    return data
+# 推理模型
+def predict_block_data(blockname,date='250709'):
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
     # 使用多个数据集训练并生成模型 , 需要按照日期更新到最新的模型
     model = {
-        'reg_weights': '../models/250709_feature_weights_reg.csv',
-        'clf_weights': '../models/250709_feature_weights_clf.csv',
-        'reg_model': '../models/250709_model_reg.json',
-        'clf_model': '../models/250709_model_clf.json'}
+        'reg_weights': f"../models/{date}_feature_weights_reg.csv",
+        'clf_weights': f"../models/{date}_feature_weights_clf.csv",
+        'reg_model': f"../models/{date}_model_reg.json",
+        'clf_model': f"../models/{date}_model_clf.json"}
 
     #预测文件中的数据
-    predictions_model_data_file(f"../alert/{blockname}.xlsx",model)
+    predictions_file = predictions_model_data_file(f"../alert/{blockname}.xlsx",model)
+
+    return predictions_file
+def main():
+    print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
+    print(pyautogui.size())
+    # 登录同花顺
+    login_to_tonghuashun()
+    time.sleep(10)
+
+    # 下单示例
+    buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
+
+if __name__ == '__main__':
+
+    # 收盘执行选股，导出数据，保存数据，并获取关键数据
+    # 1、启动通达信
+    # 启动同花顺或通达信
+    pyautogui.FAILSAFE = True
+    # # 增加一个按钮 按 esc 以后程序退出运行
+    # pyautogui.hotkey('alt', 'esc')
+    # print('按 esc 退出程序')
+    # while True:
+    #     if pyautogui.press('esc'):
+    #         break
+    #     time.sleep(1)
+    #位置：
+    x, y = pyautogui.position()
+    print(x, y)
+    # 屏幕分辨率
+    x, y = pyautogui.size()
+    print(x, y)
+    wait_for_keypress()
+    # 通达信数据获取，导出和保存
+    blockname = tdx_get_block_data()
+    # time.sleep(3)
+    print("请确认操作已完成，按回车键继续...")
+    wait_for_keypress()
+    # 同花顺数据获取，导出和保存
+    ths_get_block_data(blockname)
+    # 合并两个数据
+    # 6、 分析和整合数据，生成需要的数据内容
+    # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
+    file = merge_block_data(blockname)
 
     # 计算结果，返回符合条件的股票代码
-
+    predict_block_data(blockname)
 
 # 导出数据，保存数据，并获取关键数据
 
