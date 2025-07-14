@@ -16,7 +16,7 @@ if __name__ == "__main__":
         'clf_model': '../models/250709_model_clf.json'}
 
     #预测文件中的数据
-    predictions_model_data_file("../alert/0711.xlsx",model)
+    predictions_model_data_file("../alert/0714.xlsx",model)
 
     exit()
 

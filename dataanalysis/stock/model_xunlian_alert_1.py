@@ -303,6 +303,7 @@ def predictions_model_data_file(input_file,model):
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
+    return output_file
 
 def predictions_model_data(data, model):
     # 将单行数据转换为DataFrame
