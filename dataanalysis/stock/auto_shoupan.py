@@ -181,6 +181,9 @@ def export_stock_data(stock):
     pyautogui.click(res_config['save_button']['x'], res_config['save_button']['y'])
 
     return filename+'.xls'
+
+# todo  支持不同分辨率的点位参数 ；先完善创业板，下一步北京板单独方法，以及深圳和上海主板，建立不同的模型和数据来分别进行分析和建模，做到准确，有效，
+# 完成自动下单，手工确认，自动化交易
 # 通达信选股
 def select_tdx_block_list():
 
