@@ -275,7 +275,7 @@ def predictions_model_data_file(input_file,model):
     df_calculate['是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
     y_test = df_calculate[features]
 
-    print(df_calculate.head(10))
+    # print(df_calculate.head(10))
     # 加载模型
     model_reg = xgb.XGBRegressor()
     model_reg.load_model(model['reg_model'])
@@ -287,8 +287,8 @@ def predictions_model_data_file(input_file,model):
     y_pred_clf = model_clf.predict(y_test)
     y_pred_reg = model_reg.predict(y_test)
 
-    print(y_pred_clf)
-    print(y_pred_reg)
+    # print(y_pred_clf)
+    # print(y_pred_reg)
 
 
     # 构造结果 DataFrame
