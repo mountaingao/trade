@@ -202,6 +202,8 @@ def select_tdx_block_list():
     # 2、执行选股步骤，填写导出文件目录07111646
     ctrl_t = pyautogui.hotkey('ctrl', 't')
     print("请选择指标...")
+    wait_for_keypress()
+
     time.sleep(0.5)
     # 点击加入条件
     pyautogui.click(1251, 568)
