@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from model_xunlian_alert_1 import predictions_model_data_file,predictions_model_data
 import keyboard
+import numpy as np
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
@@ -285,11 +286,11 @@ def export_ths_block_data(blockname):
 # 记录点 10: (1407, 916) - Button.left - 15:26:51.526
 # 记录点 11: (1407, 916) - Button.left - 15:26:53.095
 # 创建同花顺板块
-    pyautogui.click(300, 337)
+    pyautogui.click(264, 337)
     time.sleep(0.5)
-    pyautogui.moveTo(360, 66)
+    pyautogui.moveTo(349, 66)
     time.sleep(0.5)
-    pyautogui.click(360, 66)
+    pyautogui.click(349, 66)
     time.sleep(0.5)
     pyautogui.click(13, 109)
     time.sleep(0.5)
@@ -346,18 +347,20 @@ def create_ths_block_from_file(blockname):
     # 导入数据
     pyautogui.click(1559, 657)
     time.sleep(0.5)
-    pyautogui.moveTo(1563, 682)
-    # pyautogui.click(1589, 684)
+    pyautogui.moveTo(1565, 680)
+    pyautogui.click(1565, 680)
     time.sleep(0.5)
-    pyautogui.click(1977, 1106)
+    pyautogui.click(2020, 1101)
     time.sleep(0.5)
-    pyautogui.click(1977, 1149)
+    pyautogui.moveTo(2020, 1138)
     time.sleep(0.5)
-    pyautogui.click(1315, 620)
+    pyautogui.click(2020, 1138)
     time.sleep(0.5)
-    pyautogui.click(1972, 1093)
+    pyautogui.click(1398, 613)
     time.sleep(0.5)
-    pyautogui.click(1369, 834)
+    pyautogui.click(1975, 1136)
+    time.sleep(0.5)
+    pyautogui.click(1377, 834)
     time.sleep(0.5)
     pyautogui.click(1457, 917)
     time.sleep(0.5)
@@ -366,7 +369,7 @@ def create_ths_block_from_file(blockname):
 
 
 # 通达信数据处理
-def tdx_get_block_data(blockname):
+def tdx_get_block_data():
     # 2、执行选股步骤，填写导出文件目录
     blockname = select_tdx_block_list()
 
@@ -408,6 +411,7 @@ def tdx_get_block_data(blockname):
     # 合并new_data和data_02的数据，按照T列进行合并
     merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
     print( merged_data.head(100))
+    merged_data.insert(len(merged_data.columns), '是否领涨', '否')
 
     # 保存中间文件，供后续使用
     merged_data.to_excel(f"../data/tdx/{blockname}_data.xlsx", index=False)
@@ -426,24 +430,25 @@ def tdx_get_block_data(blockname):
     # input("请按回车键继续...")
     return blockname
 # 同花顺数据处理
-def ths_get_block_data( blockname):
+def ths_get_block_data(blockname):
     # ths导入
     # 4、打开同花顺，创建新的板块，并导入临时文件夹中的文件，可以手工操作，也可以通过代码实现
     create_ths_block_from_file(blockname)
+    wait_for_keypress()
     # 5、打开同花顺，导出实时数据，保存下来
     export_ths_block_data(blockname)
 
 # 合并两个文件的数据，并返回需要的格式的数据
 def merge_block_data(blockname):
     # 判断两个文件是否存在
-    if not os.path.exists("../data/tdx/"+blockname+'.xls'):
-        print("../data/tdx/"+blockname+'.xls'+" 文件不存在")
+    if not os.path.exists("../data/tdx/"+blockname+'_data.xlsx'):
+        print("../data/tdx/"+blockname+'_data.xlsx'+" 文件不存在")
         return None
     if not os.path.exists("../data/ths/"+blockname+'.xls'):
         print("../data/ths/"+blockname+'.xls'+" 文件不存在")
         return None
 
-    tdx_data = pd.read_excel("../data/tdx/"+blockname+'_data..xls',encoding='GBK',sep='\t')
+    tdx_data = pd.read_excel("../data/tdx/"+blockname+'_data.xlsx')
 
     ths_data = pd.read_csv("../data/ths/"+blockname+'.xls',encoding='GBK',sep='\t')
 
@@ -452,17 +457,39 @@ def merge_block_data(blockname):
     # 打印 columns
     print(data.columns)
     # 将columns 按照自己的需求进行排序
+    # '代码', '名称', '涨幅%', '现价', '最高', '量比', '总金额', '细分行业', 'T', 'T1', '净额','净流入', '净量'
+    # 在data最前面增加两个字段：序号	日期
+    data.insert(0, '序号', range(1, len(data) + 1))
+    data.insert(1, '日期', pd.Timestamp.now().strftime("%Y-%m-%d"))
+
+    # 后面增加字段 '次日涨幅', '次日最高价', '次日最高涨幅', '概念', '说明','是否领涨', '预测', '是否成功', '最高价', 'AI预测', 'AI幅度', '重合'，值均为空
+    data.insert(len(data.columns), '次日涨幅', '')
+    data.insert(len(data.columns), '次日最高价', '')
+    data.insert(len(data.columns), '次日最高涨幅', '')
+    data.insert(len(data.columns), '概念', '')
+    data.insert(len(data.columns), '说明', '')
+
+    data.insert(len(data.columns), '预测', '')
+    data.insert(len(data.columns), '是否成功', '')
+
+    # 将字段 T更名为信号天数 净量更名为 当日资金流入
+    data = data.rename(columns={'T': '信号天数', '净量': '当日资金流入', '涨幅%': '当日涨幅', '最高': '最高价'})
+    # 预测的值 = =IF(OR(AND(M1104<=3,P1104>0.2),P1104>2),"是","否")  当 （信号天数 <=3 and 净量 > 0.2） or 净量 > 2 时为是；其余为否
+    data['预测'] = np.where(
+        (data['信号天数'] <= 3) & (data['当日资金流入'] > 0.2) | (data['当日资金流入'] > 2), "是", "否")
+
     # 序号	日期	代码	名称	当日涨幅	现价	细分行业	次日涨幅	次日最高价	次日最高涨幅	概念	说明	信号天数	净额	净流入	当日资金流入	是否领涨	预测	是否成功	最高价	AI预测	AI幅度	重合
-    data = data[['序号', '日期', '代码', '名称', '当日涨幅', '现价', '细分行业', '次日涨幅', '次日最高价', '次日最高涨幅', '概念', '说明', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨', '预测', '是否成功', '最高价', 'AI预测', 'AI幅度', '重合']]
+    # data = data[['序号', '日期', '代码', '名称', '当日涨幅', '现价', '细分行业', '次日涨幅', '次日最高价', '次日最高涨幅', '概念', '说明', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨', '预测', '是否成功', '最高价', 'AI预测', 'AI幅度', '重合']]
     # 没有的字段均为空置
     # 合并数据 净额	净流入	换手(实)	总金额	净量
     # merged_data = pd.merge(merged_data, data_03[['净额', '净流入', '净量']], left_index=True, right_index=True)
     # print( merged_data.head(100))
     # 增加最高价字段
-    data['最高价'] = data['最高'].std.replace(',', '').astype(float)
-
+    # data['最高价'] = data['最高'].std.replace(',', '').astype(float)
+    print(data.columns)
     # 保存文件
     # result_df.to_excel(output_file, index=False)
+
     data.to_excel(f"../alert/{blockname}.xlsx", index=False)
     return data
 # 推理模型
@@ -477,7 +504,15 @@ def predict_block_data(blockname,date='250709'):
 
     #预测文件中的数据
     predictions_file = predictions_model_data_file(f"../alert/{blockname}.xlsx",model)
+    predictions_data = pd.read_excel(predictions_file)
+    # 将字段 T更名为信号天数 净量更名为 当日资金流入
+    data = predictions_data.rename(columns={'分类预测_y_pred_clf': 'AI预测', '回归预测_y_pred_reg': 'AI幅度'})
 
+    data['重合'] = np.where(
+        (data['预测'] == "是") & (data['AI预测'] == 1), "是", "否")
+
+    # 保存文件
+    data.to_excel(predictions_file, index=False)
     return predictions_file
 def main():
     print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
@@ -511,12 +546,15 @@ if __name__ == '__main__':
     wait_for_keypress()
     # 通达信数据获取，导出和保存
     blockname = tdx_get_block_data()
-    # time.sleep(3)
-    print("请确认操作已完成，按回车键继续...")
+
+
+    # blockname = '07151007'
     wait_for_keypress()
     # 同花顺数据获取，导出和保存
     ths_get_block_data(blockname)
     # 合并两个数据
+    wait_for_keypress()
+
     # 6、 分析和整合数据，生成需要的数据内容
     # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
     file = merge_block_data(blockname)
