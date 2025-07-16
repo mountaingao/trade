@@ -386,7 +386,7 @@ def tdx_get_block_data():
     #右键选择历史数据
     tdx_change_history_list()
 
-    blockname_01 = blockname+'01'
+    blockname_01 = blockname+'_01'
     # 导出数据
     export_tdx_block_data(blockname_01)
     print("导出历史数据已完成！")
@@ -417,11 +417,15 @@ def tdx_get_block_data():
     # print( data_02.head(100))
 
     # 合并new_data和data_02的数据，按照T列进行合并
+    # data_02 按字段 代码 排序
+    data_02 = data_02.sort_values(by=['代码'])
     merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
     # print( merged_data.head(100))
     merged_data.insert(len(merged_data.columns), '是否领涨', '否')
     # merged_data['代码'] = merged_data['代码'].astype(str) # 将代码字段转换为字符串类型
     merged_data['代码']  = merged_data['代码'].str.split('=').str[1].str.replace("'", "")
+    # 去掉双引号
+    merged_data['代码'] = merged_data['代码'].str.replace("'", "")
     # 保存中间文件，供后续使用
     merged_data.to_excel(f"../data/tdx/{blockname}_data.xlsx", index=False)
 
@@ -560,16 +564,16 @@ if __name__ == '__main__':
     # 屏幕分辨率
     x, y = pyautogui.size()
     print(x, y)
-    # wait_for_keypress()
-    # # 通达信数据获取，导出和保存
-    # blockname = tdx_get_block_data()
-    #
-    # wait_for_keypress()
-    # # 同花顺数据获取，导出和保存
-    # ths_get_block_data(blockname)
-    # print("数据已经生成，请修改是否领涨字段的值，然后保存文件，然后按空格键继续...")
+    wait_for_keypress()
+    # 通达信数据获取，导出和保存
+    blockname = tdx_get_block_data()
 
-    blockname = '07151728'
+    wait_for_keypress()
+    # 同花顺数据获取，导出和保存
+    ths_get_block_data(blockname)
+    print("数据已经生成，请修改是否领涨字段的值，然后保存文件，然后按空格键继续...")
+
+    # blockname = '07161523'
 
     wait_for_keypress()
     # 合并两个数据
@@ -581,6 +585,7 @@ if __name__ == '__main__':
     predict_block_data(blockname)
 
 # 导出数据，保存数据，并获取关键数据
+# 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
 
 
 
