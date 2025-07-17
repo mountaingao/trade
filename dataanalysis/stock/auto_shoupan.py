@@ -6,6 +6,7 @@ import pandas as pd
 from model_xunlian_alert_1 import predictions_model_data_file,predictions_model_data
 import keyboard
 import numpy as np
+import datetime  # 新增导入datetime模块
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
@@ -391,7 +392,11 @@ def tdx_get_block_data():
     export_tdx_block_data(blockname_01)
     print("导出历史数据已完成！")
 
+    # 合并数据
+    tdx_merge_data(blockname,blockname_01)
+    return blockname
 
+def tdx_merge_data(blockname,blockname_01):
     # 读取文件，代码写入到 txt中
     file1 = "../data/tdx/"+blockname+'.xls'
     # file1 = "../data/tdx/07111619.xls"
@@ -410,22 +415,46 @@ def tdx_get_block_data():
     new_data = data[['代码', '名称', '涨幅%', '现价', '最高', '量比', '总金额', '细分行业']]
     # print( new_data.head(100))
 
+    # new_data['代码']  = new_data['代码'].str.split('=').str[1].str.replace('"', "")
+
     file2 = "../data/tdx/"+blockname_01+'.xls'
     # file2 = "../data/tdx/0711161920250711.xls"
     # 读取数据去掉第一行，第二行是列名
     data_02 = pd.read_csv(file2,encoding='GBK',sep='\t',header=1)
-    # print( data_02.head(100))
-
+    data_02 = data_02[:-1]
+    data_02.columns = data_02.columns.str.replace(' ', '')
+    data_02['代码']  = data_02['代码'].str.split('=').str[1].str.replace('"', "")
+    data_02 = data_02.sort_values(by=['代码'])
+    print( data_02.head(10))
     # 合并new_data和data_02的数据，按照T列进行合并
     # data_02 按字段 代码 排序
-    data_02 = data_02.sort_values(by=['代码'])
-    merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
+    # data_02 = data_02.sort_values(by=['代码'])
+    # print(  data_02[['T', 'T1']])
+    data_t = data_02[['代码','T', 'T1']]
+    print("排序前:")
+    print(data_t.head())
+
+    # 按'代码'列排序并重置索引
+    data_t.sort_values(by='代码', inplace=True)
+    data_t.reset_index(drop=True, inplace=True)
+
+    print("\n排序后:")
+    print(data_t.head())
+
+    print(  data_t)
+    # 合并时按照排序后的值进行合并 删除索引后重建
+
+    # 按照 代码 进行合并
+    # merged_data = pd.merge(new_data, data_t, left_on='代码', right_on='T')
+    merged_data = pd.merge(new_data, data_t[['T', 'T1']], left_index=True, right_index=True)
+    # merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
+
     # print( merged_data.head(100))
     merged_data.insert(len(merged_data.columns), '是否领涨', '否')
-    # merged_data['代码'] = merged_data['代码'].astype(str) # 将代码字段转换为字符串类型
-    merged_data['代码']  = merged_data['代码'].str.split('=').str[1].str.replace("'", "")
+
+    # merged_data['代码']  = merged_data['代码'].str.split('=').str[1].str.replace("'", "")
     # 去掉双引号
-    merged_data['代码'] = merged_data['代码'].str.replace("'", "")
+    merged_data['代码']  = merged_data['代码'].str.split('=').str[1].str.replace('"', "")
     # 保存中间文件，供后续使用
     merged_data.to_excel(f"../data/tdx/{blockname}_data.xlsx", index=False)
 
@@ -442,6 +471,8 @@ def tdx_get_block_data():
     # time.sleep(5)
     # input("请按回车键继续...")
     return blockname
+
+
 # 同花顺数据处理
 def ths_get_block_data(blockname):
     # ths导入
@@ -494,8 +525,33 @@ def merge_block_data(blockname):
     # 将字段 T更名为信号天数 净量更名为 当日资金流入
     data = data.rename(columns={'T': '信号天数', '净量': '当日资金流入', '涨幅%': '当日涨幅', '最高': '最高价'})
     # 预测的值 = =IF(OR(AND(M1104<=3,P1104>0.2),P1104>2),"是","否")  当 （信号天数 <=3 and 净量 > 0.2） or 净量 > 2 时为是；其余为否
-    data['预测'] = np.where(
-        (data['信号天数'] <= 3) & (data['当日资金流入'] > 0.2) | (data['当日资金流入'] > 2), "是", "否")
+
+    # 07170948 把这个时间加上年 和后面的秒 如 20250717084800  然后转换成time 传给函数
+    # 获取当前年份（动态）
+    current_year = datetime.datetime.now().year  # 例如 2025
+
+    # 组合完整时间字符串
+    full_time_str = f"{current_year}{blockname}00"  # 添加年份和秒数
+
+    print('full_time_str' +full_time_str)
+    # 转换为 datetime 对象
+    dt = datetime.datetime.strptime(full_time_str, "%Y%m%d%H%M%S")
+
+    hour = get_time_directory(dt.time())
+    print('hour' +hour)
+    if hour == 1000:    # 早盘预测 放量滞涨为否，当日资金流入大于0，需要重点关注后续走势，前面是阴线的有爆发力 0717
+        data['预测'] = np.where(
+            ((data['信号天数'] <= 10) & (data['当日资金流入'] > 0)) | (data['当日资金流入'] > 2), "是", "否")
+    elif hour == 1200:    # 中午预测 基本要看头部的几个票
+        data['预测'] = np.where(
+            ((data['信号天数'] <= 3) & (data['当日资金流入'] > 0.2)) | (data['当日资金流入'] > 2), "是", "否")
+    else:
+        data['预测'] = np.where(
+            ((data['信号天数'] <= 3) & (data['当日资金流入'] > 0.2)) | (data['当日资金流入'] > 2), "是", "否")
+
+    # 下午预测 老票不会有太多机会，看低位，或者冲高后横盘 # 收盘预测和下午一致  ，关注新出现的标的
+
+
 
     # 序号	日期	代码	名称	当日涨幅	现价	细分行业	次日涨幅	次日最高价	次日最高涨幅	概念	说明	信号天数	净额	净流入	当日资金流入	是否领涨	预测	是否成功	最高价	AI预测	AI幅度	重合
     # data = data[['序号', '日期', '代码', '名称', '当日涨幅', '现价', '细分行业', '次日涨幅', '次日最高价', '次日最高涨幅', '概念', '说明', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨', '预测', '是否成功', '最高价', 'AI预测', 'AI幅度', '重合']]
@@ -511,6 +567,21 @@ def merge_block_data(blockname):
     print( data.head(10))
     data.to_excel(f"../alert/{blockname}.xlsx", index=False)
     return data
+
+# 新增函数：根据当前时间获取目录名
+def get_time_directory(now=datetime.datetime.now().time()):
+    # now = datetime.datetime.now().time()
+    if datetime.time(9, 30) <= now <= datetime.time(11, 0):
+        return '1000'
+    elif datetime.time(11, 30) <= now <= datetime.time(13, 30):
+        return '1200'
+    elif datetime.time(13, 30) <= now <= datetime.time(15, 0):
+        return '1400'
+    elif datetime.time(15, 0) <= now <= datetime.time(18, 30):
+        return '1600'
+    else:
+        return 'other'
+
 # 推理模型
 def predict_block_data(blockname,date='250709'):
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
@@ -522,7 +593,13 @@ def predict_block_data(blockname,date='250709'):
         'clf_model': f"../models/{date}_model_clf.json"}
 
     #预测文件中的数据
-    predictions_file = predictions_model_data_file(f"../alert/{blockname}.xlsx",model)
+    # 按照时间确定目录名
+    time_dir = get_time_directory()  # 获取时间目录
+    target_dir = f"../data/predictions/{time_dir}"  # 目标目录路径
+    os.makedirs(target_dir, exist_ok=True)  # 创建目录（如果不存在）
+    # output_file = f'../data/predictions/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
+    #预测文件中的数据
+    predictions_file = predictions_model_data_file(f"../alert/{blockname}.xlsx",model,target_dir)
     predictions_data = pd.read_excel(predictions_file)
     # 将字段 T更名为信号天数 净量更名为 当日资金流入
     data = predictions_data.rename(columns={'分类预测_y_pred_clf': 'AI预测', '回归预测_y_pred_reg': 'AI幅度'})
@@ -530,11 +607,14 @@ def predict_block_data(blockname,date='250709'):
     data['重合'] = np.where(
         (data['预测'] == "是") & (data['AI预测'] == 1), "1", "0")
 
-    # 打印数据中 重合值为1的数据
-    print(data[data['重合'] == '1'])
+    # 打印数据 重合值为1的数据 预测 为是或 AI预测 为1 的 数据
+
+    # print(data[data['重合'] == '1'] | data[data['AI预测'] == 1] | data[data['预测'] == 1])
+
     # 保存文件
     data.to_excel(predictions_file, index=False)
     return predictions_file
+
 def main():
     print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
     print(pyautogui.size())
@@ -586,6 +666,9 @@ if __name__ == '__main__':
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
+# 得到通达信的情绪温度数据
+# 通达信实时数据 880005
+
 
 
 

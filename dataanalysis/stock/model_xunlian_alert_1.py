@@ -263,7 +263,7 @@ def checking_model_data(input_file,model):
 
     print(f"验证结果已保存至: {output_file}")
 
-def predictions_model_data_file(input_file,model):
+def predictions_model_data_file(input_file,model,output_dir):
     print(input_file)
     # 预测 准备数据
     df_calculate = pd.read_excel(input_file)
@@ -299,7 +299,10 @@ def predictions_model_data_file(input_file,model):
     # 保存为 Excel 文件
     file_name = os.path.basename(input_file)
     file_root, file_ext = os.path.splitext(file_name)  # 分离文件名和后缀
-    output_file = f'../data/predictions/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
+    if(output_dir == ''):
+        output_dir = f'../data/predictions'
+
+    output_file = f'{output_dir}/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")

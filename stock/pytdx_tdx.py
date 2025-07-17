@@ -1,7 +1,6 @@
 from pytdx.hq import TdxHq_API
 
 # 创建 API 对象
-#todo 数据不出来，后续再研究
 api = TdxHq_API()
 
 def get_server_ip():
