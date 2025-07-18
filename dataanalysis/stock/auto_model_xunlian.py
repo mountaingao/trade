@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from chinese_calendar import is_workday, is_holiday
 import pandas as pd
 import auto_shoupan
+import model_xunlian
 def get_previous_trading_day(date):
     previous_date = date - timedelta(days=1)
     while not is_workday(previous_date) or is_holiday(previous_date):
@@ -37,7 +38,8 @@ def process_prediction_files(base_dir="../data/predictions/"):
             continue
 
         print(f"正在处理文件夹: {folder_name}")
-
+        # 数据集合
+        dfs = []
         # 3. 遍历文件夹中的所有文件，读取文件内容
         for filename in os.listdir(folder_path):
             print(f"正在处理文件: {filename}")
@@ -47,24 +49,21 @@ def process_prediction_files(base_dir="../data/predictions/"):
             if len(filename) >= 4 and filename[:4] == previous_mmdd:
                 file_path = os.path.join(folder_path, filename)
                 print(f"找到匹配文件: {file_path}")
-                filename_without_extension = os.path.splitext(filename)[0]
-                # 另一个文件
-                today_mmdd = datetime.now().strftime('%m%d')
-                tdx_files = f"../data/tdx/{filename_without_extension}{today_mmdd}.xls"
-                print("通达信导出文件"+filename_without_extension+today_mmdd)
 
-                # tdx_files = f"../data/tdx/071520250717.xls"
-                auto_shoupan.export_tdx_block_data(filename_without_extension+today_mmdd)
                 # try:
                 # 4. 读取文件内容，组合数据以后进行训练
                 df_pred = pd.read_excel(file_path)
-                print(df_pred.head(100))
-                # 5. 训练模型
-                auto_shoupan.train_model(df_pred, filename_without_extension)
+                dfs.append(df_pred)
+                print(df_pred.head(10))
+
+
                 # except Exception as e:
                 #     print(f"处理文件 {filename} 时出错: {e}")
 
         # 训练模型
+        # 5. 训练模型 数据
+        df = pd.concat(dfs, ignore_index=True)
+        model_xunlian.generate_model_data(df,folder_path)
 
         # 将模型写入目录中
 

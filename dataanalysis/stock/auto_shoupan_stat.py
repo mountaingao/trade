@@ -34,13 +34,12 @@ def process_prediction_files_stat(base_dir="../data/predictions/"):
             continue
 
         print(f"正在处理文件夹: {folder_name}")
-        output_file = os.path.join(folder_path, f"{md.strftime('%y-%m-%d')}.xlsx")
+
         df = pd.DataFrame()
         # 3. 遍历文件夹中的所有文件，按目录输出一个统计数据文件，输出文件名为 "日期.xlsx"
         for filename in os.listdir(folder_path):
             print(f"正在处理文件: {filename}")
-            print(f"4w: {filename[:4]}")
-
+            print(f"filename: {filename[:4]}")
 
             # 检查文件名前4位是否匹配当前月日
             if len(filename) >= 4 and filename[:4] <= previous_mmdd:
@@ -57,41 +56,45 @@ def process_prediction_files_stat(base_dir="../data/predictions/"):
                 # df里添加一行记录
 
                 # 修复1：确保使用正确的列名
-            if '是否成功' not in df_pred.columns:
-                print(f"警告: 文件 {filename} 中缺少 '是否成功' 列")
-                continue
+                if '是否成功' not in df_pred.columns:
+                    print(f"警告: 文件 {filename} 中缺少 '是否成功' 列")
+                    continue
 
-            # 修复2：转换数据类型
-            df_pred['是否成功'] = pd.to_numeric(df_pred['是否成功'], errors='coerce').fillna(0)
-            df_pred['预测'] = df_pred['预测'].map({'是': 1, '否': 0}).fillna(0)
-            df_pred['AI预测'] = pd.to_numeric(df_pred['AI预测'], errors='coerce').fillna(0)
+                # 修复2：转换数据类型
+                df_pred['是否成功'] = pd.to_numeric(df_pred['是否成功'], errors='coerce').fillna(0)
+                df_pred['预测'] = df_pred['预测'].map({'是': 1, '否': 0}).fillna(0)
+                df_pred['AI预测'] = pd.to_numeric(df_pred['AI预测'], errors='coerce').fillna(0)
 
-            # 修复3：计算成功率
-            ai_pred_sum = df_pred['AI预测'].sum()
-            rule_pred_sum = df_pred['预测'].sum()
-            success_sum = df_pred['是否成功'].sum()
+                # 修复3：计算成功率
+                ai_pred_sum = df_pred['AI预测'].sum()
+                rule_pred_sum = df_pred['预测'].sum()
+                success_sum = df_pred['是否成功'].sum()
 
-            # 修复4：避免除零错误
-            ai_success_ratio = success_sum / ai_pred_sum if ai_pred_sum > 0 else 0
-            rule_success_ratio = success_sum / rule_pred_sum if rule_pred_sum > 0 else 0
+                # 修复4：避免除零错误
+                ai_success_ratio = success_sum / ai_pred_sum if ai_pred_sum > 0 else 0
+                rule_success_ratio = success_sum / rule_pred_sum if rule_pred_sum > 0 else 0
 
-            # 修复5：计算重合成功率
-            overlap_mask = (df_pred['预测'] == 1) & (df_pred['AI预测'] == 1)
-            overlap_success = df_pred.loc[overlap_mask & (df_pred['是否成功'] == 1)].shape[0]
-            overlap_total = df_pred.loc[overlap_mask].shape[0]
-            overlap_success_ratio = overlap_success / overlap_total if overlap_total > 0 else 0
+                # 修复5：计算重合成功率
+                overlap_mask = (df_pred['预测'] == 1) & (df_pred['AI预测'] == 1)
+                overlap_success = df_pred.loc[overlap_mask & (df_pred['是否成功'] == 1)].shape[0]
+                overlap_total = df_pred.loc[overlap_mask].shape[0]
+                overlap_success_ratio = overlap_success / overlap_total if overlap_total > 0 else 0
 
-            # 创建结果DataFrame
-            result_data = {
-                "日期": [filename],
-                "AI预测成功比例": [ai_success_ratio],
-                "预测成功比例": [rule_success_ratio],
-                "重合成功比例": [overlap_success_ratio]
-            }
-            df = pd.DataFrame(result_data)
-                # except Exception as e:
-                #     print(f"处理文件 {filename} 时出错: {e}")
+                # 创建结果DataFrame ,值都使用百分比
+
+                result_data = {
+                    "日期": [filename_without_extension],
+                    "AI预测成功比例": [ai_success_ratio*100],
+                    "预测成功比例": [rule_success_ratio*100],
+                    "重合成功比例": [overlap_success_ratio*100]
+                }
+                # 将result_data 增加到 df 中
+                df = pd.concat([df, pd.DataFrame(result_data)])
+                # df = pd.concat([df, pd.DataFrame(result_data)])
+                    # except Exception as e:
+                    #     print(f"处理文件 {filename} 时出错: {e}")
         print( df)
+        output_file = os.path.join("../data/stat", f"{md.strftime('%y-%m-%d')}-{folder_name}.xlsx")
         print( output_file)
         df.to_excel(output_file, index=False)
 
