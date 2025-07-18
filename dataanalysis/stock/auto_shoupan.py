@@ -424,29 +424,43 @@ def tdx_merge_data(blockname,blockname_01):
     data_02 = data_02[:-1]
     data_02.columns = data_02.columns.str.replace(' ', '')
     data_02['代码']  = data_02['代码'].str.split('=').str[1].str.replace('"', "")
-    data_02 = data_02.sort_values(by=['代码'])
+
+    data_02.sort_values(by=['代码'], inplace=True)
+    data_02.reset_index(drop=True, inplace=True)
+
     print( data_02.head(10))
     # 合并new_data和data_02的数据，按照T列进行合并
     # data_02 按字段 代码 排序
     # data_02 = data_02.sort_values(by=['代码'])
     # print(  data_02[['T', 'T1']])
-    data_t = data_02[['代码','T', 'T1']]
-    print("排序前:")
-    print(data_t.head())
-
-    # 按'代码'列排序并重置索引
-    data_t.sort_values(by='代码', inplace=True)
-    data_t.reset_index(drop=True, inplace=True)
-
-    print("\n排序后:")
-    print(data_t.head())
-
-    print(  data_t)
+    # data_t = data_02[['代码','T', 'T1']].copy()
+    # print("排序前:")
+    # print(data_t.head())
+    #
+    # # 按'代码'列排序并重置索引
+    # data_t.sort_values(by='代码', inplace=True)
+    # data_t.reset_index(drop=True, inplace=True)
+    #
+    # print("\n排序后:")
+    # print(data_t.head())
+    #
+    # print(  data_t)
     # 合并时按照排序后的值进行合并 删除索引后重建
 
     # 按照 代码 进行合并
     # merged_data = pd.merge(new_data, data_t, left_on='代码', right_on='T')
-    merged_data = pd.merge(new_data, data_t[['T', 'T1']], left_index=True, right_index=True)
+    merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
+    # 在合并前处理代码格式
+    # new_data['代码'] = new_data['代码'].str.split('=').str[1].str.replace('"', "")
+    # data_02['代码'] = data_02['代码'].astype(str)  # 确保类型一致
+    # 替代当前合并方式
+    # merged_data = pd.merge(
+    #     new_data,
+    #     data_t[['T', 'T1']],
+    #     left_on='代码',
+    #     right_on='代码',  # 确保列名一致
+    #     how='left'
+    # )
     # merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
 
     # print( merged_data.head(100))
@@ -610,6 +624,12 @@ def predict_block_data(blockname,date='250709'):
     # 打印数据 重合值为1的数据 预测 为是或 AI预测 为1 的 数据
 
     # print(data[data['重合'] == '1'] | data[data['AI预测'] == 1] | data[data['预测'] == 1])
+
+    print(data[data['重合'] == '1'])
+
+    print(data[data['预测'] == '1'])
+
+    print(data[data['AI预测'] == 1])
 
     # 保存文件
     data.to_excel(predictions_file, index=False)
