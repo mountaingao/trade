@@ -85,17 +85,13 @@ def process_prediction_files(base_dir="../data/predictions/"):
 
 
                 # //df_pred 内容保存回原文件
-
                 file_path = os.path.join(folder_path,filename)
+
+                # 将filename 先备份到 bak 目录中，然后再写回原文件
+                os.rename(file_path, os.path.join("../data/bak/predictions/", filename))
 
                 df_pred.to_excel(file_path, index=False)
 
-                # 计算成功比例 AI预测成功比例
-                success_rate = df_pred['是否成功'].sum() / df_pred['AI预测'].sum()
-                print(f"成功比例: {success_rate:.2%}")
-                # 预测的成功率
-                predict_success_rate = df_pred['预测成功'].sum() / df_pred['预测'].sum()
-                print(f"预测的成功率: {predict_success_rate:.2%}")
                 # except Exception as e:
                 #     print(f"处理文件 {filename} 时出错: {e}")
 

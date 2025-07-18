@@ -20,6 +20,7 @@ from sklearn.metrics import classification_report, r2_score, mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score
 import os
 
+
 def generate_model_data_from_files(input_files):
     """
 根据输入文件列表生成模型数据并保存特征权重
@@ -33,6 +34,7 @@ def generate_model_data_from_files(input_files):
         df_part = pd.read_excel(file)
         dfs.append(df_part)
     df = pd.concat(dfs, ignore_index=True)
+    return df
 
 def generate_model_data(df,file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
     """

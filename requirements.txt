@@ -39,4 +39,6 @@ ipympl  # 新增：增强JupyterLab交互式绘图支持
 pynput
 keyboard
 pytest
+bayesian-optimization
+shap
 

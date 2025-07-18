@@ -63,13 +63,9 @@ def process_prediction_files(base_dir="../data/predictions/"):
         # 训练模型
         # 5. 训练模型 数据
         df = pd.concat(dfs, ignore_index=True)
-        model_xunlian.generate_model_data(df,folder_path)
+        model_xunlian.generate_model_data(df,folder_name)
 
         # 将模型写入目录中
-
-
-
-
 
 if __name__ == "__main__":
     process_prediction_files()

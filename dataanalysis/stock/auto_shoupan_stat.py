@@ -16,6 +16,41 @@ def get_previous_trading_day(date):
         previous_date -= timedelta(days=1)
     return previous_date
 
+# 示例Python代码
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+# 相关性分析
+def corr_matrix( df):
+    # 计算相关系数
+    corr_matrix = df.corr()
+
+    # 查看与目标变量的相关性
+    target_corr = corr_matrix['次日涨幅'].sort_values(ascending=False)
+
+    # 可视化
+    plt.figure(figsize=(12,8))
+    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+    plt.show()
+
+from sklearn.ensemble import RandomForestRegressor
+
+# 随机森林来分析特征
+def RandomForest_tezheng(df):
+    # 准备数据
+    X = df.drop(['次日涨幅', '序号', '名称'], axis=1)  # 移除目标变量和无关字段
+    y = df['次日涨幅']
+
+    # 训练模型
+    model = RandomForestRegressor()
+    model.fit(X, y)
+
+    # 获取特征重要性
+    feature_importances = pd.DataFrame({
+        'feature': X.columns,
+        'importance': model.feature_importances_
+    }).sort_values('importance', ascending=False)
+
 def process_prediction_files_stat(base_dir="../data/predictions/"):
     # 1. 获取当前月日（例如：今天是7月8日，则得到 "0708"）
     # 上一个交易日的月日
