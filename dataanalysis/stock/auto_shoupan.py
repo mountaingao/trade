@@ -243,6 +243,7 @@ def export_tdx_block_data(blockname):
 # 记录点 3: (1999, 1106) - Button.left - 15:51:29.611
 # 记录点 4: (1402, 828) - Button.left - 15:51:31.852
 # 记录点 5: (1327, 748) - Button.left - 15:51:37.292
+    wait_for_keypress()
     pyautogui.typewrite('34')
     # 回车
     pyautogui.press('enter')
@@ -261,8 +262,8 @@ def export_tdx_block_data(blockname):
     # 取消 不打开
     pyautogui.click(1402, 828)
     # time.sleep(12)
-    print("请确认操作已完成，按回车键继续...")
     wait_for_keypress()
+    print("请确认操作已完成，按键继续...")
     pyautogui.click(1327, 748)
     time.sleep(1)
 def tdx_change_history_list():

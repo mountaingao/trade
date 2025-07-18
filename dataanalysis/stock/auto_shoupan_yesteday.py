@@ -4,6 +4,7 @@ import json  # 假设文件是JSON格式，如果不是请替换相应的读取�
 from datetime import datetime, timedelta
 from chinese_calendar import is_workday, is_holiday
 import pandas as pd
+import auto_shoupan
 def get_previous_trading_day(date):
     previous_date = date - timedelta(days=1)
     while not is_workday(previous_date) or is_holiday(previous_date):
@@ -18,7 +19,7 @@ def process_prediction_files(base_dir="../data/predictions/"):
     previous_mmdd = get_previous_trading_day(md).strftime("%m%d")
     print(previous_mmdd)
     # current_mmdd = datetime.now().strftime("%m%d")
-    previous_mmdd = '0716'
+    # previous_mmdd = '0716'
     # 2. 遍历base_dir下的所有文件夹
     for folder_name in os.listdir(base_dir):
         folder_path = os.path.join(base_dir, folder_name)
@@ -38,15 +39,19 @@ def process_prediction_files(base_dir="../data/predictions/"):
             if len(filename) >= 4 and filename[:4] == previous_mmdd:
                 file_path = os.path.join(folder_path, filename)
                 print(f"找到匹配文件: {file_path}")
+                filename_without_extension = os.path.splitext(filename)[0]
+                # 另一个文件
+                today_mmdd = datetime.now().strftime('%m%d')
+                tdx_files = f"../data/tdx/{filename_without_extension}{today_mmdd}.xls"
+                print("通达信导出文件"+filename_without_extension+today_mmdd)
 
+                # tdx_files = f"../data/tdx/071520250717.xls"
+                auto_shoupan.export_tdx_block_data(filename_without_extension+today_mmdd)
                 # try:
                 # 4. 读取文件内容
                 df_pred = pd.read_excel(file_path)
                 print(df_pred.head(100))
-                # 另一个文件
-                today_mmdd = datetime.now().strftime('%m%d')
-                # tdx_files = f"../data/tdx/{today_mmdd}*.xls"
-                tdx_files = f"../data/tdx/071520250717.xls"
+
 
                 print(tdx_files)
                 df_today = pd.read_csv(tdx_files, encoding='GBK', sep='\t', header=0)
@@ -81,10 +86,16 @@ def process_prediction_files(base_dir="../data/predictions/"):
 
                 # //df_pred 内容保存回原文件
 
-                file_path = os.path.join(folder_path,"00.xlsx")
+                file_path = os.path.join(folder_path,filename)
 
                 df_pred.to_excel(file_path, index=False)
 
+                # 计算成功比例 AI预测成功比例
+                success_rate = df_pred['是否成功'].sum() / df_pred['AI预测'].sum()
+                print(f"成功比例: {success_rate:.2%}")
+                # 预测的成功率
+                predict_success_rate = df_pred['预测成功'].sum() / df_pred['预测'].sum()
+                print(f"预测的成功率: {predict_success_rate:.2%}")
                 # except Exception as e:
                 #     print(f"处理文件 {filename} 时出错: {e}")
 

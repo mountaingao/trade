@@ -12,11 +12,37 @@
         "database": "trade"
     },
     "ths_positon": {
-        "x": 960,
-        "y": 1060,
-        "c_x": 1100,
-        "c_y": 300,
         "1920x1080": {
+            "self_selection": {
+                "x": 100,
+                "y": 200
+            },
+            "content_panel": {
+                "x": 300,
+                "y": 400
+            },
+            "menu_item1": {
+                "x": 500,
+                "y": 600
+            },
+            "menu_item2": {
+                "x": 700,
+                "y": 800
+            },
+            "dialog_confirm": {
+                "x": 900,
+                "y": 1000
+            },
+            "select_button": {
+                "x": 1100,
+                "y": 1200
+            },
+            "save_button": {
+                "x": 1300,
+                "y": 1400
+            }
+        },
+        "2560x1440": {
             "self_selection": {
                 "x": 195,
                 "y": 705
@@ -44,36 +70,6 @@
             "save_button": {
                 "x": 1086,
                 "y": 723
-            }
-        },
-        "2560x1440": {
-            "self_selection": {
-                "x": 193,
-                "y": 333
-            },
-            "content_panel": {
-                "x": 425,
-                "y": 189
-            },
-            "menu_item1": {
-                "x": 500,
-                "y": 664
-            },
-            "menu_item2": {
-                "x": 740,
-                "y": 664
-            },
-            "dialog_confirm": {
-                "x": 1506,
-                "y": 556
-            },
-            "select_button": {
-                "x": 1971,
-                "y": 1077
-            },
-            "save_button": {
-                "x": 1407,
-                "y": 914
             }
         }
     }
