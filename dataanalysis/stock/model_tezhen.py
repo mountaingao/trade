@@ -380,6 +380,11 @@ class DynamicFeatureWeighter:
 # adjusted_weights = model.adjusted_weights
 def stability_index(importance_list):
     """计算各特征排名变化的标准差"""
+    # 修复：处理单个DataFrame输入的情况
+    if isinstance(importance_list, pd.DataFrame):
+        # 如果是DataFrame，提取importance列作为Series
+        importance_list = [importance_list['importance']]
+    # 确保输入是Series列表
     ranks = pd.DataFrame([s.rank(ascending=False) for s in importance_list])
     return ranks.std().mean()
 
@@ -450,11 +455,11 @@ optimizer = BayesianOptimization(
 )
 # optimizer.maximize(n_iter=10)
 def trading_signal(row):
-    if row['预测涨幅'] > 5 and row['资金流强度'] > 1.5:
+    if row['AI幅度'] > 5 and row['当日资金流入'] > 1.5:
         return '强买入'
-    elif row['预测涨幅'] > 3 and row['净流入'] > 0:
+    elif row['AI幅度'] > 3 and row['当日资金流入'] > 0:
         return '买入'
-    elif row['预测涨幅'] < -3:
+    elif row['AI幅度'] < -3:
         return '卖出'
     else:
         return '观望'
@@ -498,7 +503,7 @@ if __name__ == "__main__":
     # 假设df是您的DataFrame，'次日涨幅'是目标变量
     # 使用多个数据集训练并生成模型
     files= [
-        "../alert/0630.xlsx",
+        # "../alert/0630.xlsx",
         "../alert/0701.xlsx",
         "../alert/0702.xlsx",
         "../alert/0703.xlsx",

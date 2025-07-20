@@ -682,8 +682,9 @@ if __name__ == '__main__':
     # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
     file = merge_block_data(blockname)
 
+    model_name = get_time_directory()
     # 计算结果，返回符合条件的股票代码
-    predict_block_data(blockname)
+    predict_block_data(blockname,model_name)
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
