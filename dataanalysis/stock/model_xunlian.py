@@ -18,6 +18,11 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import classification_report, r2_score, mean_squared_error
 from sklearn.metrics import accuracy_score, precision_score
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_absolute_error, accuracy_score
+
 import os
 
 
@@ -35,6 +40,133 @@ def generate_model_data_from_files(input_files):
         dfs.append(df_part)
     df = pd.concat(dfs, ignore_index=True)
     return df
+
+# 随机森林模型创建
+def random_forest_feature_analysis(df, target_col, problem_type='regression',
+                                   test_size=0.2, random_state=42, n_estimators=100,
+                                   plot_top_n=15, figsize=(12, 8)):
+    """
+    使用随机森林分析特征重要性
+
+    参数:
+    -----------
+    df : DataFrame
+        包含特征和目标变量的数据集
+    target_col : str
+        目标变量列名
+    problem_type : str ('regression' 或 'classification')
+        问题类型，默认为回归
+    test_size : float
+        测试集比例，默认为0.2
+    random_state : int
+        随机种子，默认为42
+    n_estimators : int
+        随机森林中树的数量，默认为100
+    plot_top_n : int
+        可视化显示最重要的前N个特征，默认为15
+    figsize : tuple
+        图形大小，默认为(12, 8)
+
+    返回:
+    -----------
+    feature_importance_df : DataFrame
+        包含特征重要性排序的DataFrame
+    model : 训练好的随机森林模型
+    """
+
+    # 复制数据避免修改原数据
+    data = df.copy()
+    print("数据集大小:", data.shape)
+
+    # 检查目标列是否存在
+    if target_col not in data.columns:
+        raise ValueError(f"目标列 '{target_col}' 不存在于数据中")
+
+    # 新增：检查目标列缺失值并处理
+    if data[target_col].isna().any():
+        na_count = data[target_col].isna().sum()
+        print(f"警告: 目标列 '{target_col}' 包含 {na_count} 个缺失值，已自动移除")
+        data = data.dropna(subset=[target_col])
+
+    # 新增：目标列数值类型转换
+    try:
+        # 尝试转换为数值类型，无法转换的值设为NaN
+        data[target_col] = pd.to_numeric(data[target_col], errors='coerce')
+        # 把不符合的数据行打印出来
+        # print(data[data[target_col].apply(lambda x: not isinstance(x, (int, float)))])
+        # 检查转换后是否有新的NaN
+        if data[target_col].isna().any():
+            invalid_count = data[target_col].isna().sum()
+            print(f"警告: 目标列 '{target_col}' 包含 {invalid_count} 个无效值(如'--')，已自动移除")
+            # print(data[target_col])
+            data = data.dropna(subset=[target_col])
+    except Exception as e:
+        print(f"目标列转换错误: {e}")
+        raise
+
+    # 分离特征和目标
+    X = data.drop(columns=[target_col])
+    y = data[target_col]
+
+    # 处理分类特征
+    categorical_cols = X.select_dtypes(include=['object', 'category']).columns
+    if not categorical_cols.empty:
+        print(f"正在对分类列进行编码: {list(categorical_cols)}")
+        le = LabelEncoder()
+        for col in categorical_cols:
+            X[col] = le.fit_transform(X[col].astype(str))
+
+    # 划分训练集和测试集
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state)
+
+    # 初始化模型
+    if problem_type == 'regression':
+        model = RandomForestRegressor(n_estimators=n_estimators,
+                                      random_state=random_state)
+        metric_name = 'MAE'
+    elif problem_type == 'classification':
+        model = RandomForestClassifier(n_estimators=n_estimators,
+                                       random_state=random_state)
+        metric_name = 'Accuracy'
+    else:
+        raise ValueError("problem_type 必须是 'regression' 或 'classification'")
+
+    # 训练模型
+    model.fit(X_train, y_train)
+
+    # 预测并评估
+    y_pred = model.predict(X_test)
+    if problem_type == 'regression':
+        metric_value = mean_absolute_error(y_test, y_pred)
+    else:
+        metric_value = accuracy_score(y_test, y_pred)
+
+    print(f"\n模型评估 ({metric_name}): {metric_value:.4f}")
+
+    # 获取特征重要性
+    importances = model.feature_importances_
+    feature_importance_df = pd.DataFrame({
+        'feature': X.columns,
+        'importance': importances
+    }).sort_values('importance', ascending=False)
+
+    # 打印最重要的特征
+    print("\n特征重要性排名:")
+    print(feature_importance_df.head(plot_top_n).to_string(index=False))
+
+    # 可视化
+    # plt.figure(figsize=figsize)
+    # top_features = feature_importance_df.head(plot_top_n)
+    # sns.barplot(x='importance', y='feature', data=top_features, palette='viridis')
+    # plt.title(f'Top {plot_top_n} 最重要的特征 (随机森林)')
+    # plt.xlabel('重要性分数')
+    # plt.ylabel('特征')
+    # plt.tight_layout()
+    # plt.savefig('feature_importance.png')  # 保存为图片文件
+    # print("特征重要性图已保存为 feature_importance.png")
+
+    return feature_importance_df, model
 
 def generate_model_data(df,file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
     """
