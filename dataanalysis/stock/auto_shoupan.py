@@ -610,7 +610,7 @@ def get_time_directory(now=datetime.datetime.now().time()):
     elif datetime.time(15, 0) <= now <= datetime.time(18, 30):
         return '1600'
     else:
-        return 'other'
+        return '250721'
 
 # 推理模型
 def predict_block_data(blockname,date='250721'):
@@ -665,7 +665,6 @@ def no_step_shoupan():
     ths_get_block_data(blockname)
     print("数据已经生成，请修改是否领涨字段的值，然后保存文件，然后按空格键继续...")
 
-    # blockname = '07161523'
     #
     wait_for_keypress()
     # # 合并两个数据
@@ -673,6 +672,7 @@ def no_step_shoupan():
     # # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
     file = merge_block_data(blockname)
     #07211414
+
     model_name = get_time_directory()
     # # 计算结果，返回符合条件的股票代码
     predict_block_data(blockname,model_name)
@@ -723,6 +723,8 @@ def step_by_step_shoupan():
     if current_step == "predict_block_data":
         blockname = step_data["blockname"]
         time_dir = get_time_directory()
+        blockname = '07211543'
+
         predict_block_data(blockname, time_dir)
         save_status("completed")
 
@@ -738,9 +740,9 @@ def main():
 
 if __name__ == '__main__':
 
-    no_step_shoupan()
+    # no_step_shoupan()
 
-    # step_by_step_shoupan()
+    step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
