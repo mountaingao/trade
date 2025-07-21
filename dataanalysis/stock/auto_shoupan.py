@@ -15,6 +15,20 @@ with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为
 
 ths_positon = config['ths_positon']
 
+STATUS_FILE = "../status/status.json"
+
+def save_status(step_name, data=None):
+    status = {"step": step_name, "data": data or {}}
+    with open(STATUS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(status, f, ensure_ascii=False, indent=2)
+
+def load_status():
+    try:
+        with open(STATUS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"step": "start", "data": {}}
+
 # 假设它们的图标在桌面上，你可以通过图标位置来启动
 # pyautogui.click(x=1076, y=1411)  # 修改坐标以匹配你的桌面图标位置
 # time.sleep(2)  # 等待软件启动
@@ -491,6 +505,7 @@ def tdx_merge_data(blockname,blockname_01):
 # 同花顺数据处理
 def ths_get_block_data(blockname):
     # ths导入
+    wait_for_keypress()
     # 4、打开同花顺，创建新的板块，并导入临时文件夹中的文件，可以手工操作，也可以通过代码实现
     create_ths_block_from_file(blockname)
     print("同花顺板块创建已完成！")
@@ -598,7 +613,7 @@ def get_time_directory(now=datetime.datetime.now().time()):
         return 'other'
 
 # 推理模型
-def predict_block_data(blockname,date='250709'):
+def predict_block_data(blockname,date='250721'):
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
     # 使用多个数据集训练并生成模型 , 需要按照日期更新到最新的模型
     model = {
@@ -607,6 +622,7 @@ def predict_block_data(blockname,date='250709'):
         'reg_model': f"../models/{date}_model_reg.json",
         'clf_model': f"../models/{date}_model_clf.json"}
 
+    print( model)
     #预测文件中的数据
     # 按照时间确定目录名
     time_dir = get_time_directory()  # 获取时间目录
@@ -636,18 +652,35 @@ def predict_block_data(blockname,date='250709'):
     data.to_excel(predictions_file, index=False)
     return predictions_file
 
-def main():
-    print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
-    print(pyautogui.size())
-    # 登录同花顺
-    login_to_tonghuashun()
-    time.sleep(10)
+def no_step_shoupan():
+    x, y = pyautogui.position()
+    print(x, y)
+    # 屏幕分辨率
+    x, y = pyautogui.size()
+    print(x, y)
+    wait_for_keypress()
+    # 通达信数据获取，导出和保存
+    blockname = tdx_get_block_data()
+    # 同花顺数据获取，导出和保存
+    ths_get_block_data(blockname)
+    print("数据已经生成，请修改是否领涨字段的值，然后保存文件，然后按空格键继续...")
 
-    # 下单示例
-    buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
+    # blockname = '07161523'
+    #
+    wait_for_keypress()
+    # # 合并两个数据
+    # # 6、 分析和整合数据，生成需要的数据内容
+    # # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
+    file = merge_block_data(blockname)
+    #07211414
+    model_name = get_time_directory()
+    # # 计算结果，返回符合条件的股票代码
+    predict_block_data(blockname,model_name)
 
-if __name__ == '__main__':
-
+def step_by_step_shoupan():
+    status = load_status()
+    current_step = status["step"]
+    step_data = status["data"]
     # 收盘执行选股，导出数据，保存数据，并获取关键数据
     # 1、启动通达信
     # 启动同花顺或通达信
@@ -666,25 +699,48 @@ if __name__ == '__main__':
     x, y = pyautogui.size()
     print(x, y)
     wait_for_keypress()
-    # 通达信数据获取，导出和保存
-    blockname = tdx_get_block_data()
+    # 步骤1: 通达信数据处理
+    if current_step in ["start", "tdx_get_block_data"]:
+        blockname = step_data.get("blockname") or tdx_get_block_data()
+        save_status("ths_get_block_data", {"blockname": blockname})
+        # blockname = tdx_get_block_data()
+
+    # 步骤2: 同花顺数据处理
+    if current_step in ["ths_get_block_data", "merge_block_data"]:
+        blockname = step_data["blockname"]
+        ths_get_block_data(blockname)
+        save_status("merge_block_data", {"blockname": blockname})
 
     wait_for_keypress()
-    # 同花顺数据获取，导出和保存
-    ths_get_block_data(blockname)
-    print("数据已经生成，请修改是否领涨字段的值，然后保存文件，然后按空格键继续...")
-
-    # blockname = '07161523'
+    # 步骤3: 数据合并
+    if current_step in ["merge_block_data", "predict_block_data"]:
+        blockname = step_data["blockname"]
+        merge_block_data(blockname)
+        save_status("predict_block_data", {"blockname": blockname})
 
     wait_for_keypress()
-    # 合并两个数据
-    # 6、 分析和整合数据，生成需要的数据内容
-    # new_data = data_03[['代码', '名称', '净额', '净流入', '净量']]2507111818
-    file = merge_block_data(blockname)
+    # 步骤4: 预测执行
+    if current_step == "predict_block_data":
+        blockname = step_data["blockname"]
+        time_dir = get_time_directory()
+        predict_block_data(blockname, time_dir)
+        save_status("completed")
 
-    model_name = get_time_directory()
-    # 计算结果，返回符合条件的股票代码
-    predict_block_data(blockname,model_name)
+def main():
+    print(pyautogui.position())  # 返回当前鼠标位置的坐标 (x, y)
+    print(pyautogui.size())
+    # 登录同花顺
+    login_to_tonghuashun()
+    time.sleep(10)
+
+    # 下单示例
+    buy_stock('600000', 10.0, 100)  # 买入股票代码为600000，价格为10.0，数量为100
+
+if __name__ == '__main__':
+
+    no_step_shoupan()
+
+    # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10

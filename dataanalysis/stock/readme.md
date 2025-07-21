@@ -85,3 +85,16 @@ jupyter notebook
 
 pip install pynput 
 
+
+
+
+几个程序的说明：
+1、auto_shoupan.py  每日运行的程序，每天可以运行多次，生成不同时间节点的数据，供日后分析使用， todo 调用时间节点模型还有问题，增加记录点以后无法正确运行
+2、auto_shoupan_test.py   运行某一段未完成的程序，处理数据
+3、auto_shoupan_yesteday.py   处理昨日收盘数据
+4、auto_shoupan_stat.py  统计预测的成功率，应该结合回归和值来分析，todo 此处需完善
+5、model_xunlian.py   训练模型,各个时间段的单独模型需要每日训练
+
+todo 
+写一个自动运行脚本，在启动时就开始运行
+

@@ -363,6 +363,12 @@ if __name__ == "__main__":
         "../alert/0704.xlsx",
         "../alert/0707.xlsx",
         "../alert/0708.xlsx",
+        "../alert/0709.xlsx",
+        "../alert/0710.xlsx",
+        "../alert/0711.xlsx",
+        "../alert/0714.xlsx",
+        "../alert/0715.xlsx",
+        "../alert/0716.xlsx",
      ]
     model = generate_model_data(files)
     print(model)
