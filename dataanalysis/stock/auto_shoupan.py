@@ -401,8 +401,8 @@ def tdx_get_block_data():
     print("导出数据已完成！")
     #右键选择历史数据
     tdx_change_history_list()
-
-    blockname_01 = blockname+'_01'
+    # 避免中文输入法的问题
+    blockname_01 = blockname+'-01'
     # 导出数据
     export_tdx_block_data(blockname_01)
     print("导出历史数据已完成！")
@@ -673,9 +673,10 @@ def no_step_shoupan():
     file = merge_block_data(blockname)
     #07211414
 
-    model_name = get_time_directory()
+    # model_name = get_time_directory()
     # # 计算结果，返回符合条件的股票代码
-    predict_block_data(blockname,model_name)
+    # predict_block_data(blockname,model_name)
+    predict_block_data(blockname)
 
 def step_by_step_shoupan():
     status = load_status()
@@ -740,9 +741,9 @@ def main():
 
 if __name__ == '__main__':
 
-    # no_step_shoupan()
+    no_step_shoupan()
 
-    step_by_step_shoupan()
+    # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10

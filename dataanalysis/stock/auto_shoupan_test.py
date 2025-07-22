@@ -58,8 +58,11 @@ if __name__ == '__main__':
         # "07181435",
         # "07210943",
         # "07211131",
-        "07211414",
-        "07211543",
+        # "07211414",
+        # "07211543",
+        # "07220947",
+        # "07221140",
+        "07221442",
     ]
     # 重新合并数据并计算07211131
     # merge_test_data(blocknames)
@@ -67,9 +70,10 @@ if __name__ == '__main__':
 
     # merge_tdx_data(blocknames)
 
-    start_predict_data(blocknames)
 
     # 从同花顺开始执行程序
     # blockname = "07181144"
     #
     # start_ths_data(blocknames)
+
+    start_predict_data(blocknames)

@@ -41,6 +41,7 @@ def generate_model_data_from_files(input_files):
     df = pd.concat(dfs, ignore_index=True)
     return df
 
+
 # 随机森林模型创建
 def random_forest_feature_analysis(df, target_col, problem_type='regression',
                                    test_size=0.2, random_state=42, n_estimators=100,
@@ -155,6 +156,8 @@ def random_forest_feature_analysis(df, target_col, problem_type='regression',
     print("\n特征重要性排名:")
     print(feature_importance_df.head(plot_top_n).to_string(index=False))
 
+    # 保存模型到model目录中
+    model_save_type(model, file_prefix)
     # 可视化
     # plt.figure(figsize=figsize)
     # top_features = feature_importance_df.head(plot_top_n)
@@ -506,12 +509,20 @@ if __name__ == "__main__":
         "../alert/0707.xlsx",
         "../alert/0708.xlsx",
      ]
-    model = generate_model_data_from_files(files)
-    print(model)
+    # 读出文件中的数据
+    df = generate_model_data_from_files(files)
+    print(df)
+    # 随机森林 的模型建立和测试
+    random_forest_feature_analysis(df, '次日涨幅', problem_type='regression')
+
+    exit()
+    # xgbboot 的模型建立和测试
     # todo 模型调优还没有做
+
+
     
     # 预测文件数据
-    predictions_model_data_file("../alert/0709.xlsx",model)
+    # predictions_model_data_file("../alert/0709.xlsx",model)
     
     # 新增：单行数据预测示例
     print("\n===== 开始单行数据测试 =====")
