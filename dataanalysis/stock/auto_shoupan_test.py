@@ -39,13 +39,20 @@ def start_ths_data(blocknames):
 
         auto_shoupan.predict_block_data(blockname)
 
+def start_merge_and_predict_data(blocknames):
+    """重新合并数据"""
+    # 这是一个数组，逐个去读并合并数据
+    for blockname in blocknames:
+
+        auto_shoupan.merge_block_data(blockname)
+        auto_shoupan.predict_block_data(blockname)
+
 def start_predict_data(blocknames):
     """重新合并数据"""
     # 这是一个数组，逐个去读并合并数据
     for blockname in blocknames:
 
         auto_shoupan.predict_block_data(blockname)
-
 
 
 if __name__ == '__main__':
@@ -63,7 +70,7 @@ if __name__ == '__main__':
         # "07220947",
         # "07221140",
         # "07221442",
-        "07231709",
+        "07251136",
     ]
     # 重新合并数据并计算07211131
     # merge_test_data(blocknames)
@@ -75,6 +82,9 @@ if __name__ == '__main__':
     # 从同花顺开始执行程序
     # blockname = "07181144"
     #
-    start_ths_data(blocknames)
+    # start_ths_data(blocknames)
+
+
+    start_merge_and_predict_data(blocknames)
 
     # start_predict_data(blocknames)
