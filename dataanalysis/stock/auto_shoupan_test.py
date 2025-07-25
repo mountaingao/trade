@@ -70,10 +70,10 @@ if __name__ == '__main__':
         # "07220947",
         # "07221140",
         # "07221442",
-        "07251136",
+        "07181529",
     ]
     # 重新合并数据并计算07211131
-    # merge_test_data(blocknames)
+    merge_test_data(blocknames)
 
 
     # merge_tdx_data(blocknames)
@@ -85,6 +85,6 @@ if __name__ == '__main__':
     # start_ths_data(blocknames)
 
 
-    start_merge_and_predict_data(blocknames)
+    # start_merge_and_predict_data(blocknames)
 
     # start_predict_data(blocknames)

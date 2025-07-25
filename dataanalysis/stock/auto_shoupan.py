@@ -7,6 +7,7 @@ from model_xunlian_alert_1 import predictions_model_data_file,predictions_model_
 import keyboard
 import numpy as np
 import datetime  # 新增导入datetime模块
+from tdx_mini_data import process_multiple_codes
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
@@ -515,7 +516,8 @@ def ths_get_block_data(blockname):
     export_ths_block_data(blockname)
     print("同花顺数据导出已完成！")
 
-
+def get_minite_band_width(df):
+    return process_multiple_codes(df)
 # 合并两个文件的数据，并返回需要的格式的数据
 def merge_block_data(blockname):
     # 判断两个文件是否存在
@@ -527,6 +529,16 @@ def merge_block_data(blockname):
         return None
 
     tdx_data = pd.read_excel("../data/tdx/"+blockname+'_data.xlsx')
+    codes = tdx_data['代码']
+    # 转为数组
+    codes = codes.to_numpy()
+    # 获取5分钟数据
+    minite_data = get_minite_band_width( codes)
+    minite_data = pd.DataFrame(minite_data)
+    # minite_data 和 tdx_data 合并 根据代码和code 字段进行，或者顺序直接合并
+    tdx_data = pd.merge(tdx_data, minite_data, left_index=True, right_index=True)
+    print(tdx_data.head(5))
+
 
     print( tdx_data.head(5))
 
