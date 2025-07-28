@@ -229,6 +229,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(results)
     print(df)
 
+    # todo 5分钟数据读取时间点以前的数据，结合最小的值和净量来判断是否可以买入，第二天爆发
     # 读取目录中的文件 dataanalysis/data/predictions/1600/07281517_1518.xlsx  获取代码
     # file_path = "../data/predictions/1600/07281517_1518.xlsx"
     # df = pd.read_excel(file_path)
