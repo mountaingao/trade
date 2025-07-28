@@ -188,11 +188,19 @@ def process_single_code(code: str) -> Dict:
     df_boll = calculate_boll(df)
     print( df_boll)
     # latest_boll = df_boll['band_width'].iloc[-1]
+    # 得到band_width最小值 和最后的比较
+    latest_boll = df_boll['band_width'].iloc[-1]
+    min_value = df['band_width'].min()
+    max_value = df['band_width'].max()
+
 
     return {
         'code': code,
         # 'latest_macd': latest_macd,
-        'band_width': df_boll['band_width'].iloc[-1]
+        'band_width': latest_boll,
+        'min_value': min_value,
+        'max_value': max_value,
+        'is_boll_low': latest_boll <= min_value
     }
 
 def process_multiple_codes(codes: List[str]) -> List[Dict]:
