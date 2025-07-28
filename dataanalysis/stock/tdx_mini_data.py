@@ -39,19 +39,21 @@ def get_minute_data(code: str) -> pd.DataFrame:
         # 连接通达信服务器
         # if not api.connect('14.215.128.18', 7709):  # 免费服务器，可替换为其他服务器
         if not api.connect('123.125.108.90', 7709):  # 免费服务器，可替换为其他服务器
+        # if not api.connect('183.201.253.76', 7709):  # 免费服务器，可替换为其他服务器
             raise ConnectionError("无法连接到通达信服务器")
 
         market_code = get_market_code(code)
         stock_code = get_stock_code(code)
 
-        # 获取最近5天的5分钟K线数据
+        # 获取最近10天的5分钟K线数据
         data = []
-        for i in range(5):  # 最多获取5天的数据
+        # 修改为获取10天数据，每天48个5分钟周期
+        for i in range(10):  # 获取10天的数据
             kline_data = api.get_security_bars(
                 TDXParams.KLINE_TYPE_5MIN, 
                 market_code, 
                 stock_code, 
-                (4-i) * 48,  # 每天最多48个5分钟周期
+                (9-i) * 48,  # 每天最多48个5分钟周期，现在获取10天数据
                 48
             )
             if kline_data:
@@ -148,7 +150,7 @@ def calculate_macd(df: pd.DataFrame, short=12, long=26, signal=9) -> pd.DataFram
 
 def calculate_boll(df: pd.DataFrame, window=20, num_std=2) -> pd.DataFrame:
     """计算布林带指标"""
-    df = df.copy()
+    # df = df.copy()
     df['ma'] = df['close'].rolling(window=window).mean()
     df['std'] = df['close'].rolling(window=window).std()
     df['upper'] = df['ma'] + num_std * df['std']
@@ -190,9 +192,12 @@ def process_single_code(code: str) -> Dict:
     # latest_boll = df_boll['band_width'].iloc[-1]
     # 得到band_width最小值 和最后的比较
     latest_boll = df_boll['band_width'].iloc[-1]
-    min_value = df['band_width'].min()
-    max_value = df['band_width'].max()
+    # 修复：使用df_boll而不是df来获取band_width列
+    min_value = df_boll['band_width'].min()
+    max_value = df_boll['band_width'].max()
 
+    # 修复除零错误：检查min_value是否为0
+    is_boll_low = latest_boll / min_value if min_value != 0 else 0
 
     return {
         'code': code,
@@ -200,7 +205,7 @@ def process_single_code(code: str) -> Dict:
         'band_width': latest_boll,
         'min_value': min_value,
         'max_value': max_value,
-        'is_boll_low': latest_boll <= min_value
+        'is_boll_low': is_boll_low
     }
 
 def process_multiple_codes(codes: List[str]) -> List[Dict]:
@@ -216,10 +221,23 @@ def process_multiple_codes(codes: List[str]) -> List[Dict]:
 # 示例调用
 if __name__ == "__main__":
     codes = [
-        "300922",
+        "300436",
         "300224",
              ]
     results = process_multiple_codes(codes)
     # 将results 转成pd，并打印出来
     df = pd.DataFrame(results)
     print(df)
+
+    # 读取目录中的文件 dataanalysis/data/predictions/1600/07281517_1518.xlsx  获取代码
+    # file_path = "../data/predictions/1600/07281517_1518.xlsx"
+    # df = pd.read_excel(file_path)
+    # print(df)
+    # codes = df['代码'].to_list()
+    # results = process_multiple_codes(codes)
+    # print( results)
+    # # 将result 转成pd，和df 合并，按照code 和 代码 相等的方法进行
+    # df_bw = pd.DataFrame(results)
+    # df = pd.merge(df,df_bw, left_index=True, right_index=True)
+    # file_path = "../data/predictions/1600/07281517_151800.xlsx"
+    # df.to_excel(file_path)

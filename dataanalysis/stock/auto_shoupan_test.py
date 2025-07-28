@@ -70,7 +70,8 @@ if __name__ == '__main__':
         # "07220947",
         # "07221140",
         # "07221442",
-        "07181529",
+        # "07181529",
+        "07281517",
     ]
     # 重新合并数据并计算07211131
     merge_test_data(blocknames)
@@ -88,3 +89,5 @@ if __name__ == '__main__':
     # start_merge_and_predict_data(blocknames)
 
     # start_predict_data(blocknames)
+
+    # minite_data = get_minite_band_width( blocknames)
