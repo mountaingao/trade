@@ -721,9 +721,9 @@ def tdx_merge_data(blockname,blockname_01):
     # print(  data_t)
     # 合并时按照排序后的值进行合并 删除索引后重建
 
-    # 按照 代码 进行合并
+    # 按照 代码 进行合并 Q	Q_1	Q3
     # merged_data = pd.merge(new_data, data_t, left_on='代码', right_on='T')
-    merged_data = pd.merge(new_data, data_02[['T']], left_index=True, right_index=True)
+    merged_data = pd.merge(new_data, data_02[['T', 'Q', 'Q_1','Q3']], left_index=True, right_index=True)
     # 在合并前处理代码格式
     # new_data['代码'] = new_data['代码'].str.split('=').str[1].str.replace('"', "")
     # data_02['代码'] = data_02['代码'].astype(str)  # 确保类型一致
