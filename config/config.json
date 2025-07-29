@@ -1,10 +1,10 @@
 {
-    "tdxdir": "D:/zd_haitong/",
+    "tdxdir": "D:/new_haitong/",
     "tempdir": "D:\\temp",
     "istest": 0,
     "debug": "True",
     "file_path_test": "alert1.txt",
-    "file_path": "D:/BaiduSyncdisk/个人/通达信/ALERT/alert.txt",
+    "file_path": "F:/baidu/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt",
     "db_config": {
         "host": "localhost",
         "user": "root",

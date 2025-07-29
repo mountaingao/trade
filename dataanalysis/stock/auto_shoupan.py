@@ -206,6 +206,49 @@ def export_stock_data(stock):
 # 完成自动下单，手工确认，自动化交易
 # 通达信选股
 def select_tdx_block_list():
+    # 获取当前屏幕分辨率
+    screen_width, screen_height = pyautogui.size()
+    resolution_key = f"{screen_width}x{screen_height}"
+    
+    # 默认坐标配置
+    default_tdx_positions = {
+        '1920x1080': {
+            'join_condition': (1251, 568),
+            'select_to_block': (1431, 860),
+            'new_block': (1497, 570),
+            'confirm_new_block': (1250, 760),
+            'confirm_selection': (1478, 815),
+            'finish_selection': (1509, 884)
+        },
+        '2560x1440': {
+            'join_condition': (1668, 757),
+            'select_to_block': (1908, 1147),
+            'new_block': (1996, 760),
+            'confirm_new_block': (1667, 1013),
+            'confirm_selection': (1971, 1087),
+            'finish_selection': (2012, 1179)
+        },
+        '3840x2160': {
+            'join_condition': (1881, 804),
+            'select_to_block': (2169, 1323),
+            'new_block': (2273, 809),
+            'confirm_new_block': (1831, 1150),
+            'confirm_selection': (2268, 1242),
+            'finish_selection': (2320, 1371)
+        }
+    }
+    
+    # 如果当前分辨率没有配置，则使用默认1920x1080的配置并缩放
+    if resolution_key not in default_tdx_positions:
+        print(f"未找到{resolution_key}分辨率的配置，使用1920x1080配置并进行缩放")
+        base_positions = default_tdx_positions['1920x1080']
+        scale_x = screen_width / 1920
+        scale_y = screen_height / 1080
+        tdx_positions = {}
+        for key, (x, y) in base_positions.items():
+            tdx_positions[key] = (int(x * scale_x), int(y * scale_y))
+    else:
+        tdx_positions = default_tdx_positions[resolution_key]
 
 # 记录点 1: (1251, 568) - Button.left - 15:38:28.446
 # 记录点 2: (1431, 860) - Button.left - 15:38:30.269
@@ -218,38 +261,79 @@ def select_tdx_block_list():
     # 2、执行选股步骤，填写导出文件目录07111646
     ctrl_t = pyautogui.hotkey('ctrl', 't')
     print("请选择指标...")
+    print(tdx_positions)
     wait_for_keypress()
 
     time.sleep(0.5)
     # 点击加入条件
-    pyautogui.click(1251, 568)
+    pyautogui.click(*tdx_positions['join_condition'])
     # 点击选股入板块
-    pyautogui.click(1431, 860)
+    pyautogui.click(*tdx_positions['select_to_block'])
     time.sleep(0.2)
     # 点击新建板块
-    pyautogui.click(1497, 570)
-    time.sleep(0.2)
-    # 输入文件名34
-
+    pyautogui.click(*tdx_positions['new_block'])
+    time.sleep(0.5)
+    # 输入文件名
     blockname = pd.Timestamp.now().strftime("%m%d%H%M")
     print(blockname)
     pyautogui.typewrite(blockname)
     # 点击确定
-    pyautogui.click(1250, 760)
+    pyautogui.click(*tdx_positions['confirm_new_block'])
     time.sleep(0.5)
     # 再点击确定，等待结果
-    pyautogui.click(1478, 815)
+    pyautogui.click(*tdx_positions['confirm_selection'])
     # 等10s 或者等待确认键
 
     # time.sleep(15)
     # 修改为：
     print("请确认操作已完成，按回车键继续...")
     wait_for_keypress()
-    pyautogui.click(1509, 884)
+    pyautogui.click(*tdx_positions['finish_selection'])
 
     return blockname
 # 通达信数据导出
 def export_tdx_block_data(blockname):
+    # 获取当前屏幕分辨率
+    screen_width, screen_height = pyautogui.size()
+    resolution_key = f"{screen_width}x{screen_height}"
+    
+    # 默认坐标配置
+    default_export_positions = {
+        '1920x1080': {
+            'all_data': (1200, 738),
+            'browse_button': (1462, 788),
+            'save_button': (1999, 1106),
+            'cancel_open': (1402, 828),
+            'final_confirm': (1327, 748)
+        },
+        '2560x1440': {
+            'all_data': (1600, 984),
+            'browse_button': (1949, 1051),
+            'save_button': (2665, 1475),
+            'cancel_open': (1869, 1104),
+            'final_confirm': (1770, 997)
+        },
+        '3840x2160': {
+            'all_data': (1786, 1106),
+            'browse_button': (2271, 1199),
+            'save_button': (2758, 1440),
+            'cancel_open': (2114, 1254),
+            'final_confirm': (2009, 1124)
+        }
+    }
+    
+    # 如果当前分辨率没有配置，则使用默认1920x1080的配置并缩放
+    if resolution_key not in default_export_positions:
+        print(f"未找到{resolution_key}分辨率的配置，使用1920x1080配置并进行缩放")
+        base_positions = default_export_positions['1920x1080']
+        scale_x = screen_width / 1920
+        scale_y = screen_height / 1080
+        export_positions = {}
+        for key, (x, y) in base_positions.items():
+            export_positions[key] = (int(x * scale_x), int(y * scale_y))
+    else:
+        export_positions = default_export_positions[resolution_key]
+
     #
 #     # 导出当前文件内容  tdx 导出功能
 #     开始记录屏幕点击位置... (按F1停止)
@@ -264,38 +348,129 @@ def export_tdx_block_data(blockname):
     pyautogui.press('enter')
     time.sleep(0.5)
     # 选择中间项-所有数据
-    pyautogui.click(1200, 738)
+    pyautogui.click(*export_positions['all_data'])
     time.sleep(0.5)
     # 点击浏览按钮
-    pyautogui.click(1462, 788)
+    pyautogui.click(*export_positions['browse_button'])
     time.sleep(0.5)
     # 输入文件名
     pyautogui.typewrite(blockname)
     # 点击确定
-    pyautogui.click(1999, 1106)
+    pyautogui.click(*export_positions['save_button'])
     time.sleep(0.5)
     # 取消 不打开
-    pyautogui.click(1402, 828)
+    pyautogui.click(*export_positions['cancel_open'])
     # time.sleep(12)
     wait_for_keypress()
     print("请确认操作已完成，按键继续...")
-    pyautogui.click(1327, 748)
+    pyautogui.click(*export_positions['final_confirm'])
     time.sleep(1)
 def tdx_change_history_list():
+    # 获取当前屏幕分辨率
+    screen_width, screen_height = pyautogui.size()
+    resolution_key = f"{screen_width}x{screen_height}"
+    
+    # 默认坐标配置
+    default_history_positions = {
+        '1920x1080': {
+            'right_click_area': (652, 597),
+            'history_menu': (725, 779)
+        },
+        '2560x1440': {
+            'right_click_area': (869, 796),
+            'history_menu': (967, 1039)
+        },
+        '3840x2160': {
+            'right_click_area': (1131, 1168),
+            'history_menu': (1358, 535)
+        }
+    }
+    
+    # 如果当前分辨率没有配置，则使用默认1920x1080的配置并缩放
+    if resolution_key not in default_history_positions:
+        print(f"未找到{resolution_key}分辨率的配置，使用1920x1080配置并进行缩放")
+        base_positions = default_history_positions['1920x1080']
+        scale_x = screen_width / 1920
+        scale_y = screen_height / 1080
+        history_positions = {}
+        for key, (x, y) in base_positions.items():
+            history_positions[key] = (int(x * scale_x), int(y * scale_y))
+    else:
+        history_positions = default_history_positions[resolution_key]
+
     # 右键切换到列表
     #     记录点 2: (1091, 1427) - Button.left - 15:47:30.412
     # 记录点 3: (652, 597) - Button.right - 15:47:33.380
     # 记录点 4: (725, 779) - Button.left - 15:47:37.909
     # 点击右键
-    pyautogui.rightClick(652, 597)
+    pyautogui.rightClick(*history_positions['right_click_area'])
     time.sleep(0.5)
     # 点击右键
-    pyautogui.moveTo(725, 779)
+    pyautogui.moveTo(*history_positions['history_menu'])
     # 点击历史
-    pyautogui.click(725,779)
+    pyautogui.click(*history_positions['history_menu'])
     time.sleep(1)
 # 同花顺数据导出
 def export_ths_block_data(blockname):
+    # 获取当前屏幕分辨率
+    screen_width, screen_height = pyautogui.size()
+    resolution_key = f"{screen_width}x{screen_height}"
+    
+    # 默认坐标配置
+    default_ths_export_positions = {
+        '1920x1080': {
+            'pos1': (290, 337),
+            'pos2': (349, 56),
+            'pos21': (13, 109),
+            'pos22': (365, 215),
+            'pos3': (440, 686),
+            'pos4': (691, 684),
+            'pos5': (539, 594),
+            'pos6': (1513, 558),
+            'pos7': (1210, 992),
+            'pos8': (1971, 1092),
+            'pos9': (1407, 916)
+        },
+        '2560x1440': {
+            'pos1': (387, 449),
+            'pos2': (461, 75),
+            'pos21': (461, 75),
+            'pos22': (461, 75),
+            'pos3': (305, 279),
+            'pos4': (467, 795),
+            'pos5': (719, 792),
+            'pos6': (2017, 744),
+            'pos7': (1613, 1323),
+            'pos8': (2628, 1456),
+            'pos9': (1876, 1221)
+        },
+        '3840x2160': {
+            'pos1': (525, 604),
+            'pos2': (157, 107),
+            'pos21': (25, 189),
+            'pos22': (671, 349),
+            'pos3': (860, 1171),
+            'pos4': (1232, 1165),
+            'pos5': (1002, 1215),
+            'pos6': (2290, 791),
+            'pos7': (2737, 1419),
+            'pos8': (3942, 2184),
+            'pos9': (2170, 1414)
+        }
+    }
+    
+    # 如果当前分辨率没有配置，则使用默认1920x1080的配置并缩放
+    if resolution_key not in default_ths_export_positions:
+        print(f"未找到{resolution_key}分辨率的配置，使用1920x1080配置并进行缩放")
+        base_positions = default_ths_export_positions['1920x1080']
+        scale_x = screen_width / 1920
+        scale_y = screen_height / 1080
+        ths_export_positions = {}
+        for key, (x, y) in base_positions.items():
+            ths_export_positions[key] = (int(x * scale_x), int(y * scale_y))
+    else:
+        ths_export_positions = default_ths_export_positions[resolution_key]
+
     # 导出同花顺板块数据
 # 记录点 1: (290, 337) - Button.left - 15:26:20.519
 # 记录点 2: (346, 56) - Button.left - 15:26:23.799
@@ -308,38 +483,121 @@ def export_ths_block_data(blockname):
 # 记录点 9: (1407, 916) - Button.left - 15:26:50.838
 # 记录点 10: (1407, 916) - Button.left - 15:26:51.526
 # 记录点 11: (1407, 916) - Button.left - 15:26:53.095
+
+# 3840x2160
+# 记录点 1: (526, 604) - Button.left - 16:42:50.812
+# 记录点 2: (127, 99) - Button.left - 16:42:52.944
+# 记录点 3: (18, 193) - Button.left - 16:42:56.264
+# 记录点 4: (482, 399) - Button.right - 16:43:00.355
+# 记录点 5: (695, 780) - Button.left - 16:43:02.658
+# 记录点 6: (936, 779) - Button.left - 16:43:05.088
+# 记录点 7: (2307, 791) - Button.left - 16:43:08.024
+# 记录点 8: (2713, 1417) - Button.left - 16:43:16.798
+# 记录点 9: (2159, 1408) - Button.left - 16:43:18.606
+# 记录点 10: (2159, 1408) - Button.left - 16:43:19.858
+# 记录点 11: (2159, 1408) - Button.left - 16:43:21.840
 # 创建同花顺板块
-    pyautogui.click(300, 338)
+#     选择板块并排序
+    pyautogui.click(*ths_export_positions['pos1'])
     time.sleep(0.5)
-    pyautogui.moveTo(349, 66)
+    pyautogui.moveTo(*ths_export_positions['pos2'])
     time.sleep(0.5)
-    pyautogui.click(349, 66)
+    pyautogui.click(*ths_export_positions['pos2'])
     time.sleep(0.5)
-    pyautogui.click(13, 109)
+    pyautogui.click(*ths_export_positions['pos21'])
+    # 移动并右键
     time.sleep(0.5)
-    pyautogui.click(365, 215)
+    pyautogui.click(*ths_export_positions['pos22'])
     time.sleep(0.5)
-    pyautogui.rightClick(365, 215)
+    pyautogui.rightClick(*ths_export_positions['pos22'])
     time.sleep(0.5)
-    pyautogui.moveTo(440, 686)
+    wait_for_keypress()
+    pyautogui.moveTo(*ths_export_positions['pos3'])
     time.sleep(0.5)
-    pyautogui.click(691, 684)
+    pyautogui.click(*ths_export_positions['pos4'])
     time.sleep(0.5)
-    pyautogui.click(539, 594)
+    pyautogui.click(*ths_export_positions['pos5'])
+    wait_for_keypress()
     time.sleep(0.5)
-    pyautogui.click(1513, 558)
+    pyautogui.click(*ths_export_positions['pos6'])
     time.sleep(0.5)
     pyautogui.typewrite(blockname)
-    pyautogui.click(1210, 992)
-    pyautogui.click(1971, 1092)
+    # 确定板块
+    # wait_for_keypress()
     time.sleep(0.5)
-    pyautogui.click(1407, 916)
+    pyautogui.click(*ths_export_positions['pos7'])
+    # pyautogui.click(*ths_export_positions['pos8'])
     time.sleep(0.5)
-    pyautogui.click(1407, 916)
+    pyautogui.click(*ths_export_positions['pos9'])
     time.sleep(0.5)
-    pyautogui.click(1407, 916)
+    pyautogui.click(*ths_export_positions['pos9'])
+    time.sleep(0.5)
+    pyautogui.click(*ths_export_positions['pos9'])
 # 同花顺创建板块
 def create_ths_block_from_file(blockname):
+    # 获取当前屏幕分辨率
+    screen_width, screen_height = pyautogui.size()
+    resolution_key = f"{screen_width}x{screen_height}"
+    
+    # 默认坐标配置
+    default_ths_create_positions = {
+        '1920x1080': {
+            'pos1': (289, 36),
+            'pos2': (337, 316),
+            'pos3': (1550, 531),
+            'pos4': (1330, 752),
+            'pos5': (1559, 657),
+            'pos6': (1589, 684),
+            'pos7': (2035, 1060),
+            'pos8': (2026, 1102),
+            'pos9': (1185, 713),
+            'pos10': (1991, 1090),
+            'pos11': (1381, 834),
+            'pos12': (1468, 914)
+        },
+        '2560x1440': {
+            'pos1': (385, 48),
+            'pos2': (449, 421),
+            'pos3': (2067, 708),
+            'pos4': (1773, 1003),
+            'pos5': (2079, 876),
+            'pos6': (2119, 912),
+            'pos7': (2713, 1413),
+            'pos8': (2701, 1470),
+            'pos9': (1580, 951),
+            'pos10': (2655, 1453),
+            'pos11': (1841, 1112),
+            'pos12': (1957, 1219)
+        },
+        '3840x2160': {
+            'pos1': (508, 65),
+            'pos2': (625, 545),
+            'pos3': (2405, 738),
+            'pos4': (1980, 1148),
+            'pos5': (2400, 974),
+            'pos6': (2403, 1010),
+            'pos7': (2698, 1358),
+            'pos8': (2713, 1425),
+            # 'pos8': (2195, 763), 排序
+            'pos9': (1782, 822),
+            'pos10': (2717, 1417),
+            'pos11': (2100, 1274),
+            'pos12': (2240, 1418)
+        }
+    }
+    
+    # 如果当前分辨率没有配置，则使用默认1920x1080的配置并缩放
+    if resolution_key not in default_ths_create_positions:
+        print(f"未找到{resolution_key}分辨率的配置，使用1920x1080配置并进行缩放")
+        base_positions = default_ths_create_positions['1920x1080']
+        scale_x = screen_width / 1920
+        scale_y = screen_height / 1080
+        ths_create_positions = {}
+        for key, (x, y) in base_positions.items():
+            ths_create_positions[key] = (int(x * scale_x), int(y * scale_y))
+    else:
+        ths_create_positions = default_ths_create_positions[resolution_key]
+
     #导入同花顺板块文件
 #     开始记录屏幕点击位置... (按F1停止)
 # 记录点 1: (289, 36) - Button.left - 17:27:28.711
@@ -356,37 +614,37 @@ def create_ths_block_from_file(blockname):
 # 记录点 12: (1468, 914) - Button.left - 17:28:16.830
 # 记录已停止
 #     创建板块
-    pyautogui.click(289, 36)
+    pyautogui.click(*ths_create_positions['pos1'])
     time.sleep(0.5)
-    pyautogui.click(337, 316)
+    pyautogui.click(*ths_create_positions['pos2'])
     time.sleep(0.5)
-    pyautogui.click(1550, 531)
+    pyautogui.click(*ths_create_positions['pos3'])
     time.sleep(0.5)
     # 输入文件名
     pyautogui.typewrite(blockname)
     time.sleep(0.5)
-    pyautogui.click(1330, 752)
+    pyautogui.click(*ths_create_positions['pos4'])
     time.sleep(0.5)
     # 导入数据
-    pyautogui.click(1539, 656)
+    pyautogui.click(*ths_create_positions['pos5'])
     time.sleep(0.5)
-    pyautogui.moveTo(1550, 682)
-    pyautogui.click(1550, 682)
+    pyautogui.moveTo(*ths_create_positions['pos6'])
+    pyautogui.click(*ths_create_positions['pos6'])
     time.sleep(0.5)
-    pyautogui.click(1986, 1058)
+    pyautogui.click(*ths_create_positions['pos7'])
     time.sleep(0.5)
-    pyautogui.moveTo(1989, 1093)
+    pyautogui.moveTo(*ths_create_positions['pos8'])
     time.sleep(0.5)
-    pyautogui.click(1989, 1093)
+    pyautogui.click(*ths_create_positions['pos8'])
     time.sleep(0.5)
     # 选择文件
-    pyautogui.click(1185, 568)
+    pyautogui.click(*ths_create_positions['pos9'])
     time.sleep(0.5)
-    pyautogui.click(1981, 1095)
+    pyautogui.click(*ths_create_positions['pos10'])
     time.sleep(0.5)
-    pyautogui.click(1377, 834)
+    pyautogui.click(*ths_create_positions['pos11'])
     time.sleep(0.5)
-    pyautogui.click(1457, 917)
+    pyautogui.click(*ths_create_positions['pos12'])
     time.sleep(0.5)
 # stock_data = export_stock_data(stock)
     # return stock_data
@@ -403,7 +661,7 @@ def tdx_get_block_data():
     #右键选择历史数据
     tdx_change_history_list()
     # 避免中文输入法的问题
-    blockname_01 = blockname+'-01'
+    blockname_01 = blockname+'_01'
     # 导出数据
     export_tdx_block_data(blockname_01)
     print("导出历史数据已完成！")
@@ -465,7 +723,7 @@ def tdx_merge_data(blockname,blockname_01):
 
     # 按照 代码 进行合并
     # merged_data = pd.merge(new_data, data_t, left_on='代码', right_on='T')
-    merged_data = pd.merge(new_data, data_02[['T', 'T1']], left_index=True, right_index=True)
+    merged_data = pd.merge(new_data, data_02[['T']], left_index=True, right_index=True)
     # 在合并前处理代码格式
     # new_data['代码'] = new_data['代码'].str.split('=').str[1].str.replace('"', "")
     # data_02['代码'] = data_02['代码'].astype(str)  # 确保类型一致
@@ -543,6 +801,12 @@ def merge_block_data(blockname):
     print( tdx_data.head(5))
 
     ths_data = pd.read_csv("../data/ths/"+blockname+'.xls',encoding='GBK',sep='\t')
+    # 如果 '净额',  '净量' 字段不存在，则将  '主力净额',  '主力净量'更改为  '净额',  '净量'
+    if '主力净额' in ths_data.columns:
+        ths_data['净额'] = ths_data['主力净额']
+    # 将   '主力净量'更改为   '净量'
+    if '主力净量' in ths_data.columns:
+        ths_data['净量'] = ths_data['主力净量']
 
     data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量']], left_index=True, right_index=True)
     print( data.head(10))
@@ -619,7 +883,7 @@ def get_time_directory(now=datetime.datetime.now().time()):
         return '1200'
     elif datetime.time(13, 30) <= now <= datetime.time(15, 0):
         return '1400'
-    elif datetime.time(15, 0) <= now <= datetime.time(18, 30):
+    elif datetime.time(15, 0) <= now <= datetime.time(22, 30):
         return '1600'
     else:
         return '250721'
@@ -761,7 +1025,3 @@ if __name__ == '__main__':
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
 # 得到通达信的情绪温度数据
 # 通达信实时数据 880005
-
-
-
-
