@@ -221,12 +221,12 @@ def select_tdx_block_list():
             'finish_selection': (1509, 884)
         },
         '2560x1440': {
-            'join_condition': (1668, 757),
-            'select_to_block': (1908, 1147),
-            'new_block': (1996, 760),
-            'confirm_new_block': (1667, 1013),
-            'confirm_selection': (1971, 1087),
-            'finish_selection': (2012, 1179)
+            'join_condition': (1251, 568),
+            'select_to_block': (1431, 860),
+            'new_block': (1497, 570),
+            'confirm_new_block': (1250, 760),
+            'confirm_selection': (1478, 815),
+            'finish_selection': (1509, 884)
         },
         '3840x2160': {
             'join_condition': (1881, 804),
@@ -307,11 +307,11 @@ def export_tdx_block_data(blockname):
             'final_confirm': (1327, 748)
         },
         '2560x1440': {
-            'all_data': (1600, 984),
-            'browse_button': (1949, 1051),
-            'save_button': (2665, 1475),
-            'cancel_open': (1869, 1104),
-            'final_confirm': (1770, 997)
+            'all_data': (1200, 738),
+            'browse_button': (1462, 788),
+            'save_button': (1999, 1106),
+            'cancel_open': (1402, 828),
+            'final_confirm': (1327, 748)
         },
         '3840x2160': {
             'all_data': (1786, 1106),
@@ -377,8 +377,8 @@ def tdx_change_history_list():
             'history_menu': (725, 779)
         },
         '2560x1440': {
-            'right_click_area': (869, 796),
-            'history_menu': (967, 1039)
+            'right_click_area': (652, 597),
+            'history_menu': (725, 779)
         },
         '3840x2160': {
             'right_click_area': (1131, 1168),
@@ -429,20 +429,18 @@ def export_ths_block_data(blockname):
             'pos6': (1513, 558),
             'pos7': (1210, 992),
             'pos8': (1971, 1092),
-            'pos9': (1407, 916)
         },
         '2560x1440': {
-            'pos1': (387, 449),
-            'pos2': (461, 75),
-            'pos21': (461, 75),
-            'pos22': (461, 75),
-            'pos3': (305, 279),
-            'pos4': (467, 795),
-            'pos5': (719, 792),
-            'pos6': (2017, 744),
-            'pos7': (1613, 1323),
-            'pos8': (2628, 1456),
-            'pos9': (1876, 1221)
+            'pos1': (303, 337),
+            'pos2': (243, 65),
+            'pos21': (19, 107),
+            'pos22': (362, 217),
+            'pos3': (444, 687),
+            'pos4': (700, 697),
+            'pos5': (1498, 561),
+            'pos6': (1664, 435),
+            'pos7': (1981, 1093),
+            'pos8': (1407, 916)
         },
         '3840x2160': {
             'pos1': (525, 604),
@@ -454,8 +452,7 @@ def export_ths_block_data(blockname):
             'pos5': (1002, 1215),
             'pos6': (2290, 791),
             'pos7': (2737, 1419),
-            'pos8': (3942, 2184),
-            'pos9': (2170, 1414)
+            'pos8': (2170, 1414)
         }
     }
     
@@ -511,13 +508,13 @@ def export_ths_block_data(blockname):
     time.sleep(0.5)
     pyautogui.rightClick(*ths_export_positions['pos22'])
     time.sleep(0.5)
-    wait_for_keypress()
+    # wait_for_keypress()
     pyautogui.moveTo(*ths_export_positions['pos3'])
     time.sleep(0.5)
     pyautogui.click(*ths_export_positions['pos4'])
     time.sleep(0.5)
     pyautogui.click(*ths_export_positions['pos5'])
-    wait_for_keypress()
+    # wait_for_keypress()
     time.sleep(0.5)
     pyautogui.click(*ths_export_positions['pos6'])
     time.sleep(0.5)
@@ -528,11 +525,11 @@ def export_ths_block_data(blockname):
     pyautogui.click(*ths_export_positions['pos7'])
     # pyautogui.click(*ths_export_positions['pos8'])
     time.sleep(0.5)
-    pyautogui.click(*ths_export_positions['pos9'])
+    pyautogui.click(*ths_export_positions['pos8'])
     time.sleep(0.5)
-    pyautogui.click(*ths_export_positions['pos9'])
+    pyautogui.click(*ths_export_positions['pos8'])
     time.sleep(0.5)
-    pyautogui.click(*ths_export_positions['pos9'])
+    pyautogui.click(*ths_export_positions['pos8'])
 # 同花顺创建板块
 def create_ths_block_from_file(blockname):
     # 获取当前屏幕分辨率
@@ -556,18 +553,18 @@ def create_ths_block_from_file(blockname):
             'pos12': (1468, 914)
         },
         '2560x1440': {
-            'pos1': (385, 48),
-            'pos2': (449, 421),
-            'pos3': (2067, 708),
-            'pos4': (1773, 1003),
-            'pos5': (2079, 876),
-            'pos6': (2119, 912),
-            'pos7': (2713, 1413),
-            'pos8': (2701, 1470),
-            'pos9': (1580, 951),
-            'pos10': (2655, 1453),
-            'pos11': (1841, 1112),
-            'pos12': (1957, 1219)
+            'pos1': (289, 36),
+            'pos2': (337, 316),
+            'pos3': (1550, 531),
+            'pos4': (1330, 752),
+            'pos5': (1559, 657),
+            'pos6': (1589, 684),
+            'pos7': (2035, 1060),
+            'pos8': (2026, 1102),
+            'pos9': (1355, 568),
+            'pos10': (1991, 1090),
+            'pos11': (1381, 834),
+            'pos12': (1468, 914)
         },
         '3840x2160': {
             'pos1': (508, 65),
@@ -844,7 +841,7 @@ def merge_block_data(blockname):
     dt = datetime.datetime.strptime(full_time_str, "%Y%m%d%H%M%S")
 
     hour = get_time_directory(dt.time())
-    print('hour' +hour)
+    # print('hour' +hour)
     if hour == 1000:    # 早盘预测 放量滞涨为否，当日资金流入大于0，需要重点关注后续走势，前面是阴线的有爆发力 0717
         data['预测'] = np.where(
             ((data['信号天数'] <= 10) & (data['当日资金流入'] > 0)) | (data['当日资金流入'] > 2), "是", "否")
