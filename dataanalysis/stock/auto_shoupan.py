@@ -432,7 +432,8 @@ def export_ths_block_data(blockname):
         },
         '2560x1440': {
             'pos1': (303, 337),
-            'pos2': (243, 65),
+            # 'pos2': (243, 65), {上方}  下面是左上角坐标
+            'pos2': (120, 59),
             'pos21': (19, 107),
             'pos22': (362, 217),
             'pos3': (444, 687),
@@ -658,7 +659,7 @@ def tdx_get_block_data():
     #右键选择历史数据
     tdx_change_history_list()
     # 避免中文输入法的问题
-    blockname_01 = blockname+'_01'
+    blockname_01 = blockname+'001'
     # 导出数据
     export_tdx_block_data(blockname_01)
     print("导出历史数据已完成！")
@@ -841,6 +842,17 @@ def merge_block_data(blockname):
     dt = datetime.datetime.strptime(full_time_str, "%Y%m%d%H%M%S")
 
     hour = get_time_directory(dt.time())
+
+    # 确保关键列的数据类型正确
+    numeric_columns = ['信号天数', '当日资金流入']
+
+    for col in numeric_columns:
+        if col in data.columns:
+            # 转换为数值类型，无法转换的设置为 NaN
+            data[col] = pd.to_numeric(data[col], errors='coerce')
+            # 可选：用0填充NaN值
+            data[col] = data[col].fillna(0)
+
     # print('hour' +hour)
     if hour == 1000:    # 早盘预测 放量滞涨为否，当日资金流入大于0，需要重点关注后续走势，前面是阴线的有爆发力 0717
         data['预测'] = np.where(

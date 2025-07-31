@@ -68,9 +68,23 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 # print(df_today)
 
             # 5. 获取需要的字段
+
                 # 将df_today 中的字段 涨幅 最高 赋值到 df_pred 中的 次日涨幅	次日最高价 字段
                 df_pred['次日涨幅'] = df_today['涨幅%']
                 df_pred['次日最高价'] = df_today['最高']
+
+                # 确保关键列的数据类型正确
+                numeric_columns = ['次日涨幅', '次日最高价', '现价', 'AI预测', 'value']
+
+                for col in numeric_columns:
+                    if col in df_pred.columns:
+                        # 转换为数值类型，无法转换的设置为 NaN
+                        df_pred[col] = pd.to_numeric(df_pred[col], errors='coerce')
+                        # 可选：用0填充NaN值
+                        df_pred[col] = df_pred[col].fillna(0)
+
+                print(df_pred.head(100))
+
                 # print(df_pred)
                 # 计算 次日最高涨幅 =  100*（次日最高价-现价）/现价
                 df_pred['次日最高涨幅'] = 100 * (df_pred['次日最高价'] - df_pred['现价']) / df_pred['现价']

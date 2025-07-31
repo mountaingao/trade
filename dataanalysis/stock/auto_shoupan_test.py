@@ -12,7 +12,7 @@ def merge_test_data(blocknames):
     """重新合并数据"""
     # 这是一个数组，逐个去读并合并数据
     for blockname in blocknames:
-        blockname_01 = blockname + "_01"
+        blockname_01 = blockname + "001"
         auto_shoupan.tdx_merge_data(blockname, blockname_01)
 
         auto_shoupan.merge_block_data(blockname)
@@ -23,7 +23,7 @@ def merge_tdx_data(blocknames):
     """重新合并数据"""
     # 这是一个数组，逐个去读并合并数据
     for blockname in blocknames:
-        blockname_01 = blockname + "_01"
+        blockname_01 = blockname + "001"
         auto_shoupan.tdx_merge_data(blockname, blockname_01)
 
 
@@ -32,7 +32,7 @@ def start_ths_data(blocknames):
     """重新合并数据"""
     # 这是一个数组，逐个去读并合并数据
     for blockname in blocknames:
-        blockname_01 = blockname + "_01"
+        blockname_01 = blockname + "001"
         auto_shoupan.ths_get_block_data(blockname)
 
         auto_shoupan.merge_block_data(blockname)
