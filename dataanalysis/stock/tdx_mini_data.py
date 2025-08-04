@@ -7,6 +7,12 @@ import time
 from typing import List, Dict, Optional
 from pytdx.hq import TdxHq_API
 from pytdx.params import TDXParams
+import json
+import struct
+# 新增代码：读取配置文件
+config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
+with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
+    config = json.load(config_file)
 
 # 假设已有以下模块或函数（需根据实际项目结构调整）
 # from dataanalysis.stock.tdx_runtime_data import get_minute_data
@@ -218,16 +224,137 @@ def process_multiple_codes(codes: List[str]) -> List[Dict]:
         results.append(result)
     return results
 
+
+
+from pytdx.reader import TdxMinBarReader
+import pandas as pd
+
+def read_local_5m_data(stock_code, tdx_path=config['tdxdir']+'vipdoc'):
+    """
+    读取通达信本地5分钟数据
+    :param stock_code: 股票代码，如'sh600000'或'sz000001'
+    :param tdx_path: 通达信安装目录下的vipdoc路径
+    :return: DataFrame
+    """
+    # 确定市场前缀
+    market = 1 if stock_code.startswith('sh') else 0
+
+    # 构建文件路径 D:\zd_haitong\vipdoc\sh\fzline
+    file_path = f"{tdx_path}/{stock_code[:2]}/fzline/{stock_code}.lc5"
+
+    # 使用PyTDX读取5分钟数据
+    reader = TdxMinBarReader()
+    df = reader.get_df(file_path)
+
+    # print(df.head())
+    # 打印数量
+    print(len(df))
+    # 打印最后10条
+    print(df.tail(10))
+    exit()
+
+    # 转换时间格式
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df.set_index('datetime', inplace=True)
+
+    return df
+
+# # 示例使用
+# df_5m = read_local_5m_data('sh600000')
+# print(df_5m.head())
+
+
+from pytdx.reader import TdxExHqDailyBarReader
+
+def read_financial_data(stock_code, tdx_path=config['tdxdir']+'vipdoc'):
+    """
+    读取财务数据（含除权信息）
+    :param stock_code: 股票代码
+    :param tdx_path: 通达信安装目录
+    :return: 包含除权信息的DataFrame
+    """
+    # 读取除权文件  D:\zd_haitong\vipdoc\cw
+    file_path = f"{tdx_path}/cw/gp{stock_code}.dat"
+
+    try:
+        reader = TdxExHqDailyBarReader()
+        # 添加异常处理，防止文件格式不匹配导致程序崩溃
+        try:
+            df_fin = reader.get_df(file_path)
+        except struct.error as e:
+            print(f"读取除权文件 {file_path} 时出错: {e}")
+            print("可能是文件格式不匹配或文件损坏，返回空DataFrame")
+            return pd.DataFrame()
+        except Exception as e:
+            print(f"读取除权文件 {file_path} 时发生未知错误: {e}")
+            return pd.DataFrame()
+
+        # 筛选出有除权信息的记录
+        df_xr = df_fin[df_fin['amount'] == 0].copy()
+        df_xr['date'] = pd.to_datetime(df_xr['datetime'])
+
+        return df_xr[['date', 'open', 'close']].rename(
+            columns={'open': 'xr_factor', 'close': 'dividend'})
+
+    except FileNotFoundError:
+        print(f"未找到除权文件: {file_path}")
+        return pd.DataFrame()
+
+# # 示例使用
+# df_xr = read_financial_data('sh600000')
+# print(df_xr.head())
+
+def adjust_price(df_5m, df_xr):
+    """
+    对5分钟数据进行除权处理
+    :param df_5m: 原始5分钟数据
+    :param df_xr: 除权信息
+    :return: 除权后的DataFrame
+    """
+    if df_xr.empty:
+        return df_5m
+
+    # 按除权日期降序排序
+    df_xr = df_xr.sort_values('date', ascending=False)
+
+    # 复制原始数据
+    df_adjusted = df_5m.copy()
+
+    # 初始化前复权因子
+    adj_factor = 1.0
+
+    # 对每个除权日进行处理
+    for _, row in df_xr.iterrows():
+        xr_date = row['date']
+        xr_factor = row['xr_factor']
+        dividend = row['dividend']
+
+        # 计算复权因子
+        # 除权因子 = (前收盘价 - 现金红利) / (前收盘价 * (1 + 送转比例))
+        # 通达信中xr_factor已经是计算好的复权因子
+        adj_factor *= xr_factor
+
+        # 对除权日之前的数据进行复权
+        mask = df_adjusted.index < xr_date
+        df_adjusted.loc[mask, ['open', 'high', 'low', 'close']] *= adj_factor
+        df_adjusted.loc[mask, 'volume'] /= adj_factor  # 成交量需要反向调整
+
+    return df_adjusted
+
+# 示例使用
+# df_5m_adjusted = adjust_price(df_5m, df_xr)
+# print(df_5m_adjusted.head())
+
 # 示例调用
 if __name__ == "__main__":
-    codes = [
-        "300436",
-        "300224",
-             ]
-    results = process_multiple_codes(codes)
-    # 将results 转成pd，并打印出来
-    df = pd.DataFrame(results)
-    print(df)
+    # codes = [
+    #     "300436",
+    #     "300224",
+    #          ]
+    # results = process_multiple_codes(codes)
+    # # 将results 转成pd，并打印出来
+    # df = pd.DataFrame(results)
+    # print(df)
 
     # todo 5分钟数据读取时间点以前的数据，结合最小的值和净量来判断是否可以买入，第二天爆发
     # 读取目录中的文件 dataanalysis/data/predictions/1600/07281517_1518.xlsx  获取代码
@@ -242,3 +369,26 @@ if __name__ == "__main__":
     # df = pd.merge(df,df_bw, left_index=True, right_index=True)
     # file_path = "../data/predictions/1600/07281517_151800.xlsx"
     # df.to_excel(file_path)
+
+
+    # 1. 读取5分钟数据
+    # df_5m = read_local_5m_data('sh600000')
+
+    # 2. 读取除权信息
+    df_xr = read_financial_data('sh600000')
+
+    exit()
+    # 3. 进行除权处理
+    df_5m_adjusted = adjust_price(df_5m, df_xr)
+    # 4. 保存处理后的数据
+    df_5m_adjusted.to_csv('sh600000_5m_adjusted.csv')
+
+    # 5. 可视化对比
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(df_5m['close'], label='原始数据')
+    plt.plot(df_5m_adjusted['close'], label='复权后数据')
+    plt.legend()
+    plt.title('5分钟数据复权前后对比')
+    plt.show()
