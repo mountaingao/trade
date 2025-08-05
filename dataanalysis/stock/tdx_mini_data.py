@@ -372,10 +372,10 @@ if __name__ == "__main__":
 
 
     # 1. 读取5分钟数据
-    # df_5m = read_local_5m_data('sh600000')
+    df_5m = read_local_5m_data('sh000689')
 
     # 2. 读取除权信息
-    df_xr = read_financial_data('sh600000')
+    df_xr = read_financial_data('sh000689')
 
     exit()
     # 3. 进行除权处理
