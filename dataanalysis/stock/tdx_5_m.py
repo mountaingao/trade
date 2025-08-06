@@ -123,15 +123,7 @@ def get_market_from_code(code: str) -> int:
     else:
         raise ValueError(f"Unknown market for code: {code}")
 
-if __name__ == "__main__":
-    # 指定LC5文件所在目录  D:\zd_haitong\vipdoc\sh\fzline
-    # lc5_directory = config['tdxdir']+'vipdoc'+'/sh/fzline'
-
-    # 转换文件
-    # process_lc5_files(lc5_directory)
-
-    # 根据代码获得文件的路径 如 上海 为 sh  深圳为sz 北京为bj
-    code = "301213"
+def get_m5_from_code(code: str) -> str:
     file_path = get_market_from_code(code)
     print(file_path)
     lc5_directory = f'{config["tdxdir"]}vipdoc/{file_path}/fzline'
@@ -143,3 +135,14 @@ if __name__ == "__main__":
     # 读取LC5文件
     data_list = read_lc5_file(file_path)
     print(data_list)
+
+if __name__ == "__main__":
+    # 指定LC5文件所在目录  D:\zd_haitong\vipdoc\sh\fzline
+    # lc5_directory = config['tdxdir']+'vipdoc'+'/sh/fzline'
+
+    # 转换文件
+    # process_lc5_files(lc5_directory)
+
+    # 根据代码获得文件的路径 如 上海 为 sh  深圳为sz 北京为bj
+    code = "301213"
+    get_m5_from_code(code)
