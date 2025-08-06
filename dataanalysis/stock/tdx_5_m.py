@@ -37,8 +37,7 @@ def read_lc5_file(file_path):
 
                 # 将每条数据保存为字典形式，并格式化价格数据到小数点后3位
                 data_list.append({
-                    '日期': f'{year}-{month:02}-{day:02}',
-                    '时间': f'{hour:02}:{minute:02}',
+                    '时间': f'{year}-{month:02}-{day:02} {hour:02}:{minute:02}:00',
                     '开盘价': round(open_price, 3),
                     '最高价': round(high_price, 3),
                     '最低价': round(low_price, 3),
@@ -113,17 +112,33 @@ config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'confi
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
     config = json.load(config_file)
 
-
+def get_market_from_code(code: str) -> int:
+    """根据股票代码判断市场代码"""
+    # 确保code是字符串类型
+    code = str(code)
+    if code.startswith('sh') or code.startswith('6'):
+        return 'sh'  # 上海
+    elif code.startswith('sz') or code.startswith(('0', '3', '15', '16', '20', '30')):
+        return 'sz'  # 深圳
+    else:
+        raise ValueError(f"Unknown market for code: {code}")
 
 if __name__ == "__main__":
     # 指定LC5文件所在目录  D:\zd_haitong\vipdoc\sh\fzline
-    lc5_directory = config['tdxdir']+'vipdoc'+'/sh/fzline'
+    # lc5_directory = config['tdxdir']+'vipdoc'+'/sh/fzline'
 
     # 转换文件
     # process_lc5_files(lc5_directory)
 
+    # 根据代码获得文件的路径 如 上海 为 sh  深圳为sz 北京为bj
+    code = "301213"
+    file_path = get_market_from_code(code)
+    print(file_path)
+    lc5_directory = f'{config["tdxdir"]}vipdoc/{file_path}/fzline'
+    print(lc5_directory)
 
-    file_path = os.path.join(lc5_directory, "sh000689.lc5")
+
+    file_path = os.path.join(lc5_directory, file_path+code+".lc5")
     print(f"正在处理文件: {file_path}")
     # 读取LC5文件
     data_list = read_lc5_file(file_path)
