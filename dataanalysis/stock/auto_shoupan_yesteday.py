@@ -102,7 +102,14 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 file_path = os.path.join(folder_path,filename)
 
                 # 将filename 先备份到 bak 目录中，然后再写回原文件
-                os.rename(file_path, os.path.join("../data/bak/predictions/", filename))
+                bak_path = os.path.join("../data/bak/predictions/", filename)
+                # 如果文件存在，则不用覆盖备份,继续执行
+                if not os.path.exists(bak_path):
+
+                    # 创建备份目录
+                    # os.makedirs("../data/bak/predictions/", exist_ok=True)
+                    # 备份文件
+                    os.rename(file_path, bak_path)
 
                 df_pred.to_excel(file_path, index=False)
 

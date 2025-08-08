@@ -364,7 +364,7 @@ def export_tdx_block_data(blockname):
     wait_for_keypress()
     print("请确认操作已完成，按键继续...")
     pyautogui.click(*export_positions['final_confirm'])
-    time.sleep(1)
+    time.sleep(0.3)
 def tdx_change_history_list():
     # 获取当前屏幕分辨率
     screen_width, screen_height = pyautogui.size()
@@ -409,7 +409,7 @@ def tdx_change_history_list():
     pyautogui.moveTo(*history_positions['history_menu'])
     # 点击历史
     pyautogui.click(*history_positions['history_menu'])
-    time.sleep(1)
+    time.sleep(0.5)
 # 同花顺数据导出
 def export_ths_block_data(blockname):
     # 获取当前屏幕分辨率
