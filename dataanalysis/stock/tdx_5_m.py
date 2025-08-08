@@ -144,5 +144,5 @@ if __name__ == "__main__":
     # process_lc5_files(lc5_directory)
 
     # 根据代码获得文件的路径 如 上海 为 sh  深圳为sz 北京为bj
-    code = "301213"
+    code = "688048"
     get_m5_from_code(code)

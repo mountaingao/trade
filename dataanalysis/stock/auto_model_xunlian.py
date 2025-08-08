@@ -43,10 +43,11 @@ def process_prediction_files(base_dir="../data/predictions/"):
         # 3. 遍历文件夹中的所有文件，读取文件内容
         for filename in os.listdir(folder_path):
             print(f"正在处理文件: {filename}")
-            print(f"4w: {filename[:4]}")
+            print(f"日期: {filename[:4]}")
+            print(f"now: {previous_mmdd}")
 
             # 检查文件名前4位是否匹配当前月日
-            if len(filename) >= 4 and filename[:4] == previous_mmdd:
+            if len(filename) >= 4 and filename[:4] < previous_mmdd:
                 file_path = os.path.join(folder_path, filename)
                 print(f"找到匹配文件: {file_path}")
 
@@ -54,18 +55,35 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 # 4. 读取文件内容，组合数据以后进行训练
                 df_pred = pd.read_excel(file_path)
                 dfs.append(df_pred)
-                print(df_pred.head(10))
-
+                # print(df_pred.head(10))
+                print(len(df_pred))
+                # 打印出dfs 总数
+                print(f"dfs 总数: {len(dfs)}")
 
                 # except Exception as e:
                 #     print(f"处理文件 {filename} 时出错: {e}")
 
         # 训练模型
         # 5. 训练模型 数据
+        if not dfs:
+            print(f"文件夹 {folder_name} 中没有找到匹配日期的数据文件，跳过训练")
+            continue
+            
         df = pd.concat(dfs, ignore_index=True)
-        model_xunlian.generate_model_data(df,folder_name)
+        
+        # 检查数据是否为空
+        if df.empty:
+            print(f"文件夹 {folder_name} 的合并数据为空，跳过训练")
+            continue
+            
+        print(f"文件夹 {folder_name} 的数据形状: {df.shape}")
 
         # 将模型写入目录中
+        try:
+            model_xunlian.generate_model_data(df,folder_name)
+        except Exception as e:
+            print(f"训练文件夹 {folder_name} 的模型时出错: {e}")
+
 
 if __name__ == "__main__":
     process_prediction_files()

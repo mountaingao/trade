@@ -178,7 +178,7 @@ def generate_model_data(df,file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
         df (DataFrame): 输入数据框
     """
 
-    print(df)
+    print("数据总数："+len(df))
     # 新增数据清洗步骤：处理标签列中的无效值
     # ======= 新增开始 =======
     # 检查并处理NaN值
