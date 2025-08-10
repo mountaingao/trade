@@ -897,6 +897,17 @@ def get_time_directory(now=datetime.datetime.now().time()):
     else:
         return '250721'
 
+def get_time_directory_from_block_name(blockname):
+    # now = datetime.datetime.now().time()
+    # blockname 转换成时间
+    now = datetime.datetime.strptime(blockname, "%m%d%H%M").time()
+    return get_time_directory( now)
+
+
+def predict_block_data_from_block_name(blockname):
+    date = get_time_directory_from_block_name(blockname)
+    return predict_block_data(blockname,date)
+
 # 推理模型
 def predict_block_data(blockname,date='250721'):
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
@@ -1026,9 +1037,9 @@ def main():
 
 if __name__ == '__main__':
 
-    no_step_shoupan()
+    # no_step_shoupan()
 
-    # step_by_step_shoupan()
+    step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
