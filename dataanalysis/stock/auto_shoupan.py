@@ -1037,9 +1037,9 @@ def main():
 
 if __name__ == '__main__':
 
-    # no_step_shoupan()
+    no_step_shoupan()
 
-    step_by_step_shoupan()
+    # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
 # 每日运行4次：9：45 - 10：30 - 11：30 - 14：40 - 15：10
