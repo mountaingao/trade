@@ -171,12 +171,26 @@ def random_forest_feature_analysis(df, target_col, problem_type='regression',
 
     return feature_importance_df, model
 
-def generate_model_data(df,file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
+def generate_model_data(df, file_prefix=pd.Timestamp.now().strftime("%y%m%d"), features=None):
     """
     根据输入数据并保存特征权重
     参数:
         df (DataFrame): 输入数据框
+        file_prefix (str): 文件前缀
+        features (list): 特征列表，默认为None，使用预设特征
     """
+    
+    # 默认特征列表
+    # default_features = [
+    #     '当日涨幅', '信号天数', '量比', '净额', '净流入', '当日资金流入', '是否领涨'
+    # ]
+    default_features = [
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
+    ]
+    
+    # 如果没有提供特征列表，则使用默认特征
+    if features is None:
+        features = default_features
 
     print("数据总数："+len(df))
     # 新增数据清洗步骤：处理标签列中的无效值
@@ -201,10 +215,6 @@ def generate_model_data(df,file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
     # ======= 新增结束 =======
 
     # 特征选择
-    features = [
-        '当日涨幅', '信号天数', '量比', '净额', '净流入', '当日资金流入', '是否领涨'
-    ]
-
     
     X_train = df[features]
     y_reg = df['次日最高涨幅']
@@ -312,13 +322,18 @@ def reg_model_save_load(model, x_transform):
     print('y_pred_proba：', y_pred_proba)
 
 
-def checking_model_data(input_file,model):
-    # 预测 准备数据
-    df2 = pd.read_excel(input_file)
-    features = [
+def checking_model_data(input_file,model, features=None):
+    # 默认特征列表
+    default_features = [
         '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
     ]
+    
+    # 如果没有提供特征列表，则使用默认特征
+    if features is None:
+        features = default_features
 
+    # 预测 准备数据
+    df2 = pd.read_excel(input_file)
     df2['value'] = df2['最高价'].map({'是': 1, '否': 0})
     df2['是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
     y_test = df2[features]
@@ -408,14 +423,19 @@ def checking_model_data(input_file,model):
 
     print(f"验证结果已保存至: {output_file}")
 
-def predictions_model_data_file(input_file,model,output_dir):
+def predictions_model_data_file(input_file,model,output_dir, features=None):
+    # 默认特征列表
+    default_features = [
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
+    ]
+    
+    # 如果没有提供特征列表，则使用默认特征
+    if features is None:
+        features = default_features
+
     print(input_file)
     # 预测 准备数据
     df_calculate = pd.read_excel(input_file)
-    features = [
-        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
-    ]
-
     df_calculate['value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
     df_calculate['是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
     y_test = df_calculate[features]
@@ -453,14 +473,19 @@ def predictions_model_data_file(input_file,model,output_dir):
     print(f"预测结果已保存至: {output_file}")
     return output_file
 
-def predictions_model_data(data, model):
+def predictions_model_data(data, model, features=None):
+    # 默认特征列表
+    default_features = [
+        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
+    ]
+    
+    # 如果没有提供特征列表，则使用默认特征
+    if features is None:
+        features = default_features
+
     # 将单行数据转换为DataFrame
     # df_calculate = pd.DataFrame([data])
     
-    features = [
-        '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
-    ]
-
     # 判断输入类型并做相应处理
     if isinstance(data, dict):
         # 处理单个样本
