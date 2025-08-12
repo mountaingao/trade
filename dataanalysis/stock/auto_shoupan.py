@@ -909,7 +909,7 @@ def predict_block_data_from_block_name(blockname):
     return predict_block_data(blockname,date)
 
 # 推理模型
-def predict_block_data(blockname,date='250721'):
+def predict_block_data(blockname,date='250812'):
     # 7、调用模型，并预测结果，将结果输出到文件中，并返回合适的结果
     # 使用多个数据集训练并生成模型 , 需要按照日期更新到最新的模型
     model = {
