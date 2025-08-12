@@ -48,7 +48,7 @@ def start_merge_and_predict_data(blocknames):
         auto_shoupan.predict_block_data(blockname)
 
 def start_predict_data(blocknames):
-    """重新合并数据"""
+    """预测结果"""
     # 这是一个数组，逐个去读并合并数据
     for blockname in blocknames:
 
@@ -76,8 +76,12 @@ if __name__ == '__main__':
         # "07220947",
         # "07221140",
         # "07221442",
-        "07181529",
+        # "07181529",
         # "07291854",
+        "08120952",
+        "08121157",
+        "08121444",
+        "08121516",
     ]
     # 重新合并数据并计算07211131
     # merge_test_data(blocknames)
@@ -94,8 +98,8 @@ if __name__ == '__main__':
 
     # start_merge_and_predict_data(blocknames)
 
-    # start_predict_data(blocknames)
+    start_predict_data(blocknames)
 
-    start_predict_date_data(blocknames)
+    # start_predict_date_data(blocknames)
 
     # minite_data = get_minite_band_width( blocknames)

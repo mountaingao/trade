@@ -22,9 +22,11 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_absolute_error, accuracy_score
+from datetime import datetime, timedelta
+from chinese_calendar import is_workday, is_holiday
 
 import os
-
+import joblib  # 添加这一行
 
 def generate_model_data_from_files(input_files):
     """
@@ -45,7 +47,7 @@ def generate_model_data_from_files(input_files):
 # 随机森林模型创建
 def random_forest_feature_analysis(df, target_col, problem_type='regression',
                                    test_size=0.2, random_state=42, n_estimators=100,
-                                   plot_top_n=15, figsize=(12, 8)):
+                                   plot_top_n=15, figsize=(12, 8), file_prefix= pd.Timestamp.now().strftime("%y%m%d")):
     """
     使用随机森林分析特征重要性
 
@@ -157,7 +159,14 @@ def random_forest_feature_analysis(df, target_col, problem_type='regression',
     print(feature_importance_df.head(plot_top_n).to_string(index=False))
 
     # 保存模型到model目录中
-    model_save_type(model, file_prefix)
+    try:
+        import joblib
+        model_filename = f'../models/{file_prefix}_random_forest_model.pkl'
+        joblib.dump(model, model_filename)
+        print(f"随机森林模型已保存至: {model_filename}")
+    except Exception as e:
+        print(f"保存随机森林模型时出错: {e}")
+
     # 可视化
     # plt.figure(figsize=figsize)
     # top_features = feature_importance_df.head(plot_top_n)
@@ -192,9 +201,12 @@ def generate_model_data(df, file_prefix=pd.Timestamp.now().strftime("%y%m%d"), f
     if features is None:
         features = default_features
 
-    print("数据总数："+len(df))
+    print(f"数据总数：{len(df)}")
+
     # 新增数据清洗步骤：处理标签列中的无效值
     # ======= 新增开始 =======
+    # 增加value字段，当字段 次日最高涨幅大于7时，值为1，否则为0  ，未来可以调整为7.5，或者根据数据进行调整
+    df['value'] = np.where(df['次日最高涨幅'] > 7, 1, 0)
     # 检查并处理NaN值
     nan_mask = df['value'].isna()
     if nan_mask.any():
@@ -212,11 +224,29 @@ def generate_model_data(df, file_prefix=pd.Timestamp.now().strftime("%y%m%d"), f
     if large_mask.any():
         print(f"警告：发现{large_mask.sum()}个过大值，已删除对应行")
         df = df[~large_mask]
+
+    # 对次日最高涨幅也进行同样的检查
+    # 检查回归目标变量中的无效值
+    reg_nan_mask = df['次日最高涨幅'].isna()
+    reg_inf_mask = np.isinf(df['次日最高涨幅'])
+    reg_large_mask = np.abs(df['次日最高涨幅']) > 1e10
+
+    if reg_nan_mask.any() or reg_inf_mask.any() or reg_large_mask.any():
+        total_invalid = reg_nan_mask.sum() + reg_inf_mask.sum() + reg_large_mask.sum()
+        print(f"警告：次日最高涨幅列发现{total_invalid}个无效值，已删除对应行")
+        # 组合所有无效值的掩码
+        invalid_mask = reg_nan_mask | reg_inf_mask | reg_large_mask
+        df = df[~invalid_mask]
+
     # ======= 新增结束 =======
 
     # 特征选择
-    
-    X_train = df[features]
+    X_train = df[features].copy()  # 创建副本避免修改原数据
+
+    # 处理分类特征 - 对'是否领涨'列进行编码
+    if '是否领涨' in X_train.columns:
+        X_train['是否领涨'] = X_train['是否领涨'].map({'是': 1, '否': 0})
+
     y_reg = df['次日最高涨幅']
     # y_clf = (df['value'] > 0).astype(int)
     y_clf = df['value']
@@ -521,6 +551,67 @@ def predictions_model_data(data, model, features=None):
         '分类预测': y_pred_clf[0],
         '回归预测': y_pred_reg[0]
     }
+def get_previous_trading_day(date):
+    previous_date = date - timedelta(days=1)
+    while not is_workday(previous_date) or is_holiday(previous_date):
+        previous_date -= timedelta(days=0)
+    return previous_date
+def get_prediction_files_data(base_dir="../data/predictions/"):
+    # 1. 获取当前月日（例如：今天是7月8日，则得到 "0708"）
+    # 上一个交易日的月日
+    md = datetime.now().date()
+    previous_mmdd = md.strftime("%m%d")
+
+    # 数据集合
+    dfs = []
+    # 2. 遍历base_dir下的所有文件夹
+    for folder_name in os.listdir(base_dir):
+        folder_path = os.path.join(base_dir, folder_name)
+
+        # 确保是文件夹
+        if not os.path.isdir(folder_path):
+            continue
+
+        print(f"正在处理文件夹: {folder_name}")
+
+        # 3. 遍历文件夹中的所有文件，读取文件内容
+        for filename in os.listdir(folder_path):
+            # print(f"正在处理文件: {filename}")
+
+            # 检查文件名前4位是否匹配当前月日
+            if len(filename) >= 4 and filename[:4] < previous_mmdd:
+                file_path = os.path.join(folder_path, filename)
+                print(f"找到匹配文件: {file_path}")
+
+                # try:
+                # 4. 读取文件内容，组合数据以后进行训练
+                df_pred = pd.read_excel(file_path)
+                dfs.append(df_pred)
+                # print(df_pred.head(10))
+                # print(len(df_pred))
+                # 打印出dfs 总数
+                # print(f"dfs 总数: {len(dfs)}")
+
+                # except Exception as e:
+                #     print(f"处理文件 {filename} 时出错: {e}")
+        # 训练模型
+        # 5. 训练模型 数据
+        if not dfs:
+            print(f"文件夹 {folder_name} 中没有找到匹配日期的数据文件，跳过训练")
+            continue
+
+
+
+
+    df = pd.concat(dfs, ignore_index=True)
+    # print(len(df))
+    # 检查数据是否为空
+    if df.empty:
+        return None
+
+    return df
+
+
 
 # 示例调用修改
 if __name__ == "__main__":
@@ -533,12 +624,39 @@ if __name__ == "__main__":
         "../alert/0704.xlsx",
         "../alert/0707.xlsx",
         "../alert/0708.xlsx",
+        "../alert/0709.xlsx",
+        "../alert/0710.xlsx",
+        "../alert/0711.xlsx",
+        "../alert/0714.xlsx",
+        "../alert/0715.xlsx",
+        "../alert/0716.xlsx",
      ]
     # 读出文件中的数据
     df = generate_model_data_from_files(files)
+    print(f'df数据量：{len(df)}')
+
+    # //提取有效字段
+    df = df[['最高价', '是否领涨', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
+
+    # 读取其他数据 每日整理的数据集
+    df_other = get_prediction_files_data()
+    print(f'df_other数据量：{len(df_other)}')
+
+    # 提取有效字段
+    df_other = df_other[['最高价', '是否领涨', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
+
+    # 合并 数据
+    df = pd.concat([df, df_other], ignore_index=True)
     print(df)
+
+    # 训练
+    generate_model_data(df)
+
+
+
+
     # 随机森林 的模型建立和测试
-    random_forest_feature_analysis(df, '次日涨幅', problem_type='regression')
+    random_forest_feature_analysis(df, '次日最高涨幅', problem_type='regression')
 
     exit()
     # xgbboot 的模型建立和测试
