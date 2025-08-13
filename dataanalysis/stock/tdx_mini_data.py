@@ -347,14 +347,15 @@ def adjust_price(df_5m, df_xr):
 
 # 示例调用
 if __name__ == "__main__":
-    # codes = [
-    #     "300436",
-    #     "300224",
-    #          ]
-    # results = process_multiple_codes(codes)
-    # # 将results 转成pd，并打印出来
-    # df = pd.DataFrame(results)
-    # print(df)
+    codes = [
+        "300436",
+        "300224",
+             ]
+    results = process_multiple_codes(codes)
+    # 将results 转成pd，并打印出来
+    df = pd.DataFrame(results)
+    print(df)
+    exit()
 
     # todo 5分钟数据读取时间点以前的数据，结合最小的值和净量来判断是否可以买入，第二天爆发
     # 读取目录中的文件 dataanalysis/data/predictions/1600/07281517_1518.xlsx  获取代码

@@ -636,19 +636,25 @@ if __name__ == "__main__":
     print(f'df数据量：{len(df)}')
 
     # //提取有效字段
-    df = df[['最高价', '是否领涨', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
+    df = df[['日期','代码',  '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
 
     # 读取其他数据 每日整理的数据集
     df_other = get_prediction_files_data()
     print(f'df_other数据量：{len(df_other)}')
 
+
     # 提取有效字段
-    df_other = df_other[['最高价', '是否领涨', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
+    df_other = df_other[['日期','代码', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅','次日最高涨幅']]
+
 
     # 合并 数据
     df = pd.concat([df, df_other], ignore_index=True)
     print(df)
 
+    # 将df数据保存为文件，文件名为日期到秒
+    file_root = f'../data/bak/{datetime.now().strftime("%Y%m%d%H%M%S")}'
+    df.to_excel(file_root+".xlsx", index=False)
+    exit()
     # 训练
     generate_model_data(df)
 
