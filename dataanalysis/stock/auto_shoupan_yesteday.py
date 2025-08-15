@@ -50,13 +50,13 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 # try:
                 # 4. 读取文件内容
                 df_pred = pd.read_excel(file_path)
-                print(df_pred.head(100))
+                # print(df_pred.head(100))
 
 
                 print(tdx_files)
                 df_today = pd.read_csv(tdx_files, encoding='GBK', sep='\t', header=0)
                 # data_02 = pd.read_csv(file2,encoding='GBK',sep='\t',header=1)
-                print(df_today)
+                # print(df_today)
                 # 去掉最后一行
                 df_today = df_today[:-1]
                 # print(df_today)
@@ -83,7 +83,7 @@ def process_prediction_files(base_dir="../data/predictions/"):
                         # 可选：用0填充NaN值
                         df_pred[col] = df_pred[col].fillna(0)
 
-                print(df_pred.head(100))
+                # print(df_pred.head(100))
 
                 # print(df_pred)
                 # 计算 次日最高涨幅 =  100*（次日最高价-现价）/现价
@@ -95,7 +95,7 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 df_pred['是否成功'] = df_pred.apply(lambda x: 1 if x['value'] == 1 and x['AI预测'] == 1 else 0, axis=1)
                 #预测成功 字段 是当 预测为是时 同时 value 为 1 时为1，否则为0
                 df_pred['预测成功'] = df_pred.apply(lambda x: 1 if x['预测'] == "是" and x['value'] == 1 else 0, axis=1)
-                print(df_pred)
+                # print(df_pred)
 
 
                 # //df_pred 内容保存回原文件
