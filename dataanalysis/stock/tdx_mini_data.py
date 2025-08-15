@@ -194,7 +194,7 @@ def process_single_code(code: str) -> Dict:
 
     # 计算BOLL线
     df_boll = calculate_boll(df)
-    print( df_boll)
+    # print( df_boll)
     # latest_boll = df_boll['band_width'].iloc[-1]
     # 得到band_width最小值 和最后的比较
     latest_boll = df_boll['band_width'].iloc[-1]

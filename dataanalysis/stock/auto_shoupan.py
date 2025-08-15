@@ -700,7 +700,7 @@ def tdx_merge_data(blockname,blockname_01):
     data_02.sort_values(by=['代码'], inplace=True)
     data_02.reset_index(drop=True, inplace=True)
 
-    print( data_02.head(10))
+    # print( data_02.head(10))
     # 合并new_data和data_02的数据，按照T列进行合并
     # data_02 按字段 代码 排序
     # data_02 = data_02.sort_values(by=['代码'])
@@ -793,10 +793,8 @@ def merge_block_data(blockname):
     minite_data = pd.DataFrame(minite_data)
     # minite_data 和 tdx_data 合并 根据代码和code 字段进行，或者顺序直接合并
     tdx_data = pd.merge(tdx_data, minite_data, left_index=True, right_index=True)
-    print(tdx_data.head(5))
 
-
-    print( tdx_data.head(5))
+    # print( tdx_data.head(5))
 
     ths_data = pd.read_csv("../data/ths/"+blockname+'.xls',encoding='GBK',sep='\t')
     # 如果 '净额',  '净量' 字段不存在，则将  '主力净额',  '主力净量'更改为  '净额',  '净量'
@@ -807,7 +805,7 @@ def merge_block_data(blockname):
         ths_data['净量'] = ths_data['主力净量']
 
     data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量']], left_index=True, right_index=True)
-    print( data.head(10))
+    # print( data.head(10))
     # 打印 columns
     # print(data.columns)
     # 将columns 按照自己的需求进行排序
@@ -837,7 +835,7 @@ def merge_block_data(blockname):
     # 组合完整时间字符串
     full_time_str = f"{current_year}{blockname}00"  # 添加年份和秒数
 
-    print('full_time_str' +full_time_str)
+    # print('full_time_str' +full_time_str)
     # 转换为 datetime 对象
     dt = datetime.datetime.strptime(full_time_str, "%Y%m%d%H%M%S")
 
@@ -879,7 +877,7 @@ def merge_block_data(blockname):
     # print(data.columns)
     # 保存文件
     # result_df.to_excel(output_file, index=False)
-    print( data.head(10))
+    # print( data.head(10))
     data.to_excel(f"../alert/{blockname}.xlsx", index=False)
     return data
 
@@ -895,7 +893,7 @@ def get_time_directory(now=datetime.datetime.now().time()):
     elif datetime.time(15, 0) <= now <= datetime.time(22, 30):
         return '1600'
     else:
-        return '250721'
+        return '250812'
 
 def get_time_directory_from_block_name(blockname):
     # now = datetime.datetime.now().time()
