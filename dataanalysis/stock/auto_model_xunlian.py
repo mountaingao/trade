@@ -6,6 +6,8 @@ from chinese_calendar import is_workday, is_holiday
 import pandas as pd
 import auto_shoupan
 import model_xunlian
+import time
+
 def get_previous_trading_day(date):
     previous_date = date - timedelta(days=1)
     while not is_workday(previous_date) or is_holiday(previous_date):
@@ -84,6 +86,103 @@ def process_prediction_files(base_dir="../data/predictions/"):
         except Exception as e:
             print(f"训练文件夹 {folder_name} 的模型时出错: {e}")
 
+def process_prediction_files_from_files(input_files):
+    model_xunlian.generate_model_data_from_files(input_files)
 
 if __name__ == "__main__":
-    process_prediction_files()
+    # process_prediction_files()
+
+    # 读取目录文件进行训练，并使用不同的参数来测试和计算结果
+    df_other = model_xunlian.get_prediction_files_data()
+    print(f'df_other数据量：{len(df_other)}')
+
+    # 去掉重复数据
+    df_other = df_other.drop_duplicates(subset=['日期', '代码', '当日涨幅'])
+
+    # 去掉字段 次日涨幅 为空的数据
+    df_other = df_other[df_other['次日涨幅'].notnull()]
+    print(f'df_other数据量：{len(df_other)}')
+
+    # //去掉字段 Q 为空的数据
+    # df_other = df_other[df_other['Q'].notnull()]
+    # print(f'df_other数据量：{len(df_other)}')
+
+    # 去掉字段 日期为 08-14 的数据 以及 08-13日数据
+    df_other = df_other[df_other['日期'] != '2025-08-13']
+    df_other = df_other[df_other['日期'] != '2025-08-14']
+    print(f'df_other数据量：{len(df_other)}')
+
+    # 将df数据保存为文件，文件名为日期到秒
+    file_root = f'../data/bak/{datetime.now().strftime("%Y%m%d%H%M%S")}'
+    df_other.to_excel(file_root+".xlsx", index=False)
+
+    # exit()
+
+    # 提取有效字段 增加量比
+    df_1 = df_other[['日期','代码', '当日涨幅', '量比','信号天数', '净额', '净流入', '当日资金流入', '是否领涨', '次日涨幅','次日最高涨幅']]
+    # 第二种 增加总金额
+    df_2 = df_other[['日期','代码', '当日涨幅', '量比','信号天数', '总金额','净额', '净流入', '当日资金流入', '是否领涨','次日涨幅','次日最高涨幅']]
+    # 第三种，增加Q，Q1 Q3
+    df_3 = df_other[['日期','代码', '当日涨幅', '量比','信号天数', 'Q','Q_1', 'Q3','总金额','净额', '净流入', '当日资金流入','是否领涨', '次日涨幅','次日最高涨幅']]
+    # 第四种，再增加5分钟 band_width
+    df_4 = df_other[['日期','代码', '当日涨幅', '量比','信号天数',  'Q','Q_1', 'Q3','band_width','总金额','净额', '净流入', '当日资金流入', '是否领涨','次日涨幅','次日最高涨幅']]
+
+
+    features = [
+        '量比','当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'
+    ]
+    print(f'df_1数据量：{len(df_1)}')
+
+# 训练
+    model = model_xunlian.generate_model_data(df_1, '081601', features)
+
+    # file=  "../data/predictions/1600/08151503_1505.xlsx"
+    file=  "../data/predictions/1600/08141531_1533.xlsx"
+    # 预测数据
+    # 读取指定文件进行预测
+    # 预测文件数据  features dataanalysis/data/predictions/1600/08151503_1505.xlsx
+    model=     {
+        'reg_weights': reg_filename,
+        'clf_weights': clf_filename,
+        'reg_model': reg_model_path,
+        'clf_model': clf_model_path
+    }
+
+    model_xunlian.predictions_model_data_file(file,model,"../data/bak/stat/",features)
+    time.sleep(1)
+
+    exit()
+    features = [
+        '量比','总金额','当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'
+    ]
+    # 训练
+    model = model_xunlian.generate_model_data(df_2, '081602', features)
+
+    # 预测数据
+    # 读取指定文件进行预测
+    # 预测文件数据  features dataanalysis/data/predictions/1600/08151503_1505.xlsx
+    model_xunlian.predictions_model_data_file(file,model,"../data/bak/stat/",features)
+    time.sleep(1)
+
+    features = [
+        '量比','总金额','Q','当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'
+    ]
+    # 训练
+    model = model_xunlian.generate_model_data(df_3, '081603', features)
+
+    # 预测数据
+    # 读取指定文件进行预测
+    # 预测文件数据  features dataanalysis/data/predictions/1600/08151503_1505.xlsx
+    model_xunlian.predictions_model_data_file(file,model,"../data/bak/stat/",features)
+    time.sleep(1)
+
+    features = [
+        '量比','总金额','Q','band_width','当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'
+    ]
+    # 训练
+    model = model_xunlian.generate_model_data(df_4, '081604', features)
+
+    # 预测数据
+    # 读取指定文件进行预测
+    # 预测文件数据  features dataanalysis/data/predictions/1600/08151503_1505.xlsx
+    model_xunlian.predictions_model_data_file(file,model,"../data/bak/stat/",features)

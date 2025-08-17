@@ -202,11 +202,15 @@ def generate_model_data(df, file_prefix=pd.Timestamp.now().strftime("%y%m%d"), f
         features = default_features
 
     print(f"数据总数：{len(df)}")
+    print("特征列表：", features)
 
     # 新增数据清洗步骤：处理标签列中的无效值
     # ======= 新增开始 =======
     # 增加value字段，当字段 次日最高涨幅大于7时，值为1，否则为0  ，未来可以调整为7.5，或者根据数据进行调整
-    df['value'] = np.where(df['次日最高涨幅'] > 7, 1, 0)
+    # 修改: 使用.copy()确保我们操作的是副本，避免SettingWithCopyWarning
+    df = df.copy()
+    df.loc[:, 'value'] = np.where(df['次日最高涨幅'] > 7, 1, 0)
+    
     # 检查并处理NaN值
     nan_mask = df['value'].isna()
     if nan_mask.any():
@@ -245,7 +249,7 @@ def generate_model_data(df, file_prefix=pd.Timestamp.now().strftime("%y%m%d"), f
 
     # 处理分类特征 - 对'是否领涨'列进行编码
     if '是否领涨' in X_train.columns:
-        X_train['是否领涨'] = X_train['是否领涨'].map({'是': 1, '否': 0})
+        X_train.loc[:, '是否领涨'] = X_train['是否领涨'].map({'是': 1, '否': 0})
 
     y_reg = df['次日最高涨幅']
     # y_clf = (df['value'] > 0).astype(int)
@@ -364,8 +368,9 @@ def checking_model_data(input_file,model, features=None):
 
     # 预测 准备数据
     df2 = pd.read_excel(input_file)
-    df2['value'] = df2['最高价'].map({'是': 1, '否': 0})
-    df2['是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
+    df2 = df2.copy()  # 避免SettingWithCopyWarning
+    df2.loc[:, 'value'] = df2['最高价'].map({'是': 1, '否': 0})
+    df2.loc[:, '是否领涨'] = df2['是否领涨'].map({'是': 1, '否': 0})
     y_test = df2[features]
 
     print(df2.head(10))
@@ -380,12 +385,9 @@ def checking_model_data(input_file,model, features=None):
     y_pred_clf = model_clf.predict(y_test)
     y_pred_reg = model_reg.predict(y_test)
 
-
-
     # 预测是
     y_pred = model_clf.predict(y_test)
     # print(y_pred)
-
 
     # y2_clf = (df2['value'] > 0).astype(int)
     y2_clf = df2['value']
@@ -405,7 +407,6 @@ def checking_model_data(input_file,model, features=None):
         print('预测值为{0}, 真实结果为{1}'.format(m, n))
         # if m / n - 1 > 0.2:
         #     print('预测值为{0}, 真是结果为{1}, 预测结果偏差大于20%'.format(m, n))
-
 
     """模型效果评估"""
     metrics_sklearn(y2_clf, y_pred)
@@ -439,9 +440,9 @@ def checking_model_data(input_file,model, features=None):
 
     # 构造结果 DataFrame
     result_df = df2.copy()
-    result_df['实际标签_value'] = y2_clf
-    result_df['分类预测_y_pred_clf'] = y_pred_clf
-    result_df['回归预测_y_pred_reg'] = y_pred_reg
+    result_df.loc[:, '实际标签_value'] = y2_clf
+    result_df.loc[:, '分类预测_y_pred_clf'] = y_pred_clf
+    result_df.loc[:, '回归预测_y_pred_reg'] = y_pred_reg
 
     # 保存为 Excel 文件  predictions_202507021753.xlsx
     # output_file = f'../data/checking_{pd.Timestamp.now().strftime("%Y%m%d%H%M")}.xlsx'
@@ -453,7 +454,7 @@ def checking_model_data(input_file,model, features=None):
 
     print(f"验证结果已保存至: {output_file}")
 
-def predictions_model_data_file(input_file,model,output_dir, features=None):
+def predictions_model_data_file(input_file,model,output_dir='', features=None):
     # 默认特征列表
     default_features = [
         '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '是否领涨'
@@ -464,10 +465,17 @@ def predictions_model_data_file(input_file,model,output_dir, features=None):
         features = default_features
 
     print(input_file)
+    print(features)
+
     # 预测 准备数据
     df_calculate = pd.read_excel(input_file)
-    df_calculate['value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
-    df_calculate['是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
+    df_calculate = df_calculate.copy()  # 避免SettingWithCopyWarning
+    # df_calculate.loc[:, 'value'] = df_calculate['最高价'].map({'是': 1, '否': 0})
+    # 处理"是否领涨"列，将"是"/"否"转换为1/0，同时处理NaN值
+    # df_calculate.loc[:, 'value'] = df_calculate['value'].fillna(0).astype(float)
+    # 原代码存在数据类型不兼容问题，需要先转换为float类型再处理
+    # df_calculate.loc[:, '是否领涨'] = df_calculate['value'].fillna(0).astype(float)
+    # df_calculate.loc[:, '是否领涨'] = df_calculate['是否领涨'].map({'是': 1, '否': 0})
     y_test = df_calculate[features]
 
     # print(df_calculate.head(10))
@@ -485,11 +493,10 @@ def predictions_model_data_file(input_file,model,output_dir, features=None):
     # print(y_pred_clf)
     # print(y_pred_reg)
 
-
     # 构造结果 DataFrame
     result_df = df_calculate.copy()
-    result_df['分类预测_y_pred_clf'] = y_pred_clf
-    result_df['回归预测_y_pred_reg'] = y_pred_reg
+    result_df.loc[:, '分类预测_y_pred_clf'] = y_pred_clf
+    result_df.loc[:, '回归预测_y_pred_reg'] = y_pred_reg
 
     # 保存为 Excel 文件
     file_name = os.path.basename(input_file)
@@ -497,7 +504,7 @@ def predictions_model_data_file(input_file,model,output_dir, features=None):
     if(output_dir == ''):
         output_dir = f'../data/predictions'
 
-    output_file = f'{output_dir}/{file_root}_{pd.Timestamp.now().strftime("%H%M")}{file_ext}'
+    output_file = f'{output_dir}/{file_root}_{pd.Timestamp.now().strftime("%H%M%S")}{file_ext}'
     result_df.to_excel(output_file, index=False)
 
     print(f"预测结果已保存至: {output_file}")
