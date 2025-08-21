@@ -148,7 +148,7 @@ def train_and_evaluate_models(df, target_col, feature_cols, model_type='regressi
             'y_test': y_test
         }
     }
-    
+    # print(results)
     return results
 
 def compare_models_performance(results_dict):
@@ -245,7 +245,7 @@ def main():
     print("分析特征重要性...")
     # 分析特征重要性
     df_importance = analyze_feature_importance(all_results)
-    
+    print(df_importance)
     # 生成报表文件名
     output_file = f"reports/model_comparison_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     
