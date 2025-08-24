@@ -43,31 +43,6 @@ from model_xunlian import generate_model_data_from_files, get_prediction_files_d
 模型调参：对RandomForest和XGBoost进行超参数优化
 交叉验证：使用更稳健的交叉验证方法评估模型性能
 
-不同阈值对比
-阈值
-最佳模型准确率
-提升幅度
-7%
-~77%
-基准
-10%
-85.51%
-+8.51%
-11%
-87.85%
-+2.34%
-13%
-90.46%
-+2.61%
-13.5%
-90.73%
-+0.27%
-14%
-92.44%
-+1.71%
-15%
-88.84%
--1.62%
 
 '''
 
@@ -105,7 +80,7 @@ def prepare_data():
     print(f'历史数据量：{len(df)}')
 
     # 提取有效字段
-    df = df[['日期', '代码', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
+    # df = df[['日期', '代码', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
 
     # 读取其他数据 每日整理的数据集
     df_other = get_prediction_files_data("../data/predictions/",'0730')
@@ -113,7 +88,7 @@ def prepare_data():
     if df_other is not None and not df_other.empty:
         print(f'预测数据量：{len(df_other)}')
         # 提取有效字段
-        df_other = df_other[['日期', '代码', '当日涨幅', '量比','总金额', '信号天数','Q', 'band_width','min_value','max_value','净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
+        # df_other = df_other[['日期', '代码', '当日涨幅', '量比','总金额', '信号天数','Q', 'band_width','min_value','max_value','净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
         # 合并数据
         df = pd.concat([df, df_other], ignore_index=True)
     
@@ -370,12 +345,12 @@ def save_selected_models(df):
     保存指定的模型到model/目录下
     """
     # 创建model目录（如果不存在）
-    os.makedirs("model", exist_ok=True)
+    os.makedirs("../models", exist_ok=True)
     
     # 定义特征组合
     feature_combinations = {
         'Basic_Features': ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'],
-        'All_Features': ['当日涨幅', '量比','总金额','信号天数','Q','band_width','min_value','max_value','净额', '净流入', '当日资金流入']
+        'All_Features': ['当日涨幅', '量比','总金额', '信号天数','Q','band_width','min_value','max_value','净额', '净流入', '当日资金流入']
     }
     
     # 定义目标任务和阈值
@@ -387,6 +362,7 @@ def save_selected_models(df):
     # 保存阈值=14 和 All_Features 的 StackingEnsemble 模型
     target_col, task_type, threshold = tasks['Next_Day_High_Increase_Classification_14']
     feature_cols = feature_combinations['All_Features']
+    # 移除目标列中的缺失值
     results = train_and_evaluate_models(df, target_col, feature_cols, task_type, threshold, return_models=True)
     
     # 保存模型
@@ -398,7 +374,7 @@ def save_selected_models(df):
         'threshold': threshold,
         'task_type': task_type
     }
-    joblib.dump(model_data_14, "../model/stacking_ensemble_threshold_14_all_features.pkl")
+    joblib.dump(model_data_14, "../models/stacking_ensemble_threshold_14_all_features.pkl")
     print("已保存阈值=14 和 All_Features 的 StackingEnsemble 模型")
     
     # 保存阈值=20 和 Basic_Features 的 RandomForest 模型
@@ -415,7 +391,7 @@ def save_selected_models(df):
         'threshold': threshold,
         'task_type': task_type
     }
-    joblib.dump(model_data_20, "../model/random_forest_threshold_20_basic_features.pkl")
+    joblib.dump(model_data_20, "../models/random_forest_threshold_20_basic_features.pkl")
     print("已保存阈值=20 和 Basic_Features 的 RandomForest 模型")
 
 def predict_with_models(file_path, output_path=None):
@@ -426,8 +402,8 @@ def predict_with_models(file_path, output_path=None):
     df = pd.read_excel(file_path)
     
     # 加载模型
-    model_14 = joblib.load("../model/stacking_ensemble_threshold_14_all_features.pkl")
-    model_20 = joblib.load("../model/random_forest_threshold_20_basic_features.pkl")
+    model_14 = joblib.load("../models/stacking_ensemble_threshold_14_all_features.pkl")
+    model_20 = joblib.load("../models/random_forest_threshold_20_basic_features.pkl")
     
     # 准备特征数据
     # 对模型14 (All_Features)
@@ -447,11 +423,15 @@ def predict_with_models(file_path, output_path=None):
     # 进行预测
     predictions_14 = model_14['model'].predict(X_14)
     predictions_20 = model_20['model'].predict(X_20)
-    
+
+
     # 添加预测结果到数据框
     df['Prediction_Threshold_14'] = predictions_14
     df['Prediction_Threshold_20'] = predictions_20
-    
+    # 打印出df['Prediction_Threshold_14'] 预测结果大于0的值
+    print(df[df['Prediction_Threshold_14'] > 0])
+    print(predictions_20[predictions_20 > 0])
+
     # 根据阈值创建分类结果
     df['Classification_Threshold_14'] = (predictions_14 > 0.5).astype(int)  # 二分类结果
     df['Classification_Threshold_20'] = (predictions_20 > 0.5).astype(int)  # 二分类结果
@@ -459,11 +439,176 @@ def predict_with_models(file_path, output_path=None):
     # 保存结果
     if output_path is None:
         output_path = file_path.replace('.xlsx', '_with_predictions.xlsx')
-    
+    print(f"保存结果到 {output_path}")
+    print( df)
     df.to_excel(output_path, index=False)
     print(f"预测结果已保存至: {output_path}")
     
     return df
+
+def backtest_threshold_14(df):
+    """
+    回测模型，测试阈值14的模型，并将符合条件的值写入临时目录
+    """
+    # 创建临时目录（如果不存在）
+    os.makedirs("temp", exist_ok=True)
+    
+    # 定义特征组合
+    feature_combinations = {
+        'All_Features': ['当日涨幅', '量比','总金额','信号天数','Q','band_width','min_value','max_value','净额', '净流入', '当日资金流入']
+    }
+    
+    print("\n=== 回测任务: 阈值14 (Threshold_14) ===")
+    
+    # 选择特征组合和目标
+    feature_cols_14 = feature_combinations['All_Features']
+    target_col_14 = '次日最高涨幅'
+    task_type_14 = 'classification'
+    threshold_14 = 14
+
+    # 加载模型
+    # 训练模型
+    # results_14 = train_and_evaluate_models(df, target_col_14, feature_cols_14, task_type_14, threshold_14, return_models=True)
+    
+    # 获取测试数据
+    X_test_14 = df[feature_cols_14].copy()
+    
+    # 处理分类特征
+    categorical_cols_14 = X_test_14.select_dtypes(include=['object', 'category']).columns
+    if not categorical_cols_14.empty:
+        le_14 = LabelEncoder()
+        for col in categorical_cols_14:
+            X_test_14[col] = le_14.fit_transform(X_test_14[col].astype(str))
+    
+    # 使用StackingEnsemble模型进行预测
+    # model_14 = results_14['StackingEnsemble']['model']
+    model_14 = joblib.load("../models/stacking_ensemble_threshold_14_all_features.pkl")
+
+    # 进行预测
+    predictions_14 = model_14['model'].predict(X_test_14)
+    
+    # 根据阈值创建分类结果
+    classifications_14 = (predictions_14 > 0.5).astype(int)
+    
+    # 将预测结果添加到原始数据
+    df_result_14 = df.copy()
+    df_result_14['Prediction_14'] = predictions_14
+    df_result_14['Classification_14'] = classifications_14
+    
+    # 筛选出分类结果为1的记录（即符合条件的记录）
+    filtered_df_14 = df_result_14[df_result_14['Classification_14'] == 1]
+    
+    # 保存符合条件的记录到临时目录
+    output_file_14 = "temp/backtest_results_threshold_14.xlsx"
+    if not filtered_df_14.empty:
+        filtered_df_14.to_excel(output_file_14, index=False)
+        print(f"阈值 14 的回测结果已保存到: {output_file_14}")
+        print(f"符合条件的记录数: {len(filtered_df_14)}")
+        print("符合条件的前几条记录:")
+        print(filtered_df_14[['日期', '代码', '当日涨幅', 'Prediction_14', 'Classification_14']].head())
+    else:
+        print(f"阈值 14 没有符合条件的记录")
+        # 创建空文件
+        filtered_df_14.to_excel(output_file_14, index=False)
+    
+    backtest_results_14 = {
+        'predictions': predictions_14,
+        'classifications': classifications_14,
+        'filtered_data': filtered_df_14,
+        'count': len(filtered_df_14)
+    }
+    
+    return backtest_results_14
+
+def backtest_threshold_20(df):
+    """
+    回测模型，测试阈值20的模型，并将符合条件的值写入临时目录
+    """
+    # 创建临时目录（如果不存在）
+    os.makedirs("temp", exist_ok=True)
+    
+    # 定义特征组合
+    feature_combinations = {
+        'Basic_Features': ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入']
+    }
+    
+    print("\n=== 回测任务: 阈值20 (Threshold_20) ===")
+    
+    # 选择特征组合和目标
+    feature_cols_20 = feature_combinations['Basic_Features']
+    target_col_20 = '次日最高涨幅'
+    task_type_20 = 'classification'
+    threshold_20 = 20
+    
+    # 训练模型
+    # results_20 = train_and_evaluate_models(df, target_col_20, feature_cols_20, task_type_20, threshold_20, return_models=True)
+
+    # 获取测试数据
+    X_test_20 = df[feature_cols_20].copy()
+    
+    # 处理分类特征
+    categorical_cols_20 = X_test_20.select_dtypes(include=['object', 'category']).columns
+    if not categorical_cols_20.empty:
+        le_20 = LabelEncoder()
+        for col in categorical_cols_20:
+            X_test_20[col] = le_20.fit_transform(X_test_20[col].astype(str))
+    
+    # 使用RandomForest模型进行预测
+    # model_20 = results_20['RandomForest']['model']
+    model_20 = joblib.load("../models/random_forest_threshold_20_basic_features.pkl")
+
+    # 进行预测
+    predictions_20 = model_20['model'].predict(X_test_20)
+    
+    # 根据阈值创建分类结果
+    classifications_20 = (predictions_20 > 0.5).astype(int)
+    
+    # 将预测结果添加到原始数据
+    df_result_20 = df.copy()
+    df_result_20['Prediction_20'] = predictions_20
+    df_result_20['Classification_20'] = classifications_20
+    
+    # 筛选出分类结果为1的记录（即符合条件的记录）
+    filtered_df_20 = df_result_20[df_result_20['Classification_20'] == 1]
+    
+    # 保存符合条件的记录到临时目录
+    output_file_20 = "temp/backtest_results_threshold_20.xlsx"
+    if not filtered_df_20.empty:
+        filtered_df_20.to_excel(output_file_20, index=False)
+        print(f"阈值 20 的回测结果已保存到: {output_file_20}")
+        print(f"符合条件的记录数: {len(filtered_df_20)}")
+        print("符合条件的前几条记录:")
+        print(filtered_df_20[['日期', '代码', '当日涨幅', 'Prediction_20', 'Classification_20']].head())
+    else:
+        print(f"阈值 20 没有符合条件的记录")
+        # 创建空文件
+        filtered_df_20.to_excel(output_file_20, index=False)
+    
+    backtest_results_20 = {
+        'predictions': predictions_20,
+        'classifications': classifications_20,
+        'filtered_data': filtered_df_20,
+        'count': len(filtered_df_20)
+    }
+    
+    return backtest_results_20
+
+def backtest_models(df):
+    """
+    回测模型，分别测试阈值14和20的模型，并将符合条件的值写入临时目录
+    """
+    # 调用阈值14的回测
+    results_14 = backtest_threshold_14(df)
+    
+    # 调用阈值20的回测
+    results_20 = backtest_threshold_20(df)
+    
+    backtest_results = {
+        'Threshold_14': results_14,
+        'Threshold_20': results_20
+    }
+    
+    return backtest_results
 
 def main():
     """
@@ -590,4 +735,13 @@ def main():
     return df_performance, df_importance
 
 if __name__ == "__main__":
-    performance_df, importance_df = main()
+    # performance_df, importance_df = main()
+
+    df = prepare_data()
+    backtest_models(df)
+    # input_file = "../data/predictions/1000/08220954_1003.xlsx"
+    # input_file = "../data/predictions/1200/08221132_1134.xlsx"
+    # input_file = "../data/predictions/1400/08221404_1406.xlsx"
+    # input_file = "../data/predictions/1600/08221505_1506.xlsx"
+    # output_dir = "../data/predictions"
+    # predict_with_models(input_file)
