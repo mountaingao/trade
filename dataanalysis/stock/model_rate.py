@@ -97,6 +97,57 @@ def prepare_data():
     df.to_excel("../data/bak/model_data.xlsx", index=False)
     return df
 
+
+def prepare_all_data():
+    """
+    准备数据集，包括历史数据和预测数据
+    """
+    # 检查临时文件是否存在
+    temp_file_path = "../data/bak/model_data_all.xlsx"
+    if os.path.exists(temp_file_path):
+        print("检测到临时文件，直接读取...")
+        df = pd.read_excel(temp_file_path)
+        print(f'历史数据量：{len(df)}')
+        return df
+
+    # 读取历史数据文件
+    files = [
+        "../alert/0630.xlsx",
+        "../alert/0701.xlsx",
+        "../alert/0702.xlsx",
+        "../alert/0703.xlsx",
+        "../alert/0704.xlsx",
+        "../alert/0707.xlsx",
+        "../alert/0708.xlsx",
+        "../alert/0709.xlsx",
+        "../alert/0710.xlsx",
+        "../alert/0711.xlsx",
+        "../alert/0714.xlsx",
+        "../alert/0715.xlsx",
+        "../alert/0716.xlsx",
+    ]
+
+    # 读取文件中的数据
+    df = generate_model_data_from_files(files)
+    print(f'历史数据量：{len(df)}')
+
+    # 提取有效字段
+    # df = df[['日期', '代码', '当日涨幅', '信号天数', '净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
+
+    # 读取其他数据 每日整理的数据集
+    df_other = get_prediction_files_data("../data/predictions/",'0717')
+
+    if df_other is not None and not df_other.empty:
+        print(f'预测数据量：{len(df_other)}')
+        # 提取有效字段
+        # df_other = df_other[['日期', '代码', '当日涨幅', '量比','总金额', '信号天数','Q', 'band_width','min_value','max_value','净额', '净流入', '当日资金流入', '次日涨幅', '次日最高涨幅']]
+        # 合并数据
+        df = pd.concat([df, df_other], ignore_index=True)
+
+    print(f'总数据量：{len(df)}')
+    # 将df写入临时文件，供下次使用
+    df.to_excel("../data/bak/model_data_all.xlsx", index=False)
+    return df
 def evaluate_model_performance(y_true, y_pred, model_type='regression'):
     """
     评估模型性能
@@ -557,6 +608,7 @@ def backtest_threshold_20(df):
     # model_20 = results_20['RandomForest']['model']
     model_20 = joblib.load("../models/random_forest_threshold_20_basic_features.pkl")
 
+    print(len(X_test_20))
     # 进行预测
     predictions_20 = model_20['model'].predict(X_test_20)
     
@@ -601,6 +653,7 @@ def backtest_models(df):
     results_14 = backtest_threshold_14(df)
     
     # 调用阈值20的回测
+
     results_20 = backtest_threshold_20(df)
     
     backtest_results = {
@@ -737,8 +790,13 @@ def main():
 if __name__ == "__main__":
     # performance_df, importance_df = main()
 
-    df = prepare_data()
-    backtest_models(df)
+    # df = prepare_data()
+    # backtest_models(df)
+
+
+    df = prepare_all_data()
+    # backtest_models(df)
+    results_20 = backtest_threshold_20(df)
     # input_file = "../data/predictions/1000/08220954_1003.xlsx"
     # input_file = "../data/predictions/1200/08221132_1134.xlsx"
     # input_file = "../data/predictions/1400/08221404_1406.xlsx"
