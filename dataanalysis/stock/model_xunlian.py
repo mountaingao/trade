@@ -563,11 +563,21 @@ def get_previous_trading_day(date):
     while not is_workday(previous_date) or is_holiday(previous_date):
         previous_date -= timedelta(days=0)
     return previous_date
-def get_prediction_files_data(base_dir="../data/predictions/"):
+def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = None,end_mmdd=None):
     # 1. 获取当前月日（例如：今天是7月8日，则得到 "0708"）
     # 上一个交易日的月日
-    md = datetime.now().date()
-    previous_mmdd = md.strftime("%m%d")
+    if end_mmdd is not None:
+        end_md = end_mmdd
+    else:
+        end_md = datetime.now().strftime("%m%d")
+
+    if start_mmddend is not None:
+        start_md = start_mmddend
+    else:
+        start_md = None
+    # md = datetime.now().date()
+    # previous_mmdd = md.strftime("%m%d")
+    previous_mmdd = end_md
 
     # 数据集合
     dfs = []
@@ -586,7 +596,7 @@ def get_prediction_files_data(base_dir="../data/predictions/"):
             # print(f"正在处理文件: {filename}")
 
             # 检查文件名前4位是否匹配当前月日
-            if len(filename) >= 4 and filename[:4] < previous_mmdd:
+            if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < previous_mmdd:
                 file_path = os.path.join(folder_path, filename)
                 print(f"找到匹配文件: {file_path}")
 
