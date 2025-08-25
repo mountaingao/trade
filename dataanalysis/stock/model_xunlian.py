@@ -628,6 +628,28 @@ def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = No
 
     return df
 
+def train_model(df, tasks, feature_combinations):
+    # 保存阈值=20 和 Basic_Features 的 RandomForest 模型
+    target_col, task_type, threshold = tasks['Next_Day_High_Increase_Classification_20']
+    feature_cols = feature_combinations['Basic_Features']
+    results = train_and_evaluate_models(df, target_col, feature_cols, task_type, threshold, return_models=True)
+
+    model = RandomForestClassifier()
+    model.fit(X_train, y_train)
+
+    # 将模型保存到文件 'my_model.joblib'
+    joblib.dump(model, 'my_model.joblib')
+    # 保存模型
+    model_data_20 = {
+        'model': results['RandomForest']['model'],
+        'feature_cols': results['feature_cols'],
+        'label_encoder': results['label_encoder'],
+        'categorical_cols': results['categorical_cols'],
+        'threshold': threshold,
+        'task_type': task_type
+    }
+    joblib.dump(model_data_20, "../models/random_forest_threshold_20_basic_features.pkl")
+    print("已保存阈值=20 和 Basic_Features 的 RandomForest 模型")
 
 
 # 示例调用修改
