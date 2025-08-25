@@ -787,16 +787,18 @@ def main():
     
     return df_performance, df_importance
 
+
+
 if __name__ == "__main__":
-    performance_df, importance_df = main()
+    # performance_df, importance_df = main()
 
     # df = prepare_data()
     # backtest_models(df)
 
 
-    # df = prepare_all_data()
-    # backtest_models(df)
-    # results_20 = backtest_threshold_20(df)
+    df = prepare_all_data()
+    backtest_models(df)
+    results_20 = backtest_threshold_20(df)
 
 
     # input_file = "../data/predictions/1000/08220954_1003.xlsx"

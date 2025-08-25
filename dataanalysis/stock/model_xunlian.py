@@ -574,7 +574,7 @@ def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = No
     if start_mmddend is not None:
         start_md = start_mmddend
     else:
-        start_md = None
+        start_md = '0630'
     # md = datetime.now().date()
     # previous_mmdd = md.strftime("%m%d")
     previous_mmdd = end_md
