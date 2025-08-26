@@ -102,7 +102,7 @@ def optimize_model_parameters(X_train, y_train, model_type='regression'):
     
     return grid_search.best_estimator_
 
-def train_and_save_models(df, target_col, feature_cols, model_type='regression', threshold=20):
+def train_and_save_models(df, target_col, feature_cols, model_type='regression', threshold=14):
     """
     训练随机森林模型并保存
     """
@@ -380,7 +380,7 @@ def test_model_functionality():
     # 4. 训练分类模型
     print("3. 训练分类模型...")
     cls_basic, cls_opt = train_and_save_models(
-        df, target_col_cls, feature_combinations['Basic_Features'], 'classification', threshold=20
+        df, target_col_cls, feature_combinations['Basic_Features'], 'classification', threshold=14
     )
     
     # 5. 测试单文件预测
