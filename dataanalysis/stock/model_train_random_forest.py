@@ -123,7 +123,168 @@ def optimize_model_parameters(X_train, y_train, model_type='regression', algorit
     
     return grid_search.best_estimator_
 
-def train_and_save_models(df, target_col, feature_cols, model_type='regression', threshold=14, algorithm='random_forest'):
+def find_optimal_threshold(df, feature_cols, algorithm='random_forest', model_type='classification'):
+    """
+    寻找最优的threshold值
+    """
+    print("开始寻找最优threshold值...")
+    
+    # 数据预处理
+    data = df.copy()
+    
+    # 移除目标列中的缺失值
+    target_col = '次日最高涨幅'
+    data = data.dropna(subset=[target_col])
+    
+    # 分离特征和目标
+    X = data[feature_cols]
+    y = data[target_col]
+    
+    # 清理数据中的无效值
+    # 将 '--' 等无效字符串替换为 NaN
+    X = X.replace(['--', 'None', 'null', ''], np.nan)
+    y = y.replace(['--', 'None', 'null', ''], np.nan)
+    
+    # 移除包含 NaN 的行
+    valid_indices = X.dropna().index.intersection(y.dropna().index)
+
+    X = X.loc[valid_indices]
+    y = y.loc[valid_indices]
+
+    print(f"数据...{len(X)}，“列”数据量：{len(y)}")
+    # 处理分类特征
+    categorical_cols = X.select_dtypes(include=['object', 'category']).columns
+    if not categorical_cols.empty:
+        le = LabelEncoder()
+        for col in categorical_cols:
+            X[col] = le.fit_transform(X[col].astype(str))
+    
+    # 划分训练集和测试集
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42)
+    
+    if model_type == 'classification':
+        # 测试不同的threshold值
+        thresholds = range(5, 15, 1)  # 从0到30，步长为1
+        best_threshold = 0
+        best_score = -1
+        best_metrics = {}
+        
+        print(f"测试threshold值范围: {min(thresholds)} - {max(thresholds)}")
+        
+        results = []
+        
+        for threshold in thresholds:
+            # 创建分类目标变量
+            y_train_cls = (y_train > threshold).astype(int)
+            y_test_cls = (y_test > threshold).astype(int)
+            
+            # 初始化模型
+            if algorithm == 'random_forest':
+                model = RandomForestClassifier(n_estimators=100, random_state=42)
+            elif algorithm == 'xgboost':
+                model = xgb.XGBClassifier(n_estimators=100, random_state=42)
+            
+            # 对模型进行超参数优化
+            print(f"对threshold={threshold}进行模型调优...")
+            optimized_model = optimize_model_parameters(X_train, y_train_cls, 'classification', algorithm)
+            
+            # 训练优化后的模型
+            optimized_model.fit(X_train, y_train_cls)
+            
+            # 预测
+            y_pred = optimized_model.predict(X_test)
+            
+            # 计算评估指标
+            accuracy = accuracy_score(y_test_cls, y_pred)
+            precision = precision_score(y_test_cls, y_pred, average='weighted', zero_division=0)
+            recall = recall_score(y_test_cls, y_pred, average='weighted', zero_division=0)
+            f1 = f1_score(y_test_cls, y_pred, average='weighted', zero_division=0)
+            
+            # 使用F1分数作为主要评估指标
+            score = f1
+            
+            results.append({
+                'threshold': threshold,
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1_score': f1
+            })
+            
+            if score > best_score:
+                best_score = score
+                best_threshold = threshold
+                best_metrics = {
+                    'threshold': threshold,
+                    'accuracy': accuracy,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1_score': f1
+                }
+            
+            print(f"Threshold: {threshold:2d}, Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
+        
+        print(f"\n最优threshold值: {best_threshold}")
+        print(f"对应的评估指标: {best_metrics}")
+        
+        # 将结果保存到文件
+        results_df = pd.DataFrame(results)
+        os.makedirs("temp", exist_ok=True)
+        results_df.to_excel(f"temp/threshold_optimization_results_{algorithm}_{model_type}.xlsx", index=False)
+        print(f"threshold优化结果已保存至: temp/threshold_optimization_results_{algorithm}_{model_type}.xlsx")
+        
+        return best_threshold, best_metrics, results_df
+    
+    elif model_type == 'regression':
+        # 对于回归模型，我们使用不同的评估方法
+        # 我们将预测值与实际值的差异作为评估标准
+        
+        # 初始化模型
+        if algorithm == 'random_forest':
+            model = RandomForestRegressor(n_estimators=100, random_state=42)
+        elif algorithm == 'xgboost':
+            model = xgb.XGBRegressor(n_estimators=100, random_state=42)
+        
+        # 对模型进行超参数优化
+        print("对回归模型进行调优...")
+        optimized_model = optimize_model_parameters(X_train, y_train, 'regression', algorithm)
+        
+        # 训练优化后的模型
+        optimized_model.fit(X_train, y_train)
+        
+        # 预测
+        y_pred = optimized_model.predict(X_test)
+        
+        # 计算回归评估指标
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        
+        metrics = {
+            'MAE': mae,
+            'R2': r2,
+            'RMSE': rmse
+        }
+        
+        print(f"回归模型评估结果: MAE={mae:.4f}, R2={r2:.4f}, RMSE={rmse:.4f}")
+        
+        # 创建结果数据框
+        results_df = pd.DataFrame([{
+            'MAE': mae,
+            'R2': r2,
+            'RMSE': rmse
+        }])
+        
+        # 保存结果
+        os.makedirs("temp", exist_ok=True)
+        results_df.to_excel(f"temp/threshold_optimization_results_{algorithm}_{model_type}.xlsx", index=False)
+        print(f"回归模型评估结果已保存至: temp/threshold_optimization_results_{algorithm}_{model_type}.xlsx")
+        
+        # 回归模型不需要threshold，返回默认值
+        return None, metrics, results_df
+
+def train_and_save_models(df, target_col, feature_cols, model_type='regression', threshold=7, algorithm='random_forest'):
     """
     训练随机森林模型并保存
     """
@@ -146,7 +307,8 @@ def train_and_save_models(df, target_col, feature_cols, model_type='regression',
     valid_indices = X.dropna().index.intersection(y.dropna().index)
     X = X.loc[valid_indices]
     y = y.loc[valid_indices]
-    
+    print(f"数据...{len(X)}，“列”数据量：{len(y)}")
+
     # 处理分类特征
     categorical_cols = X.select_dtypes(include=['object', 'category']).columns
     if not categorical_cols.empty:
@@ -474,20 +636,39 @@ def main():
 
     # 训练并保存模型 - 随机森林
     feature_cols = ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入']
+
+    # 定义多种特征列组合进行测试
+    feature_combinations = {
+        'Basic_Features': ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入'],
+        'Price_and_Flow_Features': ['当日涨幅', '总金额', '净额', '净流入', '当日资金流入'],
+        'Timing_Features':  ['当日涨幅', '量比', '总金额','信号天数', '净额', '净流入', '当日资金流入'],
+        'Flow_Features': ['当日涨幅', '量比','总金额','信号天数','Q','净额', '净流入', '当日资金流入'],
+        'last_Features': ['当日涨幅', '量比','总金额','信号天数','Q','band_width','净额', '净流入', '当日资金流入'],
+        'All_Features': ['当日涨幅', '量比','总金额','信号天数','Q','band_width','min_value','max_value','净额', '净流入', '当日资金流入']
+    }
+
+    # 模型调优和参数调优
+    # find_optimal_threshold(df, feature_cols, algorithm='random_forest', model_type='classification')
+    # find_optimal_threshold(df, feature_cols, algorithm='xgboost', model_type='classification')
+
+    # find_optimal_threshold(df, feature_cols, algorithm='xgboost', model_type='regression')
+    # find_optimal_threshold(df, feature_cols, algorithm='random_forest', model_type='regression')
+
+
+
     train_and_save_models(df, '次日最高涨幅', feature_cols, 'regression', algorithm='random_forest')
     train_and_save_models(df, '次日最高涨幅', feature_cols, 'classification', algorithm='random_forest')
-    
-    # 训练并保存模型 - XGBoost
+    #
+    # # 训练并保存模型 - XGBoost
     train_and_save_models(df, '次日最高涨幅', feature_cols, 'regression', algorithm='xgboost')
     train_and_save_models(df, '次日最高涨幅', feature_cols, 'classification', algorithm='xgboost')
-
-    # 使用模型进行预测
-    predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest'])
-    predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['xgboost'])
+    #
+    # # 使用模型进行预测
+    # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'])
 
 if __name__ == "__main__":
     # model='basic' or 'optimized'
-    # main()
+    main()
     # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
-    predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
