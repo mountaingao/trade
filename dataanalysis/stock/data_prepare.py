@@ -133,10 +133,11 @@ def prepare_all_data(end_mmdd: str):
     准备数据集，包括历史数据和预测数据
     """
     # 检查临时文件是否存在,如果有end_mmdd 则使用end_mmdd 作为文件名最后部分，否则为all
-    temp_file_path = "cache/model_data_all.xlsx"
     if end_mmdd is not None:
-        temp_file_path = "cache/model_data_"+end_mmdd+".xlsx"
-    # temp_file_path = "cache/predictions_data_all.xlsx"
+        temp_file_path = "cache/predictions_data_"+end_mmdd+".xlsx"
+    else:
+        temp_file_path = "cache/predictions_data_all.xlsx"
+
     if os.path.exists(temp_file_path):
         print("检测到临时文件，直接读取...")
         df = pd.read_excel(temp_file_path)

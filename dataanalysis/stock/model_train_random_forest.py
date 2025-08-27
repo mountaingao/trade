@@ -435,8 +435,8 @@ def predict_with_saved_models(file_path, output_path=None, algorithms=['random_f
     for algorithm in algorithms:
         # 加载模型
         if algorithm == 'random_forest':
-            regression_model = joblib.load(f"../models/rf_regression_{model}_model.pkl")
-            classification_model = joblib.load(f"../models/rf_classification_{model}_model.pkl")
+            regression_model = joblib.load(f"../models/{algorithm}_regression_{model}_model.pkl")
+            classification_model = joblib.load(f"../models/{algorithm}_classification_{model}_model.pkl")
         elif algorithm == 'xgboost':
             regression_model = joblib.load(f"../models/xgboost_regression_{model}_model.pkl")
             classification_model = joblib.load(f"../models/xgboost_classification_{model}_model.pkl")
@@ -632,7 +632,7 @@ def main():
     # 运行测试
 
     # 如果需要实际使用，可以取消下面的注释
-    df = prepare_all_data("0824")
+    df = prepare_all_data("0812")
 
     # 训练并保存模型 - 随机森林
     feature_cols = ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入']
@@ -668,7 +668,8 @@ def main():
 
 if __name__ == "__main__":
     # model='basic' or 'optimized'
-    main()
+    # main()
     # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
     # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
