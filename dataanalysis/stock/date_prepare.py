@@ -1,0 +1,203 @@
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Optional
+import warnings
+import os
+from datetime import datetime, timedelta
+import model_xunlian
+warnings.filterwarnings('ignore')
+
+
+
+def get_data_from_files(input_files):
+    """
+根据输入文件列表生成模型数据并保存特征权重
+
+参数:
+    input_files (list): 输入Excel文件路径列表
+"""
+    # 读取并合并所有文件
+    dfs = []
+    for file in input_files:
+        df_part = pd.read_excel(file)
+        dfs.append(df_part)
+    df = pd.concat(dfs, ignore_index=True)
+    return df
+
+def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = None,end_mmdd=None):
+    # 1. 获取当前月日（例如：今天是7月8日，则得到 "0708"），可以指定开始和结束日期
+    # 读取指定目录下所有子目录的文件的数据
+    # 上一个交易日的月日
+    if end_mmdd is not None:
+        end_md = end_mmdd
+    else:
+        end_md = datetime.now().strftime("%m%d")
+
+    if start_mmddend is not None:
+        start_md = start_mmddend
+    else:
+        start_md = '0630'
+    # md = datetime.now().date()
+    # previous_mmdd = md.strftime("%m%d")
+    previous_mmdd = end_md
+
+    # 数据集合
+    dfs = []
+    # 2. 遍历base_dir下的所有文件夹
+    for folder_name in os.listdir(base_dir):
+        folder_path = os.path.join(base_dir, folder_name)
+
+        # 确保是文件夹
+        if not os.path.isdir(folder_path):
+            continue
+
+        print(f"正在处理文件夹: {folder_name}")
+
+        # 3. 遍历文件夹中的所有文件，读取文件内容
+        for filename in os.listdir(folder_path):
+            # print(f"正在处理文件: {filename}")
+
+            # 检查文件名前4位是否匹配当前月日
+            if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < previous_mmdd:
+                file_path = os.path.join(folder_path, filename)
+                print(f"找到匹配文件: {file_path}")
+
+                # try:
+                # 4. 读取文件内容，组合数据以后进行训练
+                df_pred = pd.read_excel(file_path)
+                dfs.append(df_pred)
+                # print(df_pred.head(10))
+                # print(len(df_pred))
+                # 打印出dfs 总数
+                # print(f"dfs 总数: {len(dfs)}")
+
+                # except Exception as e:
+                #     print(f"处理文件 {filename} 时出错: {e}")
+        # 训练模型
+        # 5. 训练模型 数据
+        if not dfs:
+            print(f"文件夹 {folder_name} 中没有找到匹配日期的数据文件，跳过训练")
+            continue
+
+    df = pd.concat(dfs, ignore_index=True)
+    # print(len(df))
+    # 检查数据是否为空
+    if df.empty:
+        return None
+
+    return df
+
+
+def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
+    """读取指定目录下的所有文件数据"""
+    dfs = []
+    # 3. 遍历文件夹中的所有文件，读取文件内容
+    for filename in os.listdir(dir_path):
+        # print(f"正在处理文件: {dir_path}")
+
+        # 检查文件名前4位是否匹配当前月日
+        if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
+            file_path = os.path.join(dir_path, filename)
+            print(f"读取文件: {file_path}")
+
+            # try:
+            # 4. 读取文件内容，组合数据以后进行训练
+            df_pred = pd.read_excel(file_path)
+            dfs.append(df_pred)
+            # print(df_pred.head(10))
+            # print(len(df_pred))
+            # 打印出dfs 总数
+            # print(f"dfs 总数: {len(dfs)}")
+
+            # except Exception as e:
+            #     print(f"处理文件 {filename} 时出错: {e}")
+    if not dfs:
+        print(f"文件夹 {dir_path} 中没有找到匹配日期的数据文件，跳过训练")
+
+        return None
+    df = pd.concat(dfs, ignore_index=True)
+    return df
+
+
+def prepare_prediction_data(start_md, end_md):
+    """
+    prediction 数据集
+    """
+    df = get_prediction_files_data("../data/predictions/",start_md,end_md)
+    print(f'prediction 数据量：{len(df)}')
+
+    return df
+
+def prepare_all_data():
+    """
+    准备数据集，包括历史数据和预测数据
+    """
+    # 检查临时文件是否存在
+    temp_file_path = "cache/predictions_data_all.xlsx"
+    if os.path.exists(temp_file_path):
+        print("检测到临时文件，直接读取...")
+        df = pd.read_excel(temp_file_path)
+        print(f'历史数据量：{len(df)}')
+        return df
+
+    df = get_alert_files_data()
+    print(len(df))
+
+    prediction_df = get_prediction_files_data("../data/predictions/","0717")
+    print(len(prediction_df))
+
+    if prediction_df is not None and not prediction_df.empty:
+        print(f'预测数据量：{len(prediction_df)}')
+        # 合并数据
+        df = pd.concat([df, prediction_df], ignore_index=True)
+
+    print(f'总数据量：{len(df)}')
+    # 将df写入临时文件，供下次使用
+    df.to_excel("cache/predictions_data_all.xlsx", index=False)
+    return df
+
+def prepare_prediction_dir_data(predir_path: "1000",start_md: str, end_md: str):
+    """
+    prediction 数据集
+    """
+    df = get_dir_files_data("../data/predictions/"+predir_path,start_md,end_md)
+    print(f'prediction 数据量：{len(df)}')
+
+    return df
+
+
+def get_alert_files_data(base_dir="../alert/",start_mmddend = None,end_mmdd=None):
+    files= [
+        "../alert/0630.xlsx",
+        "../alert/0701.xlsx",
+        "../alert/0702.xlsx",
+        "../alert/0703.xlsx",
+        "../alert/0704.xlsx",
+        "../alert/0707.xlsx",
+        "../alert/0708.xlsx",
+        "../alert/0709.xlsx",
+        "../alert/0710.xlsx",
+        "../alert/0711.xlsx",
+        "../alert/0714.xlsx",
+        "../alert/0715.xlsx",
+        "../alert/0716.xlsx",
+    ]
+    df = get_data_from_files(files)
+    return df
+
+
+# 使用示例
+def main():
+    """使用示例"""
+    # 所有的数 据
+    prepare_all_data()
+
+    # prediction 某一段时间内的数据集
+    prepare_prediction_data("0717","0720")
+
+    # 得到某个时间段内的prediction 数据
+    prepare_prediction_dir_data("1000","0717","0720")
+
+
+if __name__ == "__main__":
+    main()
