@@ -128,12 +128,15 @@ def prepare_prediction_data(start_md, end_md):
 
     return df
 
-def prepare_all_data():
+def prepare_all_data(end_mmdd: str):
     """
     准备数据集，包括历史数据和预测数据
     """
-    # 检查临时文件是否存在
-    temp_file_path = "cache/predictions_data_all.xlsx"
+    # 检查临时文件是否存在,如果有end_mmdd 则使用end_mmdd 作为文件名最后部分，否则为all
+    temp_file_path = "cache/model_data_all.xlsx"
+    if end_mmdd is not None:
+        temp_file_path = "cache/model_data_"+end_mmdd+".xlsx"
+    # temp_file_path = "cache/predictions_data_all.xlsx"
     if os.path.exists(temp_file_path):
         print("检测到临时文件，直接读取...")
         df = pd.read_excel(temp_file_path)
@@ -143,7 +146,7 @@ def prepare_all_data():
     df = get_alert_files_data()
     print(len(df))
 
-    prediction_df = get_prediction_files_data("../data/predictions/","0717")
+    prediction_df = get_prediction_files_data("../data/predictions/","0717",end_mmdd)
     print(len(prediction_df))
 
     if prediction_df is not None and not prediction_df.empty:
@@ -153,7 +156,7 @@ def prepare_all_data():
 
     print(f'总数据量：{len(df)}')
     # 将df写入临时文件，供下次使用
-    df.to_excel("cache/predictions_data_all.xlsx", index=False)
+    df.to_excel(temp_file_path, index=False)
     return df
 
 def prepare_prediction_dir_data(predir_path: "1000",start_md: str, end_md: str):
@@ -190,7 +193,7 @@ def get_alert_files_data(base_dir="../alert/",start_mmddend = None,end_mmdd=None
 def main():
     """使用示例"""
     # 所有的数 据
-    prepare_all_data()
+    prepare_all_data(end_mmdd="0717")
 
     # prediction 某一段时间内的数据集
     prepare_prediction_data("0717","0720")
