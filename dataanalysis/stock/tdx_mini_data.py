@@ -70,7 +70,7 @@ def get_minute_data(code: str) -> pd.DataFrame:
             
         # 转换为DataFrame
         df = pd.DataFrame(data)
-        print( df)
+        # print( df)
         # 处理日期时间字段
         df['datetime'] = pd.to_datetime(df['datetime'])
         
@@ -87,7 +87,8 @@ def get_minute_data(code: str) -> pd.DataFrame:
         required_cols = ['datetime', 'open', 'high', 'low', 'close', 'volume']
         df = df[required_cols]
 
-        print( df)
+        # print( df)
+        print("获取股票5分钟数据成功",code)
         return df
         
     except Exception as e:
@@ -138,7 +139,13 @@ def _save_to_cache(code: str, df: pd.DataFrame):
         pickle.dump(df, f)
 
 def _load_from_cache(code: str) -> Optional[pd.DataFrame]:
+    # 检查cache时间，超过1小时重读
     cache_path = _get_cache_path(code)
+    if os.path.exists(cache_path):
+        # 修复：将时间戳转换为datetime对象进行比较
+        cache_time = datetime.fromtimestamp(os.path.getmtime(cache_path))
+        if (datetime.now() - cache_time).total_seconds() > 3600:
+            os.remove(cache_path)
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             return pickle.load(f)
@@ -195,12 +202,15 @@ def process_single_code(code: str) -> Dict:
     # 计算BOLL线
     df_boll = calculate_boll(df)
     # print( df_boll)
+    # 写入临时文件
+    # df_boll = pd.DataFrame(results)
+
     # latest_boll = df_boll['band_width'].iloc[-1]
     # 得到band_width最小值 和最后的比较
     latest_boll = df_boll['band_width'].iloc[-1]
-    # 修复：使用df_boll而不是df来获取band_width列
-    min_value = df_boll['band_width'].min()
-    max_value = df_boll['band_width'].max()
+    # 修复：使用df_boll而不是df来获取band_width列,取最近60分钟的band_width的最小值和最大值
+    min_value = df_boll['band_width'].tail(60).min()
+    max_value = df_boll['band_width'].tail(60).max()
 
     # 修复除零错误：检查min_value是否为0
     is_boll_low = latest_boll / min_value if min_value != 0 else 0
@@ -347,6 +357,14 @@ def adjust_price(df_5m, df_xr):
 
 # 示例调用
 if __name__ == "__main__":
+
+
+    results = process_single_code('301489')
+    print( results)
+    # 写入临时文件
+
+    exit()
+
     codes = [
         "300436",
         "300224",

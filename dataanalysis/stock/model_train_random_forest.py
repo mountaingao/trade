@@ -422,6 +422,9 @@ def predict_with_saved_models(file_path, output_path=None, algorithms=['random_f
     """
     使用保存的模型进行预测 model_type='basic' or 'optimized'
     """
+    # 判断文件是否存在
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"文件 {file_path} 不存在")
     # 读取输入文件
     df = pd.read_excel(file_path, engine='openpyxl')
     
@@ -668,8 +671,10 @@ def main():
 
 if __name__ == "__main__":
     # model='basic' or 'optimized'
-    # main()
+    main()
     # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
-    predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    # predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    # predict_with_saved_models("../data/predictions/1400/08251421_1422.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    # predict_with_saved_models("../data/predictions/1600/08251518_1520.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
     # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')

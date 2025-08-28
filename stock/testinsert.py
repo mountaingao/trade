@@ -6,12 +6,13 @@ file_path = r"ALERT.txt"
 # file_path = r"ALERT-0311.txt"
 # file_path = r"ALERT-0310.txt"
 # file_path = r"ALERT-0410.txt"
-file_path = r"ALERT-0626.txt"
+# file_path = r"ALERT-0626.txt"
+# file_path = r"ALERT-0828.txt"
 # file_path = r"D:/BaiduSyncdisk/个人/通达信/ALERT/ALERT.txt"
 
 # 读取文件并解析时间
 rows = []
-with open(file_path, 'r', encoding='GB2312') as f:
+with open(file_path, 'r', encoding='GBK') as f:
     for line in f:
         line = line.rstrip('\n')  # 去除行尾换行符
         if not line.strip():

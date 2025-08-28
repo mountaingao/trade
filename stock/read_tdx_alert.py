@@ -8,9 +8,10 @@ import mysql.connector
 import datetime
 import pandas as pd
 from datetime import datetime
-from stockrating.stock_rating_ds import evaluate_stock
+from stockrating.stock_rating_ds import evaluate_stock,get_stock_min_data_boll
 from stockrating.get_stock_block import process_stock_concept_data
 from stockrating.read_local_info_tdx import expected_calculate_total_amount
+from dataanalysis.stock.tdx_mini_data import  process_single_code
 import tempfile
 import json
 from autotrade.add_stock_ths_block import add_stocks_to_ths_block
@@ -240,15 +241,39 @@ def format_result(result,conn):
 
             else:
                 score = evaluate_stock(stock_code)
+                # 计算5分钟K线数据
+
                 #计算当日成交量，是否能过10亿，如果可以，则弹出提示，很可能是涨停标的
                 total_amount,current_amount = expected_calculate_total_amount(stock_code,get_number_of_timer( item[2].strip()),alert_date)
+                min_boll = get_stock_min_data_boll(stock_code)
+                print(min_boll)
+
                 # 如果评分大于50，添加到格式化结果中 如果为 预选 也不用评分
-                if score >= 50 or item[6].strip() == '预选':
+                if (item[6].strip() == '预选' and min_boll['band_width'] > 7):
                     # 将 block 列表转换为字符串
                     formatted_lines.append("-------------------------------------")
                     formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}   【{item[6].strip()}】")
                     formatted_lines.append("-------------------------------------")
-                    formatted_lines.append(f"|【评分】: {score}   ")
+                    formatted_lines.append(f"|【评分】: {score} 【band_width】：{int(min_boll['band_width'])}   ")
+                    formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
+                    formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"| 当前成交额: {current_amount:.2f}亿           ")
+                    formatted_lines.append(f"| 预计成交额: {total_amount:.2f}亿              ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append("| 相关概念:                        ")
+                    formatted_lines.append(f"| - {block_str}                         ")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"| 注: 上轨有效！                   ")
+
+                elif score >= 50 and item[6].strip() != '预选' :
+                    # min_boll['band_width'] 取整数部分
+
+                    # 将 block 列表转换为字符串
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}   【{item[6].strip()}】")
+                    formatted_lines.append("-------------------------------------")
+                    formatted_lines.append(f"|【评分】: {score}  ")
                     formatted_lines.append(f"| 预警时间: {item[2].strip()}           ")
                     formatted_lines.append(f"| 当前价格: {item[3].strip()} ({item[4].strip()})          ")
                     formatted_lines.append("-------------------------------------")
@@ -261,7 +286,7 @@ def format_result(result,conn):
                     formatted_lines.append(f"| 注: 上轨有效！                   ")
                 else:
                     print(f"预计成交额{total_amount:.2f}亿")
-                    if total_amount >= 10:
+                    if total_amount >= 10 and item[6].strip() != '预选':
                         formatted_lines.append("-------------------------------------")
                         formatted_lines.append(f"|【{item[1].strip()}】 {stock_code}  【{item[6].strip()}】")
                         formatted_lines.append("-------------------------------------")
@@ -349,7 +374,7 @@ def monitor_file(mp3_path,db_config):
                 import_to_database(result,  conn)
 
         # 每隔1秒检查一次
-        time.sleep(2)
+        time.sleep(1)
 
 if __name__ == "__main__":
     # 获取脚本所在目录的上一级目录

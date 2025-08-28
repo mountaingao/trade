@@ -158,7 +158,7 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     if not isinstance(mini_data.index, (pd.RangeIndex, pd.DatetimeIndex)):
         mini_data = mini_data.reset_index(drop=True)
 
-    print(f"mini_data:{mini_data}")
+    # print(f"mini_data:{mini_data}")
     # 计算每分钟的成交金额
     amount_data = mini_data['price'] * mini_data['vol']
 
@@ -166,10 +166,10 @@ def calculate_total_amount(mini_data, amount_percentage, num):
     # print(f"num:{num}")
     # 提取前num个 amount 的累计和
     current_amount = amount_data.iloc[:num].sum()
-    print(f"cumulative_vol_iloc:{current_amount}")
+    # print(f"cumulative_vol_iloc:{current_amount}")
     # 获取第15个 vol_percentage 的값
     percentage_num = amount_percentage[num-1]
-    print(f"percentage_num:{percentage_num}")
+    # print(f"percentage_num:{percentage_num}")
     # 反推当日完整的成交量
     total_amount = current_amount * 100 / percentage_num
 
@@ -205,7 +205,7 @@ def expected_calculate_total_amount(symbol, num ,date):
 
 
     today_mini = get_stock_minutes_by_remote(symbol, today)
-    print(f"today_mini:{today_mini}")
+    # print(f"today_mini:{today_mini}")
     # print(today_mini)
     # 此处为空，不需要继续执行
     if today_mini.empty:
@@ -217,7 +217,7 @@ def expected_calculate_total_amount(symbol, num ,date):
     yesterday_str = yesterday.strftime('%Y%m%d')
     print(f"上一个交易日: {yesterday_str}")
     yesterday_mini = get_stock_minutes_by_remote(symbol, yesterday_str)
-    print(f"yesterday_mini:{yesterday_mini}")
+    # print(f"yesterday_mini:{yesterday_mini}")
 
 # 计算并打印每分钟成交量百分比
     amount_percentage = calculate_amount_percentage(yesterday_mini)

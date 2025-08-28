@@ -6,6 +6,7 @@ import os
 import hashlib
 import time, datetime
 import pywencai
+from dataanalysis.stock.tdx_mini_data import  process_single_code
 
 from mootdx.reader import Reader
 
@@ -316,6 +317,15 @@ def calculate_score(value, rule):
             if value >= threshold:
                 return score
     return 0
+
+
+def get_stock_min_data_boll(stock_code):
+    # 计算5分钟k线的bandwith，返回宽度值供判断
+    min_data = process_single_code(stock_code)
+
+    return min_data
+
+
 
 # 计算各项得分
 def evaluate_stock(symbol):
