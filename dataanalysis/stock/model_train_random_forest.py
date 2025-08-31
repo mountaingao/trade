@@ -635,10 +635,12 @@ def main():
     # 运行测试
 
     # 如果需要实际使用，可以取消下面的注释
-    df = prepare_all_data("0812")
+    df = prepare_all_data("0827")
 
     # 训练并保存模型 - 随机森林
-    feature_cols = ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入']
+    # feature_cols = ['当日涨幅', '信号天数', '净额', '净流入', '当日资金流入']
+    feature_cols =  ['当日涨幅', '量比','总金额','信号天数','Q','band_width','净额', '净流入', '当日资金流入']
+
 
     # 定义多种特征列组合进行测试
     feature_combinations = {
@@ -671,10 +673,12 @@ def main():
 
 if __name__ == "__main__":
     # model='basic' or 'optimized'
-    main()
+    # main()
     # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
     # predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
     # predict_with_saved_models("../data/predictions/1400/08251421_1422.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
     # predict_with_saved_models("../data/predictions/1600/08251518_1520.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
     # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+
+    predict_with_saved_models("../data/predictions/1600/08290950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
