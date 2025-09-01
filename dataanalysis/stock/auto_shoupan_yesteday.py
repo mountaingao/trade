@@ -49,6 +49,7 @@ def process_prediction_files(base_dir="../data/predictions/"):
                 auto_shoupan.export_tdx_block_data(filename_without_extension+today_mmdd)
                 # try:
                 # 4. 读取文件内容
+
                 df_pred = pd.read_excel(file_path)
                 # print(df_pred.head(100))
 
