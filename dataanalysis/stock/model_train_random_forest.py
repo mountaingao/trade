@@ -11,6 +11,7 @@ import warnings
 import joblib
 # 添加XGBoost导入
 import xgboost as xgb
+import streamlit as st
 warnings.filterwarnings('ignore')
 
 
@@ -25,8 +26,11 @@ def prepare_data_from_directory(directory_path):
     """
     从指定目录读取所有数据文件并准备数据集
     """
+    # 使用绝对路径
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
     # 检查临时文件是否存在
-    temp_file_path = "../data/bak/model_data_rf.xlsx"
+    temp_file_path = os.path.join(base_dir, "..", "data", "bak", "model_data_rf.xlsx")
     if os.path.exists(temp_file_path):
         print("检测到临时文件，直接读取...")
         try:
@@ -52,7 +56,8 @@ def prepare_data_from_directory(directory_path):
     print(f'历史数据量：{len(df)}')
 
     # 读取其他数据 每日整理的数据集
-    df_other = get_prediction_files_data("../data/predictions/", '0730')
+    predictions_dir = os.path.join(base_dir, "..", "data", "predictions")
+    df_other = get_prediction_files_data(predictions_dir, '0730')
     
     if df_other is not None and not df_other.empty:
         print(f'预测数据量：{len(df_other)}')
@@ -428,8 +433,10 @@ def predict_with_saved_models(file_path, output_path=None, algorithms=['random_f
     # 读取输入文件
     df = pd.read_excel(file_path, engine='openpyxl')
     
-    # 创建temp目录
-    os.makedirs("temp", exist_ok=True)
+    # 创建temp目录，使用绝对路径
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    temp_dir = os.path.join(base_dir, "temp")
+    os.makedirs(temp_dir, exist_ok=True)
     
     # 存储所有预测结果
     results = df.copy()
@@ -437,12 +444,13 @@ def predict_with_saved_models(file_path, output_path=None, algorithms=['random_f
     # 遍历所有算法
     for algorithm in algorithms:
         # 加载模型
+        model_dir = os.path.join(base_dir, "..", "models")
         if algorithm == 'random_forest':
-            regression_model = joblib.load(f"../models/{algorithm}_regression_{model}_model.pkl")
-            classification_model = joblib.load(f"../models/{algorithm}_classification_{model}_model.pkl")
+            regression_model = joblib.load(os.path.join(model_dir, f"{algorithm}_regression_{model}_model.pkl"))
+            classification_model = joblib.load(os.path.join(model_dir, f"{algorithm}_classification_{model}_model.pkl"))
         elif algorithm == 'xgboost':
-            regression_model = joblib.load(f"../models/xgboost_regression_{model}_model.pkl")
-            classification_model = joblib.load(f"../models/xgboost_classification_{model}_model.pkl")
+            regression_model = joblib.load(os.path.join(model_dir, f"xgboost_regression_{model}_model.pkl"))
+            classification_model = joblib.load(os.path.join(model_dir, f"xgboost_classification_{model}_model.pkl"))
         
         # 准备回归模型特征数据
         X_reg = df[regression_model['feature_cols']].copy()
@@ -481,19 +489,21 @@ def predict_with_saved_models(file_path, output_path=None, algorithms=['random_f
         # 文件名改为输入文件名加上_with_results.xlsx
         # 修改文件名以包含所有算法名称
         algorithms_str = '_'.join(algorithms)
-        output_path = f'temp/{file_name}_{algorithms_str}_{model}.xlsx'
+        output_path = os.path.join(temp_dir, f'{file_name}_{algorithms_str}_{model}.xlsx')
 
     results.to_excel(output_path, index=False)
     print(f"预测结果已保存至: {output_path}")
     
-    return results
+    return results, output_path
 
 def predict_from_directory(directory_path, algorithms=['random_forest']):
     """
     读取指定目录下的所有文件并进行预测
     """
-    # 创建结果目录
-    os.makedirs("temp/directory_predictions", exist_ok=True)
+    # 创建结果目录，使用绝对路径
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(base_dir, "temp", "directory_predictions")
+    os.makedirs(results_dir, exist_ok=True)
     
     # 读取目录下所有xlsx文件
     files = []
@@ -511,7 +521,7 @@ def predict_from_directory(directory_path, algorithms=['random_forest']):
         try:
             print(f"处理文件: {file_path}")
             result = predict_with_saved_models(file_path, 
-                                             f"temp/directory_predictions/{os.path.basename(file_path)}",
+                                             os.path.join(results_dir, os.path.basename(file_path)),
                                              algorithms)
             results.append(result)
         except Exception as e:
@@ -671,14 +681,193 @@ def main():
     # # 使用模型进行预测
     # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'])
 
+def streamlit_app():
+    """
+    Streamlit应用界面
+    """
+    st.set_page_config(page_title="股票预测模型", layout="wide")
+    st.title("📈 股票预测模型系统")
+    
+    # 侧边栏
+    st.sidebar.header("模型操作")
+    operation = st.sidebar.radio("选择操作", ["模型训练", "模型预测", "查看模型信息"])
+    
+    if operation == "模型训练":
+        st.header("模型训练")
+        
+        # 数据准备
+        if st.button("准备训练数据"):
+            with st.spinner("正在准备数据..."):
+                try:
+                    df = prepare_all_data("0827")
+                    st.success(f"数据准备完成，共 {len(df)} 条记录")
+                    st.session_state['train_data'] = df
+                except Exception as e:
+                    st.error(f"数据准备失败: {e}")
+        
+        # 特征选择
+        feature_cols = ['当日涨幅', '量比','总金额','信号天数','Q','band_width','净额', '净流入', '当日资金流入']
+        
+        # 模型训练
+        if st.button("训练模型") and 'train_data' in st.session_state:
+            with st.spinner("正在训练模型..."):
+                try:
+                    df = st.session_state['train_data']
+                    
+                    # 训练随机森林模型
+                    rf_reg_basic, rf_reg_opt = train_and_save_models(
+                        df, '次日最高涨幅', feature_cols, 'regression', algorithm='random_forest')
+                    rf_cls_basic, rf_cls_opt = train_and_save_models(
+                        df, '次日最高涨幅', feature_cols, 'classification', algorithm='random_forest')
+                    
+                    # 训练XGBoost模型
+                    xgb_reg_basic, xgb_reg_opt = train_and_save_models(
+                        df, '次日最高涨幅', feature_cols, 'regression', algorithm='xgboost')
+                    xgb_cls_basic, xgb_cls_opt = train_and_save_models(
+                        df, '次日最高涨幅', feature_cols, 'classification', algorithm='xgboost')
+                    
+                    st.success("所有模型训练完成并已保存！")
+                    
+                    # 显示模型评估结果
+                    st.subheader("模型评估结果")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("随机森林回归模型 (基础):", rf_reg_basic['metrics'])
+                        st.write("随机森林分类模型 (基础):", rf_cls_basic['metrics'])
+                        st.write("随机森林回归模型 (优化):", rf_reg_opt['metrics'])
+                        st.write("随机森林分类模型 (优化):", rf_cls_opt['metrics'])
+                    
+                    with col2:
+                        st.write("XGBoost回归模型 (基础):", xgb_reg_basic['metrics'])
+                        st.write("XGBoost分类模型 (基础):", xgb_cls_basic['metrics'])
+                        st.write("XGBoost回归模型 (优化):", xgb_reg_opt['metrics'])
+                        st.write("XGBoost分类模型 (优化):", xgb_cls_opt['metrics'])
+                        
+                except Exception as e:
+                    st.error(f"模型训练失败: {e}")
+    
+    elif operation == "模型预测":
+        st.header("模型预测")
+        
+        # 文件上传
+        uploaded_file = st.file_uploader("上传预测数据文件 (Excel)", type=['xlsx'])
+        
+        if uploaded_file is not None:
+            # 保存上传的文件
+            with open(f"temp/uploaded_file.xlsx", "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            st.success("文件上传成功！")
+            
+            # 选择模型类型
+            algorithms = st.multiselect("选择模型算法", ['random_forest', 'xgboost'], default=['random_forest'])
+            model_type = st.selectbox("选择模型版本", ['basic', 'optimized'])
+            
+            # 执行预测
+            if st.button("开始预测"):
+                with st.spinner("正在执行预测..."):
+                    try:
+                        result, output_path = predict_with_saved_models(
+                            "temp/uploaded_file.xlsx",
+                            algorithms=algorithms,
+                            model=model_type
+                        )
+                        
+                        st.success("预测完成！")
+                        
+                        # 显示预测结果
+                        st.subheader("预测结果")
+                        st.dataframe(result)
+                        
+                        # 提供下载
+                        output_file = f"temp/prediction_result.xlsx"
+                        result.to_excel(output_file, index=False)
+                        
+                        with open(output_file, "rb") as file:
+                            st.download_button(
+                                label="下载预测结果",
+                                data=file,
+                                file_name="prediction_result.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                            
+                        # 显示预测统计
+                        st.subheader("预测统计")
+                        for algorithm in algorithms:
+                            reg_col = f'{algorithm}_Reg'
+                            cls_col = f'{algorithm}_Cf'
+                            
+                            if reg_col in result.columns:
+                                st.write(f"{algorithm} 回归预测 - 平均值: {result[reg_col].mean():.2f}")
+                            
+                            if cls_col in result.columns:
+                                positive_count = (result[cls_col] == 1).sum()
+                                st.write(f"{algorithm} 分类预测 - 正向预测数量: {positive_count}")
+                                
+                    except Exception as e:
+                        st.error(f"预测失败: {e}")
+    
+    elif operation == "查看模型信息":
+        st.header("模型信息")
+        
+        # 显示已保存的模型
+        model_dir = "../models"
+        if os.path.exists(model_dir):
+            models = os.listdir(model_dir)
+            if models:
+                st.write("已保存的模型:")
+                for model in models:
+                    st.write(f"- {model}")
+            else:
+                st.info("暂无已保存的模型")
+        else:
+            st.info("模型目录不存在")
+
 if __name__ == "__main__":
-    # model='basic' or 'optimized'
-    # main()
-    # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
-    # predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
-    # predict_with_saved_models("../data/predictions/1400/08251421_1422.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
-    # predict_with_saved_models("../data/predictions/1600/08251518_1520.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+    # 检查是否在Streamlit环境中运行
+    # 修复: 使用更兼容的方法检测Streamlit环境
+    try:
+        # 新的检测方法：检查是否在Streamlit中运行
+        is_streamlit_run = (
+            "STREAMLIT_RUN" in os.environ or 
+            any("streamlit" in arg for arg in os.sys.argv) or
+            os.environ.get("IS_STREAMLIT", False) or
+            # 添加对_streamlit_run属性的检查，这是Streamlit 1.0+的标识
+            (hasattr(st, '_is_running_with_streamlit') and st._is_running_with_streamlit)
+        )
+    except:
+        is_streamlit_run = False
+    
+    if is_streamlit_run:
+        streamlit_app()
+    else:
+        # 原始命令行模式
+        # model='basic' or 'optimized'
+        # main()
+        # predict_with_saved_models("../data/predictions/1000/08250950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+        # predict_with_saved_models("../data/predictions/1200/08251134_1135.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+        # predict_with_saved_models("../data/predictions/1400/08251421_1422.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+        # predict_with_saved_models("../data/predictions/1600/08251518_1520.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
-    # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+        # predict_with_saved_models("../data/predictions/1000/08260955_0957.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
 
-    predict_with_saved_models("../data/predictions/1600/08290950_0952.xlsx", algorithms=['random_forest','xgboost'],model='optimized')
+        # 检查文件是否存在，如果不存在则给出提示
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        predict_file = os.path.join(base_dir, "..", "data", "predictions", "1600", "08291641_1643.xlsx")
+        if os.path.exists(predict_file):
+            predict_with_saved_models(predict_file, algorithms=['random_forest','xgboost'],model='optimized')
+        else:
+            print(f"警告: 预测文件 {predict_file} 不存在，请检查路径或先生成预测数据")
+            # 列出目录中可用的文件供参考
+            predict_dir = os.path.join(base_dir, "..", "data", "predictions", "1600")
+            if os.path.exists(predict_dir):
+                available_files = [f for f in os.listdir(predict_dir) if f.endswith('.xlsx')]
+                if available_files:
+                    print(f"在 {predict_dir} 目录中找到以下可用文件:")
+                    for f in available_files:
+                        print(f"  - {f}")
+                else:
+                    print(f"在 {predict_dir} 目录中未找到任何Excel文件")
+            else:
+                print(f"目录 {predict_dir} 不存在")
