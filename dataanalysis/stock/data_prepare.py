@@ -79,6 +79,10 @@ def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = No
             print(f"文件夹 {folder_name} 中没有找到匹配日期的数据文件，跳过训练")
             continue
 
+    if not dfs:
+        print(f"文件夹 {folder_name} 中没有找到匹配日期的数据文件，跳过训练")
+        return None
+
     df = pd.concat(dfs, ignore_index=True)
     # print(len(df))
     # 检查数据是否为空
@@ -87,6 +91,33 @@ def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = No
 
     return df
 
+def get_dir_files_date(dir_path: str,start_md: str,end_mmdd: str):
+    """读取指定目录下的所有文件名的日期"""
+    dates = []
+    if end_mmdd is not None:
+        end_mmdd = end_mmdd
+    else:
+        end_mmdd = datetime.now().strftime("%m%d")
+    # 3. 遍历文件夹中的所有文件，读取文件内容
+    for filename in os.listdir(dir_path):
+        if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
+            file_path = os.path.join(dir_path, filename)
+            # print(f"读取文件: {file_path}")
+            # 获取文件名中的日期
+            date = filename[:4]
+            dates.append(date)
+
+    return dates
+
+def get_dir_files(dir_path):
+    """读取指定目录下的所有文件名的日期"""
+    files = []
+    # 3. 遍历文件夹中的所有文件，读取文件内容
+    for filename in os.listdir(dir_path):
+        file_path = os.path.join(dir_path, filename)
+        print(f"读取文件: {file_path}")
+        files.append(file_path)
+    return files
 
 def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
     """读取指定目录下的所有文件数据"""
@@ -148,7 +179,7 @@ def prepare_all_data(end_mmdd: str):
     print(len(df))
 
     prediction_df = get_prediction_files_data("../data/predictions/","0717",end_mmdd)
-    print(len(prediction_df))
+    # print(len(prediction_df))
 
     if prediction_df is not None and not prediction_df.empty:
         print(f'预测数据量：{len(prediction_df)}')
