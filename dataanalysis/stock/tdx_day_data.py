@@ -518,6 +518,10 @@ def get_stock_daily_data(code):
 
         # 计算BOLL指标
         kline_data = DayKLineProcessor.calculate_boll(kline_data,29, 2)
+
+        # 2023-09-22 15:00:00 date 字段取 日期 2023-09-22
+        kline_data['date'] = pd.to_datetime(kline_data['date'])
+        kline_data['date'] = kline_data['date'].dt.date
         # 打印出特定字段
         print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width']].tail())
 

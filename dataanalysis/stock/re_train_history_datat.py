@@ -48,12 +48,18 @@ def get_history_accuracy_data(date_suffix='0827'):
     for code in df['代码'].unique():
         code_df = df[df['代码'] == code]
         # 获取该股票的代码
-        calculate_q_and_boll(code)
+        data = calculate_q_and_boll(code)
         # 得到df中该代码的所有数据
         code_df = df[df['代码'] == code]
         print(code, len(code_df))
+        print(code_df.head(10))
 
-        prepare_prediction_data(code_df)
+        print( data.tail())
+
+        
+        # 提取data 中 满足 code_df 中日期的数据（多条）
+        data = data[data['date'].isin(code_df['日期'])]
+        print(data.head())
 
         exit()
         code = code_df['代码'].iloc[0]
