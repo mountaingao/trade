@@ -508,7 +508,7 @@ def get_stock_daily_data(code):
 
     # 获取K线数据
     kline_data = processor.load_online_kline_data(code)
-    print(kline_data.tail())
+    # print(kline_data.tail())
 
     if kline_data is not None and len(kline_data) > 0:
         # 计算QU指标
@@ -523,11 +523,11 @@ def get_stock_daily_data(code):
         kline_data['date'] = pd.to_datetime(kline_data['date'])
         kline_data['date'] = kline_data['date'].dt.date
         # 打印出特定字段
-        print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width']].tail())
+        # print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width']].tail())
 
 
         kline_data = DayKLineProcessor.calculate_bias(kline_data,6)
-        print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']].tail())
+        # print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']].tail())
 
 
         return kline_data

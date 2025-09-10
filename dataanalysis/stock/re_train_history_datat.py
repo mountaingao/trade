@@ -58,8 +58,27 @@ def get_history_accuracy_data(date_suffix='0827'):
 
         
         # 提取data 中 满足 code_df 中日期的数据（多条）
+        # 以code_df为基础，获取data中该日期的所有数据组成新的数组，并将结果保存为文件
+        for index, row in code_df.iterrows():
+            date = row['日期']
+            # 获取该股票的收盘价
+            # close = row['close']
+            # 获取该股票的Q值
+            # Q = row['Q']
+            # 获取该股票的boll29值
+            print(code, date)
+            RESULT = data[data['date'] == str(date)]
+            print(date, RESULT)
+            # 获取该股票的流入值
+            # money_flow = data[data['date'] == date]['money_flow'].values[0]
+        print(code_df['日期'])
+        print(data['date'])
         data = data[data['date'].isin(code_df['日期'])]
-        print(data.head())
+        print(len(data))
+
+        # list_data = data[data['date'].isin(code_df['日期'])]
+        # print(list_data.head())
+        # print(len(list_data  ))
 
         exit()
         code = code_df['代码'].iloc[0]
