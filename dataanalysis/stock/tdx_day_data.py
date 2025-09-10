@@ -1,11 +1,80 @@
 # day_kline_processor.py
 import os
 import pandas as pd
-import numpy as pd
 import numpy as np
 from datetime import datetime, timedelta
 import warnings
+from pytdx.hq import TdxHq_API
+from pytdx.params import TDXParams
+from tdx_mini_data import get_market_code,get_stock_code
+
 warnings.filterwarnings('ignore')
+
+
+# 读取每日K线数据
+def get_daily_data(code: str) -> pd.DataFrame:
+    """使用pytdx获取5分钟K线数据"""
+    api = TdxHq_API()
+    try:
+        # 连接通达信服务器
+        # if not api.connect('14.215.128.18', 7709):  # 免费服务器，可替换为其他服务器
+        if not api.connect('123.125.108.90', 7709):  # 免费服务器，可替换为其他服务器
+            # if not api.connect('183.201.253.76', 7709):  # 免费服务器，可替换为其他服务器
+            raise ConnectionError("无法连接到通达信服务器")
+
+        market_code = get_market_code(code)
+        stock_code = get_stock_code(code)
+
+        # 获取最近10天的5分钟K线数据
+        data = []
+        # 修改为获取10天数据，每天48个5分钟周期
+        for i in range(10):  # 获取10天的数据
+            kline_data = api.get_security_bars(
+                TDXParams.KLINE_TYPE_DAILY,
+                market_code,
+                stock_code,
+                (9-i) * 48,  # 每天最多48个5分钟周期，现在获取10天数据
+                48
+            )
+            if kline_data:
+                data.extend(kline_data)
+
+        if not data:
+            return pd.DataFrame()
+
+        # 转换为DataFrame
+        df = pd.DataFrame(data)
+        # print( df.columns)
+        print( df.tail(5))
+        # 处理日期时间字段
+        df['datetime'] = pd.to_datetime(df['datetime'])
+
+        #columns： Index(['open', 'close', 'high', 'low', 'vol', 'amount', 'year', 'month', 'day',
+               # 'hour', 'minute', 'datetime'],
+        # 重命名列以匹配原代码
+        df = df.rename(columns={
+            'datetime': 'date',
+            'open': 'open',
+            'high': 'high',
+            'low': 'low',
+            'close': 'close',
+            'vol': 'volume',
+            'amount': 'amount'
+        })
+
+        # 只保留需要的列
+        required_cols = ['date', 'open', 'high', 'low', 'close', 'volume', 'amount']
+        df = df[required_cols]
+
+        # print( df)
+        print("获取股票日线数据成功",code)
+        return df
+
+    except Exception as e:
+        print(f"获取股票{code}数据时出错: {e}")
+        return pd.DataFrame()
+    finally:
+        api.disconnect()
 
 class DayKLineProcessor:
     def __init__(self, data_source='local', data_directory=None):
@@ -112,8 +181,86 @@ class DayKLineProcessor:
         # 这里只是一个框架，实际需要根据使用的在线数据源实现
         # 可以使用tushare、akshare等库获取在线数据
         print(f"从在线数据源加载 {symbol} 的K线数据")
+        kline_data = get_daily_data(symbol)
         # 示例返回空数据框
-        return pd.DataFrame(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+        return kline_data
+
+
+    @staticmethod
+    def calculate_boll(df: pd.DataFrame, window=20, num_std=2) -> pd.DataFrame:
+        """计算布林带指标"""
+        # df = df.copy()
+        df['ma'] = df['close'].rolling(window=window).mean()
+        df['std'] = df['close'].rolling(window=window).std()
+        df['upper'] = (df['ma'] + num_std * df['std']).round(2)
+        df['lower'] = (df['ma'] - num_std * df['std']).round(2)
+        df['band_width'] = 100*(df['upper'] - df['lower']) / df['ma'].round(2)
+        return df
+
+    def calculate_bias(data, period=6):
+        """
+        计算乖离率(BIAS)
+
+        参数:
+        data: 价格序列 (pandas Series)
+        period: 计算周期 (默认6日)
+
+        返回:
+        BIAS值序列
+        """
+        # 确保只对数值列进行计算
+        if isinstance(data, pd.DataFrame):
+            # 如果传入的是DataFrame，选择收盘价列进行计算
+            price_data = data['close']
+        else:
+            # 如果传入的是Series，直接使用
+            price_data = data
+
+        # 计算移动平均线
+        ma = price_data.rolling(window=period).mean()
+
+        # 计算乖离率
+        data['bias'] = (100 * (price_data - ma) / ma ).round(2)
+
+        return data
+    def SMA(self, X, N, M):
+        """
+        计算带权重的简单移动平均线
+
+        参数:
+        X: 价格序列 (pandas Series)
+        N: 移动平均窗口大小 (必须是整数)
+        M: 当前价格的权重
+
+        返回:
+        SMA值序列
+        """
+        # 确保N是整数
+        N = int(N)
+
+        # 初始化结果数组
+        result = np.zeros(len(X))
+        result[:] = np.nan  # 将前N-1个值设为NaN
+
+        # 如果数据长度小于窗口大小，直接返回NaN数组
+        if len(X) < N:
+            return result
+
+        # 计算第一个有效值
+        result[N-1] = np.mean(X[:N])
+
+        # 递归计算后续值
+        for i in range(N, len(X)):
+            result[i] = (X.iloc[i] * M + result[i-1] * (N - M)) / N
+
+        return result
+    def calculate_sma(self, df: pd.DataFrame) -> pd.DataFrame:
+        """计算SMA指标"""
+        # 使用自定义的小数周期移动平均
+        df['sma'] = self.SMA(df['close'], 6.5, 1).round(2)
+        # 当日sma 值除以前一天 sma 值
+        df['sma_ratio'] = (100*(df['sma'] - df['sma'].shift(1)) / df['sma'].shift(1)).round(2)
+        return df
 
     def calculate_qu(self, kline_data):
         """
@@ -356,6 +503,37 @@ class DayKLineProcessor:
         else:
             print("没有数据需要保存")
 
+def get_stock_daily_data(code):
+    processor = DayKLineProcessor(data_source='online', data_directory='kline_data')
+
+    # 获取K线数据
+    kline_data = processor.load_online_kline_data(code)
+    print(kline_data.tail())
+
+    if kline_data is not None and len(kline_data) > 0:
+        # 计算QU指标
+        kline_data = processor.calculate_sma(kline_data)
+        print("sma数据:")
+        print(kline_data.tail())
+
+        # 计算BOLL指标
+        kline_data = DayKLineProcessor.calculate_boll(kline_data,29, 2)
+        # 打印出特定字段
+        print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width']].tail())
+
+
+        kline_data = DayKLineProcessor.calculate_bias(kline_data,6)
+        print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']].tail())
+
+
+        return kline_data
+
+    else:
+        print(f"未能获取到 {code} 的K线数据")
+        return None, None, None
+
+
+
 # 使用示例
 def main():
     # 创建处理器实例（使用本地数据）
@@ -379,4 +557,8 @@ def main():
     processor.save_results()
 
 if __name__ == "__main__":
-    main()
+    # main()
+    # get_daily_data('300006')
+    # get_stock_daily_data('300006')
+    # get_stock_daily_data('300528')
+    get_stock_daily_data('688388')

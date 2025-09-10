@@ -413,6 +413,8 @@ def calculate_stock_profit_from_date(symbol, date, price=0, days=5):
 
 
 if __name__ == '__main__':
+    value = get_stock_history_by_local("300134")
+    print(value)
 
     # expected_calculate_total_amount("300134", 235)
 
