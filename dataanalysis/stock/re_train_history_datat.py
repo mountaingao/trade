@@ -58,9 +58,9 @@ def get_history_accuracy_data(date_suffix='0719'):
             continue
         # 得到df中该代码的所有数据
         code_df = df[df['代码'] == code]
-        code_df.loc[:, '日期'] = code_df['日期'].astype(str)
+        code_df.loc[:, '日期'] = code_df['日期'][:10].astype(str)
 
-        data.loc[:, 'date'] = data['date'].astype(str)
+        data.loc[:, 'date'] = data['date'][:10].astype(str)
 
         # 打印调试信息，查看日期格式
         print("code_df 日期格式示例:", code_df['日期'].head())
@@ -72,12 +72,27 @@ def get_history_accuracy_data(date_suffix='0719'):
         print(matched_data.tail(10))
 
         code_value = df[df['代码'] == code]
+        # 打印code_value 的出所有的值
+        print("code_value 所有值:")
         print(code_value)
-        # 将 matched_data 中的数据，按日期关联加到 code_value 中，保存到新的文件中
+        # 打印code_value 的所有列
+
+        # 日期字段有两种数据格式，统一处理
+        code_value['日期'] = code_value['日期'].apply(lambda x: str(x)[:10])
+        print(code_value)
+
+
+        # 合并数据
         code_value = code_value.merge(matched_data, left_on='日期', right_on='date', how='left')
         print(code_value)
 
         # 过滤掉数据中 Q有值，小于2.5 的数据，如果为空保留
+        if 'Q' in code_value.columns:
+            code_value = code_value[code_value['Q'].isna() | (code_value['Q'] >= 2.5)]
+        else:
+            print("警告: 数据中不存在'Q'列，跳过Q值过滤")
+
+        exit()
 
         new_data = pd.concat([new_data, code_value], axis=0)
 
