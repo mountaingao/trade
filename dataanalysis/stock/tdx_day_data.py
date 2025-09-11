@@ -45,7 +45,7 @@ def get_daily_data(code: str) -> pd.DataFrame:
         # 转换为DataFrame
         df = pd.DataFrame(data)
         # print( df.columns)
-        print( df.tail(5))
+        # print( df.tail(5))
         # 处理日期时间字段
         df['datetime'] = pd.to_datetime(df['datetime'])
 
@@ -503,18 +503,23 @@ class DayKLineProcessor:
         else:
             print("没有数据需要保存")
 
+# data：online  or local
 def get_stock_daily_data(code):
     processor = DayKLineProcessor(data_source='online', data_directory='kline_data')
 
     # 获取K线数据
-    kline_data = processor.load_online_kline_data(code)
-    # print(kline_data.tail())
+    if processor.data_source == 'local':
+        kline_data = processor.load_local_kline_data(code)
+    else:
+        kline_data = processor.load_online_kline_data(code)
+    # kline_data = processor.load_online_kline_data(code)
+    print(kline_data)
 
     if kline_data is not None and len(kline_data) > 0:
         # 计算QU指标
         kline_data = processor.calculate_sma(kline_data)
         print("sma数据:")
-        print(kline_data.tail())
+        # print(kline_data.tail())
 
         # 计算BOLL指标
         kline_data = DayKLineProcessor.calculate_boll(kline_data,29, 2)
@@ -527,14 +532,16 @@ def get_stock_daily_data(code):
 
 
         kline_data = DayKLineProcessor.calculate_bias(kline_data,6)
-        # print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']].tail())
+        print(kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']].tail())
 
 
+        # 返回 dataFrame 格式
+        kline_data = kline_data[['date', 'close', 'sma', 'sma_ratio', 'upper', 'lower', 'band_width','bias']]
         return kline_data
 
     else:
         print(f"未能获取到 {code} 的K线数据")
-        return None, None, None
+        return None
 
 
 

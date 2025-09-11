@@ -24,7 +24,7 @@ def calculate_q_and_boll(code):
     return data_daily
 
 
-def get_history_accuracy_data(date_suffix='0827'):
+def get_history_accuracy_data(date_suffix='0719'):
     """
     主函数
     """
@@ -37,69 +37,55 @@ def get_history_accuracy_data(date_suffix='0827'):
     # 循环读取数据，重新计算日线的Q和 boll29 上轨指标，如果符合条件 Q>2.5 和 boll29 > 1 和 流入>0，保存进新的文件中
     # 过滤掉数据中 当日资金流入<0 的数据
     df = df[df['当日资金流入'] > 0]
-    # 过滤掉数据中 如果 Q有值，小于2.5 的数据，如果为空保留
-    df = df[df['Q'].notna() | (df['Q'] >= 2.5)]
+    # 过滤掉数据中 如果 Q有值，小于2.5 的数据，如果为空保留，如果Q不存在，保留
+    # 过滤掉数据中 Q有值且小于2.5 的数据（如果Q列存在）
+    if 'Q' in df.columns:
+        df = df[df['Q'].isna() | (df['Q'] >= 2.5)]
+    else:
+        print("警告: 数据中不存在'Q'列，跳过Q值过滤")
 
     print(f'数据量：{len(df)}')
     print(len(df['代码'].unique()))
     # exit()
-
+    new_data = pd.DataFrame ()
     # 循环读取df数据，根据 代码 字段读取数据，计算Q和boll29
     for code in df['代码'].unique():
         code_df = df[df['代码'] == code]
         # 获取该股票的代码
         data = calculate_q_and_boll(code)
+        if data is None:
+            print(f"{code} 数据为空")
+            continue
         # 得到df中该代码的所有数据
         code_df = df[df['代码'] == code]
-        print(code, len(code_df))
-        print(code_df.head(10))
+        code_df.loc[:, '日期'] = code_df['日期'].astype(str)
 
-        print( data.tail())
+        data.loc[:, 'date'] = data['date'].astype(str)
 
-        
-        # 提取data 中 满足 code_df 中日期的数据（多条）
-        # 以code_df为基础，获取data中该日期的所有数据组成新的数组，并将结果保存为文件
-        for index, row in code_df.iterrows():
-            date = row['日期']
-            # 获取该股票的收盘价
-            # close = row['close']
-            # 获取该股票的Q值
-            # Q = row['Q']
-            # 获取该股票的boll29值
-            print(code, date)
-            RESULT = data[data['date'] == str(date)]
-            print(date, RESULT)
-            # 获取该股票的流入值
-            # money_flow = data[data['date'] == date]['money_flow'].values[0]
-        print(code_df['日期'])
-        print(data['date'])
-        data = data[data['date'].isin(code_df['日期'])]
-        print(len(data))
+        # 打印调试信息，查看日期格式
+        print("code_df 日期格式示例:", code_df['日期'].head())
+        print("data 日期格式示例:", data['date'].head())
 
-        # list_data = data[data['date'].isin(code_df['日期'])]
-        # print(list_data.head())
-        # print(len(list_data  ))
+        # 查找匹配的数据
+        matched_data = data[data['date'].isin(code_df['日期'])]
+        print("匹配的数据:")
+        print(matched_data.tail(10))
 
-        exit()
-        code = code_df['代码'].iloc[0]
-        # 获取该股票的日期
-        date = code_df['trade_date'].iloc[0]
-        # 获取该股票的收盘价
-        close = code_df['close'].iloc[0]
-        # 获取该股票的Q值
-        Q = code_df['Q'].iloc[0]
-    # 计算BOLL指标（29日周期）
-    df['ma29'] = df.groupby('ts_code')['close'].rolling(window=29, min_periods=1).mean().reset_index(0, drop=True)
-    df['std29'] = df.groupby('ts_code')['close'].rolling(window=29, min_periods=1).std().reset_index(0, drop=True)
-    df['boll29_upper'] = df['ma29'] + 2 * df['std29']
+        code_value = df[df['代码'] == code]
+        print(code_value)
+        # 将 matched_data 中的数据，按日期关联加到 code_value 中，保存到新的文件中
+        code_value = code_value.merge(matched_data, left_on='日期', right_on='date', how='left')
+        print(code_value)
 
-    # 计算Q指标（资金流入流出指标）
-    # 假设Q指标是基于资金流量计算的，这里使用一个简化版本
-    # 如果你有具体的Q指标计算方法，请替换下面的计算逻辑
-    df['money_flow'] = df['close'] * df['amount']  # 资金流量 = 收盘价 * 成交额
-    df['mf_avg'] = df.groupby('ts_code')['money_flow'].rolling(window=20, min_periods=1).mean().reset_index(0, drop=True)
-    df['Q'] = df['money_flow'] / df['mf_avg']  # 简化版Q指标
+        # 过滤掉数据中 Q有值，小于2.5 的数据，如果为空保留
 
+        new_data = pd.concat([new_data, code_value], axis=0)
+
+    # 保存到新的文件中
+    # 目录不存在就建立
+    if not os.path.exists('./temp/history_data'):
+        os.makedirs('./temp/history_data')
+    new_data.to_csv(f'./temp/history_data/{date_suffix}.csv', index=False)
     # 筛选条件: Q>2.5 和 boll29 > 1 和 流入>0
     # 假设"流入>0"是指资金流量为正
     condition = (df['Q'] > 2.5) & (df['boll29_upper'] > 1) & (df['money_flow'] > 0)
