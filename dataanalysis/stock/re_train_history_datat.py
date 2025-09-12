@@ -188,6 +188,29 @@ def calculate_data_accuracy(df):
             # 尝试将列转换为数值类型，无法转换的设置为NaN
             df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce')
 
+    # 计算 次日最高涨幅 之和 和 次日涨幅 之和
+    sum_次日最高涨幅 = df_copy['次日最高涨幅'].sum()
+    print('次日最高涨幅和：', sum_次日最高涨幅,
+          '比例：', sum_次日最高涨幅/len(df_copy) if len(df_copy) > 0 else 0)
+
+    sum_次日涨幅 = df_copy['次日涨幅'].sum()
+    print('次日涨幅和：', sum_次日涨幅,
+          '比例：', sum_次日涨幅/len(df_copy) if len(df_copy) > 0 else 0)
+
+    # 计算 次日涨幅 和当日涨幅《19.97的之和
+    sum_次日涨幅_1997 = df_copy[df_copy['当日涨幅'] < 19.97]['次日涨幅'].sum()
+
+    print('次日涨幅和 当日涨幅《19.97：', sum_次日涨幅_1997,
+          '比例：', sum_次日涨幅_1997/len(df_copy) if len(df_copy) > 0 else 0)
+
+    # 计算 次日最高涨幅 和当日涨幅《19.97的之和
+    sum_次日最高涨幅_1997 = df_copy[df_copy['当日涨幅'] < 19.97]['次日最高涨幅'].sum()
+
+    print('次日最高涨幅和 当日涨幅《19.97：', sum_次日最高涨幅_1997,
+          '比例：', sum_次日最高涨幅_1997/len(df_copy) if len(df_copy) > 0 else 0)
+
+
+
     print('次日最高涨幅大于1的数量：', len(df_copy[df_copy['次日最高涨幅'] > 1]),
           '比例：', len(df_copy[df_copy['次日最高涨幅'] > 1])/len(df_copy) if len(df_copy) > 0 else 0)
 
