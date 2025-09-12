@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 
 # 导入原有数据读取函数
-from data_prepare import prepare_all_data,get_dir_files_date,get_dir_files,prepare_prediction_data
+from data_prepare import prepare_all_data,prepare_prediction_dir_data,get_dir_files,prepare_prediction_data
 from tdx_day_data import get_daily_data,get_stock_daily_data
 
 # 计算单个股票的参数
@@ -121,9 +121,125 @@ def get_history_accuracy_data(date_suffix='0719'):
 
     return filtered_df
 
+def get_existing_accuracy_data(hour='1600',date_suffix='0911'):
+    """
+    主函数
+    """
 
+    # 如果需要实际使用，可以取消下面的注释
+    # df = prepare_all_data(date_suffix)
+
+    # 指定目录数据
+    df = prepare_prediction_dir_data(hour,"0717",date_suffix)
+    if df is None:
+        return
+
+    print(f'数据量：{len(df)}')
+
+    # 过滤掉数据中 次日涨幅为空的数据
+    df = df[df['次日涨幅'].notna()]
+
+    calculate_data_accuracy( df)
+
+    # 过滤掉数据中 Q有值且小于2.5 的数据（如果Q列存在）
+    if 'Q' in df.columns:
+        df = df[(df['Q'] >= 2.5)]
+    else:
+        print("警告: 数据中不存在'Q'列，跳过Q值过滤")
+
+    print(f'Q 数据量：{len(df)}')
+
+    # 计算这时 次日最高涨幅 大于1的数量
+    calculate_data_accuracy( df)
+
+    # 针对df中的 信号天数字段，保留1-5的数字，大于5的数字只保留奇数 的行数
+    # 修正：确保返回布尔值，添加异常处理
+    def filter_signal_days(x):
+        try:
+            first_digit = int(str(x)[0])
+            if first_digit <= 5:
+                return True  # 保留1-5的数字
+            else:
+                return first_digit % 2 == 1  # 大于5的数字只保留奇数
+        except (ValueError, IndexError):
+            return False  # 如果转换失败，不保留该行
+
+    # 使用布尔索引过滤数据
+    df = df[df['信号天数'].apply(filter_signal_days)]
+
+    print(f'信号天数 数据量：{len(df)}')
+    calculate_data_accuracy( df)
+
+    # df = df[df['信号天数'].apply(filter_signal_days)]
+    df = df[(df['当日资金流入'] >= 0)]
+    print(f'当日资金流入 数据量：{len(df)}')
+    calculate_data_accuracy( df)
+
+    # 将结果写入到临时文件excel中
+    df.to_excel(f'./temp/{hour}_{date_suffix}_filter.xlsx', index=False)
+
+def calculate_data_accuracy(df):
+    # 确保相关列是数值类型，如果不是则进行转换
+    numeric_columns = ['次日最高涨幅', '次日涨幅']
+    df_copy = df.copy()
+
+    for col in numeric_columns:
+        if col in df_copy.columns:
+            # 尝试将列转换为数值类型，无法转换的设置为NaN
+            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce')
+
+    print('次日最高涨幅大于1的数量：', len(df_copy[df_copy['次日最高涨幅'] > 1]),
+          '比例：', len(df_copy[df_copy['次日最高涨幅'] > 1])/len(df_copy) if len(df_copy) > 0 else 0)
+
+    # 计算 次日涨幅 大于1的数量
+    print('次日涨幅大于1的数量：', len(df_copy[df_copy['次日涨幅'] > 1]),
+          '比例：', len(df_copy[df_copy['次日涨幅'] > 1])/len(df_copy) if len(df_copy) > 0 else 0)
+
+    # 计算 次日涨幅 大于5的数量
+    print('次日涨幅大于5的数量：', len(df_copy[df_copy['次日涨幅'] > 5]),
+          '比例：', len(df_copy[df_copy['次日涨幅'] > 5])/len(df_copy) if len(df_copy) > 0 else 0)
+
+    # 计算 次日最高涨幅 大于5的数量
+    print('次日最高涨幅大于5的数量：', len(df_copy[df_copy['次日最高涨幅'] > 5]),
+          '比例：', len(df_copy[df_copy['次日最高涨幅'] > 5])/len(df_copy) if len(df_copy) > 0 else 0)
+
+
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+def random_forest_analysis(df):
+
+    # 准备数据
+    X = df.drop('结果字段', axis=1)
+    y = df['结果字段']
+
+    # 训练随机森林模型
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+
+    # 获取特征重要性
+    feature_importance = pd.DataFrame({
+        'feature': X.columns,
+        'importance': model.feature_importances_
+    }).sort_values('importance', ascending=False)
+
+    print("特征重要性排序:")
+    print(feature_importance)
 def main():
-    get_history_accuracy_data()
+    # 历史数据分析
+    # get_history_accuracy_data()
+
+    # 现有数据分析
+    # get_existing_accuracy_data("0912")
+
+    get_existing_accuracy_data('1000','0912')
+    get_existing_accuracy_data('1200','0912')
+    get_existing_accuracy_data('1400','0912')
+    get_existing_accuracy_data('1600','0912')
+
+
 
 
 if __name__ == "__main__":
