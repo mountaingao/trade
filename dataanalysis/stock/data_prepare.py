@@ -122,26 +122,34 @@ def get_dir_files(dir_path):
 def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
     """读取指定目录下的所有文件数据"""
     dfs = []
-    # 3. 遍历文件夹中的所有文件，读取文件内容
+    # 3. 遍历文件夹中的所有文件，读取文件内容，只读取 xls或xlsx文件
+
     for filename in os.listdir(dir_path):
         # print(f"正在处理文件: {dir_path}")
+        # 检查文件名是否以 .xls 或 .xlsx 结尾
+        if filename.endswith('.xls') or filename.endswith('.xlsx'):
+            # 检查文件名前4位是否匹配当前月日
+            if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
+                file_path = os.path.join(dir_path, filename)
+                print(f"读取文件: {file_path}")
 
-        # 检查文件名前4位是否匹配当前月日
-        if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
-            file_path = os.path.join(dir_path, filename)
-            print(f"读取文件: {file_path}")
+                # try:
+                # 4. 读取文件内容，组合数据以后进行训练
+                # 如果是xlsx文件，使用read_excel 读取
+                # 如果是xls文件，使用read_csv 读取，并检查字符集
+                if filename.endswith('.xlsx'):
+                    df_pred = pd.read_excel(file_path)
+                else:
+                    df_pred = pd.read_csv(file_path,encoding='gbk')
 
-            # try:
-            # 4. 读取文件内容，组合数据以后进行训练
-            df_pred = pd.read_excel(file_path)
-            dfs.append(df_pred)
-            # print(df_pred.head(10))
-            # print(len(df_pred))
-            # 打印出dfs 总数
-            # print(f"dfs 总数: {len(dfs)}")
+                dfs.append(df_pred)
+                # print(df_pred.head(10))
+                # print(len(df_pred))
+                # 打印出dfs 总数
+                # print(f"dfs 总数: {len(dfs)}")
 
-            # except Exception as e:
-            #     print(f"处理文件 {filename} 时出错: {e}")
+                # except Exception as e:
+                #     print(f"处理文件 {filename} 时出错: {e}")
     if not dfs:
         print(f"文件夹 {dir_path} 中没有找到匹配日期的数据文件，跳过训练")
 
@@ -200,6 +208,14 @@ def prepare_prediction_dir_data(predir_path: "1000",start_md: str, end_md: str):
 
     return df
 
+def prepare_ths_data(start_md: str, end_md: str):
+    """
+    prediction 数据集
+    """
+    df = get_dir_files_data("../data/ths/",start_md,end_md)
+    print(f'prediction 数据量：{len(df)}')
+
+    return df
 
 def get_alert_files_data(base_dir="../alert/",start_mmddend = None,end_mmdd=None):
     files= [

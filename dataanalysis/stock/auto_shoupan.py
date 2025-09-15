@@ -8,7 +8,7 @@ import keyboard
 import numpy as np
 import datetime  # 新增导入datetime模块
 from tdx_mini_data import process_multiple_codes
-
+from sqllite_block_manager import StockDataStorage
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
@@ -783,6 +783,19 @@ def ths_get_block_data(blockname):
 
 def get_minite_band_width(df):
     return process_multiple_codes(df)
+
+# 更新概念数据，批量更新，传入df，批量处理
+def update_stock_block_status(df):
+    # 创建存储实例
+    storage = StockDataStorage()
+    # codes = storage.query_by_codes(df['代码'].tolist())
+
+    df_data = df[['代码', '名称', '日期', '细分行业', '概念']]
+    df_data['状态'] = 0
+    print( df_data.head(100))
+
+    storage.batch_import_from_dataframe(df_data)
+
 # 合并两个文件的数据，并返回需要的格式的数据
 def merge_block_data(blockname):
     # 判断两个文件是否存在
@@ -812,9 +825,16 @@ def merge_block_data(blockname):
     # 将   '主力净量'更改为   '净量'
     if '主力净量' in ths_data.columns:
         ths_data['净量'] = ths_data['主力净量']
+    if '备注' in ths_data.columns:
+        ths_data['概念'] = ths_data['备注']
+    # 将概念中 -- 数据 删除为空
+    ths_data['概念'] = ths_data['概念'].str.replace('--', '')
 
-    data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量']], left_index=True, right_index=True)
+    data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量', '概念']], left_index=True, right_index=True)
     # print( data.head(10))
+
+    update_stock_block_status(data)
+
     # 打印 columns
     # print(data.columns)
     # 将columns 按照自己的需求进行排序
@@ -827,7 +847,7 @@ def merge_block_data(blockname):
     data.insert(len(data.columns), '次日涨幅', '')
     data.insert(len(data.columns), '次日最高价', '')
     data.insert(len(data.columns), '次日最高涨幅', '')
-    data.insert(len(data.columns), '概念', '')
+    # data.insert(len(data.columns), '概念', '')
     data.insert(len(data.columns), '说明', '')
 
     data.insert(len(data.columns), '预测', '')

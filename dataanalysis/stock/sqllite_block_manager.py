@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 import json
 import os
+from data_prepare import prepare_ths_data
 
 class StockDataStorage:
     def __init__(self, db_path="../data/db/stock_block_data.db"):
@@ -77,6 +78,20 @@ class StockDataStorage:
         """根据股票代码查询数据"""
         return self.query_stock_block("code = ?", (code,))
 
+    def query_by_codes(self, codes):
+        """根据多个股票代码查询数据"""
+        if not codes:
+            return pd.DataFrame()  # 返回空的DataFrame
+        
+        # 构造占位符
+        placeholders = ','.join(['?'] * len(codes))
+        query = f"SELECT * FROM stockblock WHERE code IN ({placeholders})"
+        
+        conn = sqlite3.connect(self.db_path)
+        df = pd.read_sql_query(query, conn, params=codes)
+        conn.close()
+        return df
+
     def update_status(self, code, new_status):
         """更新指定代码的状态"""
         conn = sqlite3.connect(self.db_path)
@@ -118,8 +133,42 @@ class StockDataStorage:
         conn.commit()
         conn.close()
 
-# 测试代码
-if __name__ == "__main__":
+    def clear_all_data(self):
+        """清除所有数据"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # cursor.execute("DELETE FROM stockblock")
+        
+        conn.commit()
+        conn.close()
+
+    def clear_data_by_codes(self, codes):
+        """根据股票代码列表清除指定数据"""
+        if not codes:
+            return
+            
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # 构造占位符
+        placeholders = ','.join(['?'] * len(codes))
+        query = f"DELETE FROM stockblock WHERE code IN ({placeholders})"
+        
+        cursor.execute(query, codes)
+        
+        conn.commit()
+        conn.close()
+
+def insert_stock_block(code, name, date, industry, blockname, status=0):
+    # 创建存储实例
+    storage = StockDataStorage()
+
+    # 1. 增加一条记录
+    storage.insert_stock_record("000001", "平安银行", "2023-01-01", "银行", "金融板块", 0)
+
+def main():
+    # 测试代码
     # 创建存储实例
     storage = StockDataStorage()
     
@@ -159,3 +208,31 @@ if __name__ == "__main__":
     all_records = storage.query_stock_block()
     print("所有记录:")
     print(all_records)
+    
+    # 6. 测试清除指定数据
+    print("\n清除指定数据 (000001, 000002):")
+    storage.clear_data_by_codes(['000001', '000002'])
+    remaining_records = storage.query_stock_block()
+    print("剩余记录:")
+    print(remaining_records)
+    
+    # 7. 测试清除所有数据
+    print("\n清除所有数据:")
+    storage.clear_all_data()
+    all_records_after_clear = storage.query_stock_block()
+    print("清除所有数据后:")
+    print(all_records_after_clear)
+
+
+def update_stock_block_status():
+    # 创建存储实例
+    storage = StockDataStorage()
+
+    # 读取同花顺目录下的所有的历史数据
+    df = prepare_ths_data("0717","0720")
+
+
+if __name__ == "__main__":
+    # main()
+
+    update_stock_block_status()
