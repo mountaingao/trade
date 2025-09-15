@@ -957,6 +957,42 @@ def predict_block_data(blockname,date='250812'):
     data.to_excel(predictions_file, index=False)
     return predictions_file
 
+def cal_predict_data_selected(predictions_file):
+
+    # 指定目录数据
+    df = pd.read_excel(predictions_file)
+    if df is None:
+        return
+
+    print(f'数据量：{len(df)}')
+    # print(df.head(10))
+
+    # 按日期、细分行业统计数量，筛选出数量大于2的组合
+    df_grouped = df.groupby(['日期', '细分行业']).size().reset_index(name='count')
+    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+    print("按日期、细分行业分组数量大于2的组合:")
+    print(df_filtered_groups)
+
+    # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-行业组合）
+    df_filtered = df.merge(df_filtered_groups[['日期', '细分行业']], on=['日期', '细分行业'])
+    print(f"筛选后的数据量: {len(df_filtered)}")
+    # print(df_filtered.tail(10))
+
+    # 挑选出按 日期 细分行业 中 Q值最大的哪条数据
+    # 处理可能存在的NaN值问题
+    df_filtered = df_filtered.dropna(subset=['Q'])
+
+    df = df_filtered.loc[df_filtered.groupby(['日期', '细分行业'])['Q'].idxmax()]
+    print("各行业龙头：")
+    print(df[['代码','名称','日期','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合']])
+
+
+    df = df[(df['Q'] >= 2.5) & (df['当日资金流入'] >= -0.2)]
+    print("满足条件的如下：")
+    print(df[['代码','名称','日期','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合']])
+
+
+
 def no_step_shoupan():
     x, y = pyautogui.position()
     print(x, y)
@@ -981,7 +1017,9 @@ def no_step_shoupan():
     # model_name = get_time_directory()
     # # 计算结果，返回符合条件的股票代码
     # predict_block_data(blockname,model_name)
-    predict_block_data(blockname)
+    predict_file = predict_block_data(blockname)
+
+    cal_predict_data_selected(predict_file)
 
 def step_by_step_shoupan():
     status = load_status()
@@ -1047,6 +1085,8 @@ def main():
 if __name__ == '__main__':
 
     no_step_shoupan()
+    # cal_predict_data_selected('../data/predictions/1000/09150954_0956.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
 
     # step_by_step_shoupan()
 
