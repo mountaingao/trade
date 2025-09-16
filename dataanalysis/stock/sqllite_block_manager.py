@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import os
 from data_prepare import prepare_ths_data
-
+import datetime
 class StockDataStorage:
     def __init__(self, db_path="../data/db/stock_block_data.db"):
         self.db_path = db_path
@@ -110,7 +110,12 @@ class StockDataStorage:
         """批量导入数据，如有重复则更新"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+        # df_data = df[['代码', '名称', '日期', '细分行业', '概念', '状态']]
+
+        print(df.columns)
+        # 转换字段名
+        df.rename(columns={'代码': 'code', '名称': 'name', '日期': 'date', '细分行业': 'industry', '概念': 'blockname', '状态': 'status'}, inplace=True)
+
         for _, row in df.iterrows():
             # 检查是否已存在该代码的记录
             cursor.execute("SELECT id FROM stockblock WHERE code = ?", (row['code'],))
@@ -228,11 +233,31 @@ def update_stock_block_status():
     # 创建存储实例
     storage = StockDataStorage()
 
+    # storage.query_stock_block()
+
     # 读取同花顺目录下的所有的历史数据
     df = prepare_ths_data("0717","0720")
+    # df_data = df[['代码', '名称', '日期', '细分行业', '概念', '状态']]
 
+    print(df.columns)
+    # 转换字段名
+    df.rename(columns={'    名称': 'name',  '细分行业': 'industry', '备注': 'blockname'}, inplace=True)
+    df['status'] = 0
+    df['date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+
+    print(df.columns)
+    print(df.head(100))
+    storage.batch_import_from_dataframe(df)
+    print(storage.query_stock_block())
+
+def list_stock_block():
+    # 创建存储实例
+    storage = StockDataStorage()
+    print(storage.query_stock_block())
 
 if __name__ == "__main__":
     # main()
 
     update_stock_block_status()
+
+    list_stock_block()

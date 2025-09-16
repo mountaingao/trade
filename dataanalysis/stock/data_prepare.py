@@ -123,7 +123,7 @@ def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
     """读取指定目录下的所有文件数据"""
     dfs = []
     # 3. 遍历文件夹中的所有文件，读取文件内容，只读取 xls或xlsx文件
-
+    file_count = 0
     for filename in os.listdir(dir_path):
         # print(f"正在处理文件: {dir_path}")
         # 检查文件名是否以 .xls 或 .xlsx 结尾
@@ -131,7 +131,9 @@ def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
             # 检查文件名前4位是否匹配当前月日
             if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
                 file_path = os.path.join(dir_path, filename)
-                print(f"读取文件: {file_path}")
+                # print(f"读取文件: {file_path}")
+                # 统计文件数
+                file_count += 1
 
                 # try:
                 # 4. 读取文件内容，组合数据以后进行训练
@@ -140,8 +142,10 @@ def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
                 if filename.endswith('.xlsx'):
                     df_pred = pd.read_excel(file_path)
                 else:
-                    df_pred = pd.read_csv(file_path,encoding='gbk')
-
+                    df_pred = pd.read_csv(file_path,encoding='GBK',sep='\t')
+                # 检查数据是否为空
+                if df_pred.empty:
+                    continue
                 dfs.append(df_pred)
                 # print(df_pred.head(10))
                 # print(len(df_pred))
@@ -155,6 +159,7 @@ def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):
 
         return None
     df = pd.concat(dfs, ignore_index=True)
+    print(f'文件夹 {dir_path} 中读取到 {file_count} 个文件，数据量：{len(df)}')
     return df
 
 
@@ -204,16 +209,19 @@ def prepare_prediction_dir_data(predir_path: "1000",start_md: str, end_md: str):
     prediction 数据集
     """
     df = get_dir_files_data("../data/predictions/"+predir_path,start_md,end_md)
-    print(f'prediction 数据量：{len(df)}')
+    # print(f'prediction 数据量：{len(df)}')
 
     return df
 
 def prepare_ths_data(start_md: str, end_md: str):
     """
-    prediction 数据集
+    prepare 数据集
     """
     df = get_dir_files_data("../data/ths/",start_md,end_md)
-    print(f'prediction 数据量：{len(df)}')
+    print(f'prepare 数据量：{len(df)}')
+    # 所有字段去掉空格
+    df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+    print(df.head(10))
 
     return df
 
