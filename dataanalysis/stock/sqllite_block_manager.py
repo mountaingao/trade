@@ -284,6 +284,32 @@ def get_stocks_block(codes):
     return storage.query_by_codes(codes)
 
 
+# 把数据补充完整，增加概念字段
+def add_blockname_data(df):
+    if df.empty:
+        return df
+    codes = df['代码'].unique()
+    # 查询得到板块数据
+    block_df = get_stocks_block(codes.tolist())
+    # print(block_df.tail(20))
+
+    # 修改: 统一代码列的数据类型为字符串,    NaN 转换为空字符串
+    df['代码'] = df['代码'].astype(str)
+    block_df['code'] = block_df['code'].fillna('').astype(str)
+
+    # 合并df和block_df，根据code和代码进行合并, blockname列 赋给 概念 列
+    df = pd.merge(df, block_df[['code', 'blockname']], left_on='代码', right_on='code', how='left')
+    # 填充缺失的概念值为空字符串
+    # 将blockname列 赋给 概念 列
+    df['概念'] = df['blockname']
+    # 过滤概念为空的数据
+    # df['概念'] = df['概念'].fillna('')
+    # df[group_by] = df[group_by].fillna('')
+    # df = df.dropna(subset=[group_by])
+    # 过滤概念为空的数据 或 ‘’ 字符串
+    df = df[(df['概念'].notna()) & (df['概念'] != '')]
+    print(f'概念数据量：{len(df)}') # 查询得到板块数据
+    return df
 
 if __name__ == "__main__":
     # main()

@@ -8,7 +8,8 @@ import keyboard
 import numpy as np
 import datetime  # 新增导入datetime模块
 from tdx_mini_data import process_multiple_codes
-from sqllite_block_manager import StockDataStorage
+from sqllite_block_manager import StockDataStorage,add_blockname_data
+
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
@@ -840,6 +841,9 @@ def merge_block_data(blockname):
         ths_data['概念'] = ths_data['备注']
     # 将概念中 -- 数据 删除为空
     ths_data['概念'] = ths_data['概念'].str.replace('--', '')
+    ths_data['概念'] = ths_data['概念'].apply(lambda x: x.split(' ')[0])
+    ths_data['概念'] = ths_data['概念'].apply(lambda x: x.split('+')[0])
+    # 替换 -- 为空
 
     data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量', '概念']], left_index=True, right_index=True)
     print( data.head(10))
@@ -997,38 +1001,44 @@ def cal_predict_data_selected(predictions_file):
     if df is None:
         return
 
+
     print(f'数据量：{len(df)}')
     # print(df.head(10))
+    # 增加板块概念
+    df = add_blockname_data(df)
+
+    # 输出筛选结果
+    get_selected_from_type(df, 'Q', '细分行业')
+    # get_selected_from_type(df_filtered, '量比')
+    get_selected_from_type(df, '当日资金流入', '概念')
+
+
+# 1000 1200 以 资金流入+概念为主
+# 1200 1400 以 Q+细分行业为主
+def get_selected_from_type(df, type='Q',group_by='细分行业'):
 
     # 按日期、细分行业统计数量，筛选出数量大于2的组合
-    df_grouped = df.groupby(['日期', '细分行业']).size().reset_index(name='count')
+    df_grouped = df.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    print("按日期、细分行业分组数量大于2的组合:")
+    print(f"按日期、{group_by}分组数量大于2的组合:")
     print(df_filtered_groups)
 
     # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-行业组合）
-    df_filtered = df.merge(df_filtered_groups[['日期', '细分行业']], on=['日期', '细分行业'])
-    print(f"筛选后的数据量: {len(df_filtered)}")
-    # print(df_filtered.tail(10))
+    df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    print(f"筛选后的{group_by}数据量: {len(df_filtered)}")
+    # print(df_filtered.tail(20))
 
     # 挑选出按 日期 细分行业 中 Q值最大的哪条数据
     # 处理可能存在的NaN值问题
-    df_filtered = df_filtered.dropna(subset=['Q'])
+    df_filtered = df_filtered.dropna(subset=[type])
 
-    # 输出筛选结果
-    get_selected_from_type(df_filtered, 'Q')
-    get_selected_from_type(df_filtered, '量比')
-    get_selected_from_type(df_filtered, '当日资金流入')
-
-
-def get_selected_from_type(df, type='量比'):
-    df_local =  df.loc[df.groupby(['日期', '细分行业'])[type].idxmax()]
+    df_local =  df_filtered.loc[df_filtered.groupby(['日期', group_by])[type].idxmax()]
     # print(f"各行业{type}量比龙头：")
-    # print(df_local[['代码','名称','现价','当日涨幅', '细分行业','信号天数','Q','当日资金流入', 'AI预测', 'AI幅度', '重合']])
+    print(df_local[['代码','名称','现价','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
     df_value = df_local[(df_local['Q'] >= 2.5) & (df_local['当日资金流入'] >= -0.2)]
-    print(f"满足{type}条件的如下：")
-    print(df_value[['代码','名称', '现价','当日涨幅', '细分行业','信号天数','Q','当日资金流入', 'AI预测', 'AI幅度', '重合']])
+    print(f"满足{type}+{group_by}条件的如下：")
+    print(df_value[['代码','名称', '现价','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
 def no_step_shoupan():
     x, y = pyautogui.position()
@@ -1121,7 +1131,7 @@ def main():
 
 if __name__ == '__main__':
 
-    no_step_shoupan()
+    # no_step_shoupan()
 
 
     # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
@@ -1142,7 +1152,11 @@ if __name__ == '__main__':
     # cal_predict_data_selected('../data/predictions/1400/09161428_1431.xlsx')
     # cal_predict_data_selected('../data/predictions/1600/09161509_1510.xlsx')
 
-
+    # 17日数据
+    cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
+    cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
+    cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
+    cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
     # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
