@@ -14,6 +14,7 @@ warnings.filterwarnings('ignore')
 # 导入原有数据读取函数
 from data_prepare import prepare_all_data,prepare_prediction_dir_data,get_dir_files,prepare_prediction_data
 from tdx_day_data import get_daily_data,get_stock_daily_data
+from sqllite_block_manager import get_stocks_block
 
 # 计算单个股票的参数
 def calculate_q_and_boll(code):
@@ -139,7 +140,7 @@ def get_existing_accuracy_data(hour='1600',date_suffix='0911'):
     # 过滤掉数据中 次日涨幅为空的数据
     df = df[df['次日涨幅'].notna()]
 
-    calculate_data_accuracy_2( df)
+    calculate_data_accuracy_by_type( df)
 
     # 过滤掉数据中 Q有值且小于2.5 的数据（如果Q列存在）
     if 'Q' in df.columns:
@@ -150,7 +151,7 @@ def get_existing_accuracy_data(hour='1600',date_suffix='0911'):
     print(f'Q 数据量：{len(df)}')
 
     # 计算这时 次日最高涨幅 大于1的数量
-    calculate_data_accuracy_2( df)
+    calculate_data_accuracy_by_type( df)
 
     # 针对df中的 信号天数字段，保留1-5的数字，大于5的数字只保留奇数 的行数
     # 修正：确保返回布尔值，添加异常处理
@@ -182,7 +183,7 @@ def get_existing_accuracy_data_2(hour='1600',date_suffix='0911'):
     # 过滤掉数据中 次日涨幅为空的数据
     df = df[df['次日涨幅'].notna()]
 
-    calculate_data_accuracy_2( df)
+    calculate_data_accuracy_by_type( df)
     df.to_excel(f'./temp/{hour}_{date_suffix}_0_filter.xlsx', index=False)
 
     # 按日期、细分行业统计数量，筛选出数量大于2的组合
@@ -251,8 +252,8 @@ def get_existing_accuracy_data_2(hour='1600',date_suffix='0911'):
 
 
 
-# 按照行业和资金流入进行过滤
-def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911'):
+# 按照行业和资金流入进行过滤 概念/细分行业
+def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911',group_by='细分行业'):
 
     # 指定目录数据
     df = prepare_prediction_dir_data(hour,"0717",date_suffix)
@@ -264,19 +265,52 @@ def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911'):
     # 过滤掉数据中 次日涨幅为空的数据
     df = df[df['次日涨幅'].notna()]
 
-    calculate_data_accuracy_2( df)
+    # 得到df中所有的唯一代码
+    codes = df['代码'].unique()
+    # 查询得到板块数据
+    block_df = get_stocks_block(codes.tolist())
+    # print(block_df.tail(20))
+
+    # 修改: 统一代码列的数据类型为字符串,    NaN 转换为空字符串
+    df['代码'] = df['代码'].astype(str)
+    block_df['code'] = block_df['code'].fillna('').astype(str)
+
+    # 合并df和block_df，根据code和代码进行合并, blockname列 赋给 概念 列
+    df = pd.merge(df, block_df[['code', 'blockname']], left_on='代码', right_on='code', how='left')
+    # 填充缺失的概念值为空字符串
+    # 将blockname列 赋给 概念 列
+    df[group_by] = df['blockname']
+    # 过滤概念为空的数据
+    # df['概念'] = df['概念'].fillna('')
+    # df[group_by] = df[group_by].fillna('')
+    # df = df.dropna(subset=[group_by])
+    # 过滤概念为空的数据 或 ‘’ 字符串
+    df = df[(df[group_by].notna()) & (df[group_by] != '')]
+    print(f'{group_by}数据量：{len(df)}')
+
+    print(df.tail(20))
+    # print(df[['代码','概念', 'blockname']].tail(10))
+
+    # exit()
+    # calculate_data_accuracy_by_type(df, group_by)
     df.to_excel(f'./temp/{hour}_{date_suffix}_{type}_0_filter.xlsx', index=False)
 
     # 按日期、细分行业统计数量，筛选出数量大于2的组合
-    df_grouped = df.groupby(['日期', '细分行业']).size().reset_index(name='count')
-    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    print("按日期、细分行业分组数量大于2的组合:")
-    # print(df_filtered_groups)
+    df_grouped = df.groupby(['日期', group_by]).size().reset_index(name='count')
+    print(df_grouped.tail(30))
+
+    df_filtered_groups = df_grouped[df_grouped['count'] >= 2]
+    print(f"按日期、{group_by}分组数量大于2的组合:{len(df_filtered_groups)}")
+    print(df_filtered_groups.tail(10))
+    # 打印出日期为2025-09-11的数据
+    print(df_filtered_groups[df_filtered_groups['日期'] == '2025-09-11'])
 
     # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-行业组合）
-    df_filtered = df.merge(df_filtered_groups[['日期', '细分行业']], on=['日期', '细分行业'])
+    df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
     print(f"筛选后的数据量: {len(df_filtered)}")
-    print(df_filtered.tail(10))
+    # 打印日期是2019-07-17的数据
+    # print(df_filtered.tail(10))
+    print(df_filtered[df_filtered['日期'] == '2025-09-11'])
     df_filtered.to_excel(f'./temp/{hour}_{date_suffix}_{type}_1_filter.xlsx', index=False)
 
     # 挑选出按 日期 细分行业 中 资金流入值最大的哪条数据
@@ -286,10 +320,10 @@ def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911'):
     # df_filtered.to_excel(f'./temp/{hour}_{date_suffix}_1_filter.xlsx', index=False)
 
     if not df_filtered.empty:
-        df = df_filtered.loc[df_filtered.groupby(['日期', '细分行业'])[type].idxmax()]
+        df = df_filtered.loc[df_filtered.groupby(['日期', group_by])[type].idxmax()]
     else:
         df = df_filtered
-    calculate_data_accuracy(df)
+    # calculate_data_accuracy_by_type(df, group_by)
     df.to_excel(f'./temp/{hour}_{date_suffix}_{type}_2_filter.xlsx', index=False)
 
     # 过滤掉数据中 Q有值且小于2.5 的数据（如果Q列存在）
@@ -301,7 +335,7 @@ def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911'):
     print(f'Q 数据量：{len(df)}')
 
     # 计算这时 次日最高涨幅 大于1的数量
-    calculate_data_accuracy(df)
+    # calculate_data_accuracy_by_type(df, group_by)
     df.to_excel(f'./temp/{hour}_{date_suffix}_{type}_3_filter.xlsx', index=False)
 
     # 针对df中的 信号天数字段，保留1-5的数字，大于5的数字只保留奇数 的行数
@@ -326,13 +360,13 @@ def get_existing_accuracy_data_by_type(type='Q',hour='1600',date_suffix='0911'):
 
     df = df[(df['当日资金流入'] >= -0.2)]
     print(f'当日资金流入 数据量：{len(df)}')
-    calculate_data_accuracy( df)
+    calculate_data_accuracy_by_type(df, group_by)
 
     # 将结果写入到临时文件excel中
     df.to_excel(f'./temp/{hour}_{date_suffix}_{type}_5_filter.xlsx', index=False)
 
-# 修改 calculate_data_accuracy_2 函数以返回统计结果
-def calculate_data_accuracy_2(df):
+# 修改 calculate_data_accuracy_by_type 函数以返回统计结果 概念
+def calculate_data_accuracy_by_type(df, group_by='细分行业'):
     # 确保相关列是数值类型，如果不是则进行转换
     numeric_columns = ['次日最高涨幅', '次日涨幅']
     df_copy = df.copy()
@@ -342,20 +376,21 @@ def calculate_data_accuracy_2(df):
     df_copy_count = df_copy.groupby('日期').agg({col: 'count' for col in numeric_columns})
     # print(df_copy_count)
     
-    # 按日期、细分行业统计数量，筛选出数量大于2的组合
-    df_grouped = df_copy.groupby(['日期', '细分行业']).size().reset_index(name='count')
-    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    print("按日期、细分行业分组数量大于2的组合:")
-    print(df_filtered_groups)
-    
-    # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-行业组合）
-    df_filtered = df_copy.merge(df_filtered_groups[['日期', '细分行业']], on=['日期', '细分行业'])
-    print(f"筛选后的数据量: {len(df_filtered)}")
-    
+    # # 按日期、细分行业统计数量，筛选出数量大于2的组合
+    # df_grouped = df_copy.groupby(['日期', group_by]).size().reset_index(name='count')
+    # df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+    # print(f"按日期、{group_by}分组数量大于2的组合:")
+    # print(df_filtered_groups.tail)
+    #
+    # # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-行业组合）
+    # df_filtered = df_copy.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    # print(f"筛选后的数据量: {len(df_filtered)}")
+
+    df_filtered = df_copy
     # 打印筛选后的统计数据
     df_filtered_sum = df_filtered.groupby('日期').agg({col: 'sum' for col in numeric_columns})
     print("筛选后按日期汇总:")
-    print(df_filtered_sum)
+    # print(df_filtered_sum)
     
     # 打印整体统计信息
     print('筛选后次日涨幅：', df_filtered_sum['次日涨幅'].sum(), df_filtered_sum['次日涨幅'].mean())
@@ -489,7 +524,7 @@ def collect_analysis_results():
                 if df is not None:
                     # 过滤掉数据中 次日涨幅为空的数据
                     df = df[df['次日涨幅'].notna()]
-                    stats = calculate_data_accuracy_2(df)
+                    stats = calculate_data_accuracy(df)
                     results.append({
                         '分析类型': 'get_existing_accuracy_data_2',
                         '时间': hour,
@@ -723,25 +758,26 @@ def main():
 
 
     # 按照不同类型进行数据统计 1000  量比数据最差，不考虑
-    get_existing_accuracy_data_by_type('Q','1000','0912')
+    # get_existing_accuracy_data_by_type('Q','1000','0912','概念')
     # get_existing_accuracy_data_by_type('量比','1000','0912')
-    get_existing_accuracy_data_by_type('当日资金流入','1000','0912')
+    # get_existing_accuracy_data_by_type('当日资金流入','1000','0912''概念')
+    #
+    # # 按照不同类型进行数据统计 1200
+    # get_existing_accuracy_data_by_type('Q','1200','0912')
+    # # get_existing_accuracy_data_by_type('量比','1200','0912')
+    # get_existing_accuracy_data_by_type('当日资金流入','1200','0912')
+    #
+    # # 按照不同类型进行数据统计 1400
+    # get_existing_accuracy_data_by_type('Q','1400','0912')
+    # # get_existing_accuracy_data_by_type('量比','1400','0912')
+    # get_existing_accuracy_data_by_type('当日资金流入','1400','0912')
+    #
+    # # 按照不同类型进行数据统计 1600
+    # get_existing_accuracy_data_by_type('Q','1600','0912')
+    # # get_existing_accuracy_data_by_type('量比','1600','0912')
+    # get_existing_accuracy_data_by_type('当日资金流入','1600','0912')
 
-    # 按照不同类型进行数据统计 1200
-    get_existing_accuracy_data_by_type('Q','1200','0912')
-    # get_existing_accuracy_data_by_type('量比','1200','0912')
-    get_existing_accuracy_data_by_type('当日资金流入','1200','0912')
-
-    # 按照不同类型进行数据统计 1400
-    get_existing_accuracy_data_by_type('Q','1400','0912')
-    # get_existing_accuracy_data_by_type('量比','1400','0912')
-    get_existing_accuracy_data_by_type('当日资金流入','1400','0912')
-
-    # 按照不同类型进行数据统计 1600
-    get_existing_accuracy_data_by_type('Q','1600','0912')
-    # get_existing_accuracy_data_by_type('量比','1600','0912')
-    get_existing_accuracy_data_by_type('当日资金流入','1600','0912')
-    
+    # exit()
     # 收集所有分析结果并生成报表
     print("正在收集分析结果...")
     results = collect_analysis_results()
@@ -759,7 +795,7 @@ def main():
     analyze_by_type_comparison('1600', '0912')
 
 if __name__ == "__main__":
-    main()
+    # main()
 
     # 增加文件比较分析调用
     print("\n开始进行文件差异分析...")

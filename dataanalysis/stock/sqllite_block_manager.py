@@ -4,6 +4,8 @@ import json
 import os
 from data_prepare import prepare_ths_data
 import datetime
+import pytz
+
 class StockDataStorage:
     def __init__(self, db_path="../data/db/stock_block_data.db"):
         self.db_path = db_path
@@ -80,7 +82,8 @@ class StockDataStorage:
 
     def query_by_codes(self, codes):
         """根据多个股票代码查询数据"""
-        if not codes:
+        # 修改: 处理numpy数组和pandas Series的情况
+        if codes is None or len(codes) == 0:
             return pd.DataFrame()  # 返回空的DataFrame
         
         # 构造占位符
@@ -121,9 +124,16 @@ class StockDataStorage:
         df['blockname'] = df['blockname'].apply(lambda x: x.split('+')[0])
         # 替换 -- 为空
         df['blockname'] = df['blockname'].str.replace('--', '')
+        # 确保 code 字段是字符串类型
+        df['code'] = df['code'].astype(str)
         for _, row in df.iterrows():
-            # 检查是否已存在该代码的记录
-            cursor.execute("SELECT id FROM stockblock WHERE code = ?", (row['code'],))
+            print(row)
+            print(row['code'])
+            code = str(row['code'])
+            print(code)
+
+        # 检查是否已存在该代码的记录
+            cursor.execute("SELECT id FROM stockblock WHERE code = ?", (code,))
             result = cursor.fetchone()
             
             if result:
@@ -132,13 +142,13 @@ class StockDataStorage:
                     UPDATE stockblock
                     SET name = ?, date = ?, industry = ?, blockname = ?, status = ?
                     WHERE code = ?
-                ''', (row['name'], row['date'], row['industry'], row['blockname'], row['status'], row['code']))
+                ''', (row['name'], row['date'], row['industry'], row['blockname'], row['status'], code))
             else:
                 # 如果不存在，插入新记录
                 cursor.execute('''
                     INSERT INTO stockblock (code, name, date, industry, blockname, status)
                     VALUES (?, ?, ?, ?, ?, ?)
-                ''', (row['code'], row['name'], row['date'], row['industry'], row['blockname'], row['status']))
+                ''', (code, row['name'], row['date'], row['industry'], row['blockname'], row['status']))
         
         conn.commit()
         conn.close()
@@ -148,7 +158,7 @@ class StockDataStorage:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # cursor.execute("DELETE FROM stockblock")
+        cursor.execute("DELETE FROM stockblock")
         
         conn.commit()
         conn.close()
@@ -237,21 +247,28 @@ def main():
 def update_stock_block_status():
     # 创建存储实例
     storage = StockDataStorage()
-
-    # storage.query_stock_block()
+    # 清空数据
+    # StockDataStorage().clear_all_data()
 
     # 读取同花顺目录下的所有的历史数据
-    df = prepare_ths_data("0717","0720")
+    df = prepare_ths_data("0717","0920")
     # df_data = df[['代码', '名称', '日期', '细分行业', '概念', '状态']]
 
     print(df.columns)
     # 转换字段名
-    df.rename(columns={'    名称': 'name',  '细分行业': 'industry', '备注': 'blockname'}, inplace=True)
+    df.rename(columns={'代码': 'code', '    名称': 'name',  '细分行业': 'industry', '备注': 'blockname'}, inplace=True)
     df['status'] = 0
-    df['date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+    def get_beijing_time():
+        """获取北京时间"""
+    beijing_tz = pytz.timezone('Asia/Shanghai')
 
-    # print(df.columns)
-    # print(df.head(100))
+    df['date'] = datetime.datetime.now(beijing_tz).strftime('%Y-%m-%d')
+    df['code'] = df['code'].str.replace('SH', '').str.replace('SZ', '')
+
+    print(df.columns)
+    df = df[['code', 'name', 'date', 'industry', 'blockname', 'status']]
+    print(df.head(100))
+    # exit()
     storage.batch_import_from_dataframe(df)
     # print(storage.query_stock_block())
 
@@ -260,9 +277,22 @@ def list_stock_block():
     storage = StockDataStorage()
     print(storage.query_stock_block())
 
-if __name__ == "__main__":
-    main()
+def get_stocks_block(codes):
+    # 创建存储实例
+    storage = StockDataStorage()
+    # print(codes)
+    return storage.query_by_codes(codes)
 
-    update_stock_block_status()
+
+
+if __name__ == "__main__":
+    # main()
+
+    # 清空所有数据
+
+    # update_stock_block_status()
 
     list_stock_block()
+
+    value = get_stocks_block([688499, 688498])
+    print(value)

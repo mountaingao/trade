@@ -1121,13 +1121,13 @@ def main():
 
 if __name__ == '__main__':
 
-    # no_step_shoupan()
+    no_step_shoupan()
 
 
-    cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
-    cal_predict_data_selected('../data/predictions/1200/09121136_1137.xlsx')
-    cal_predict_data_selected('../data/predictions/1400/09121440_1442.xlsx')
-    cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
+    # cal_predict_data_selected('../data/predictions/1200/09121136_1137.xlsx')
+    # cal_predict_data_selected('../data/predictions/1400/09121440_1442.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
 
 
     # 15日数据
