@@ -1131,7 +1131,7 @@ def main():
 
 if __name__ == '__main__':
 
-    # no_step_shoupan()
+    no_step_shoupan()
 
 
     # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
@@ -1153,10 +1153,10 @@ if __name__ == '__main__':
     # cal_predict_data_selected('../data/predictions/1600/09161509_1510.xlsx')
 
     # 17日数据
-    cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
-    cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
-    cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
-    cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
+    # cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
+    # cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
+    # cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
     # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据
