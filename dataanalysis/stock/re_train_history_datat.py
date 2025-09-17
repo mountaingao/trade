@@ -759,7 +759,7 @@ def main():
     analyze_by_type_comparison('1600', '0912')
 
 if __name__ == "__main__":
-    # main()
+    main()
 
     # 增加文件比较分析调用
     print("\n开始进行文件差异分析...")

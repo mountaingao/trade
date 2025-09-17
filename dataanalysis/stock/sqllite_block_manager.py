@@ -116,6 +116,11 @@ class StockDataStorage:
         # 转换字段名
         df.rename(columns={'代码': 'code', '名称': 'name', '日期': 'date', '细分行业': 'industry', '概念': 'blockname', '状态': 'status'}, inplace=True)
 
+        # blockname 字段 如果有+号，+号之前的数据 如果有空格分开，也取第一个
+        df['blockname'] = df['blockname'].apply(lambda x: x.split(' ')[0])
+        df['blockname'] = df['blockname'].apply(lambda x: x.split('+')[0])
+        # 替换 -- 为空
+        df['blockname'] = df['blockname'].str.replace('--', '')
         for _, row in df.iterrows():
             # 检查是否已存在该代码的记录
             cursor.execute("SELECT id FROM stockblock WHERE code = ?", (row['code'],))
@@ -245,10 +250,10 @@ def update_stock_block_status():
     df['status'] = 0
     df['date'] = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    print(df.columns)
-    print(df.head(100))
+    # print(df.columns)
+    # print(df.head(100))
     storage.batch_import_from_dataframe(df)
-    print(storage.query_stock_block())
+    # print(storage.query_stock_block())
 
 def list_stock_block():
     # 创建存储实例
@@ -256,7 +261,7 @@ def list_stock_block():
     print(storage.query_stock_block())
 
 if __name__ == "__main__":
-    # main()
+    main()
 
     update_stock_block_status()
 
