@@ -1029,6 +1029,22 @@ def get_selected_from_type(df, type='Q',group_by='细分行业'):
     print(f"满足{type}+{group_by}条件的如下：")
     print(df_value[['代码','名称', '当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
+
+
+# 分析各个板块的数据，挑选出最有潜力的几个
+
+
+def select_from_block_data(df):
+    # 1、流入为正数，选择最大的一个
+    # 2、按涨幅排序，选择前3名
+    # 3、Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3     调整 Q>Q_1 Q_1<Q3
+    # 4、量比大于1 涨幅>0  或 量比小于1 涨幅<0
+    # 信号天数小一些，如果是强势,可以忽略
+    df_local = df.copy()
+    df_value = df_local[(df_local['当日资金流入'] >= 2.5) & (df_local['当日资金流入'] >= -0.2) ]
+
+    df['Q'] = np.where(df['当日资金流入']>0, df['Q'], 0)
+
 def no_step_shoupan():
     x, y = pyautogui.position()
     print(x, y)

@@ -90,11 +90,6 @@ def start_cal_predict_data_selected(file_path):
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
 
 
-# 分析各个板块的数据，挑选出最有潜力的几个
-# 1、流入为正数，选择最大的一个
-# 2、按涨幅排序，选择前3名
-# 3、Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3     调整 Q>Q_1 Q_1<Q3
-# 4、量比大于1 涨幅>0  或 量比小于1 涨幅<0
 
 def main():
     blocknames = [
