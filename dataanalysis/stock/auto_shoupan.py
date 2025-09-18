@@ -793,18 +793,6 @@ def update_stock_block_status(df):
     print(df.columns)
     df_data = df[['代码', '名称', '日期', '细分行业', '概念']]
     df_data['状态'] = 0
-    print( df_data.head(100))
-
-    test_data = pd.DataFrame({
-        'code': ['000002', '000003', '000001'],
-        'name': ['万科A', '中粮可乐', '平安银行'],
-        'date': ['2023-01-02', '2023-01-03', '2023-01-01'],
-        'industry': ['房地产', '食品饮料', '银行'],
-        'blockname': ['地产板块', '消费板块', '金融板块'],
-        'status': [0, 0, 1]
-    })
-
-
 
     storage.batch_import_from_dataframe(df_data)
 
@@ -1009,6 +997,7 @@ def cal_predict_data_selected(predictions_file):
 
     # 输出筛选结果
     get_selected_from_type(df, 'Q', '细分行业')
+    get_selected_from_type(df, 'Q', '概念')
     # get_selected_from_type(df_filtered, '量比')
     get_selected_from_type(df, '当日资金流入', '概念')
 
@@ -1034,11 +1023,11 @@ def get_selected_from_type(df, type='Q',group_by='细分行业'):
 
     df_local =  df_filtered.loc[df_filtered.groupby(['日期', group_by])[type].idxmax()]
     # print(f"各行业{type}量比龙头：")
-    print(df_local[['代码','名称','现价','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
+    print(df_local[['代码','名称','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
     df_value = df_local[(df_local['Q'] >= 2.5) & (df_local['当日资金流入'] >= -0.2)]
     print(f"满足{type}+{group_by}条件的如下：")
-    print(df_value[['代码','名称', '现价','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
+    print(df_value[['代码','名称', '当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
 def no_step_shoupan():
     x, y = pyautogui.position()
@@ -1134,29 +1123,7 @@ if __name__ == '__main__':
     no_step_shoupan()
 
 
-    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
-    # cal_predict_data_selected('../data/predictions/1200/09121136_1137.xlsx')
-    # cal_predict_data_selected('../data/predictions/1400/09121440_1442.xlsx')
-    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
 
-
-    # 15日数据
-    # cal_predict_data_selected('../data/predictions/1000/09150954_0956.xlsx')
-    # cal_predict_data_selected('../data/predictions/1200/09151132_1133.xlsx')
-    # cal_predict_data_selected('../data/predictions/1400/09151359_1401.xlsx')
-    # cal_predict_data_selected('../data/predictions/1600/09151506_1507.xlsx')
-
-    # 16日数据
-    # cal_predict_data_selected('../data/predictions/1000/09160943_0945.xlsx')
-    # cal_predict_data_selected('../data/predictions/1200/09161142_1144.xlsx')
-    # cal_predict_data_selected('../data/predictions/1400/09161428_1431.xlsx')
-    # cal_predict_data_selected('../data/predictions/1600/09161509_1510.xlsx')
-
-    # 17日数据
-    # cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
-    # cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
-    # cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
-    # cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
     # step_by_step_shoupan()
 
 # 导出数据，保存数据，并获取关键数据

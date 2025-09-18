@@ -61,8 +61,42 @@ def start_predict_date_data(blocknames):
 
         auto_shoupan.predict_block_data_from_block_name(blockname)
 
-if __name__ == '__main__':
+def start_cal_predict_data_selected(file_path):
+    """重新合并数据"""
+    # auto_shoupan.cal_predict_data_selected(file_path)
 
+    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
+    # cal_predict_data_selected('../data/predictions/1200/09121136_1137.xlsx')
+    # cal_predict_data_selected('../data/predictions/1400/09121440_1442.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
+
+
+    # 15日数据
+    # cal_predict_data_selected('../data/predictions/1000/09150954_0956.xlsx')
+    # cal_predict_data_selected('../data/predictions/1200/09151132_1133.xlsx')
+    # cal_predict_data_selected('../data/predictions/1400/09151359_1401.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09151506_1507.xlsx')
+
+    # 16日数据
+    # cal_predict_data_selected('../data/predictions/1000/09160943_0945.xlsx')
+    # cal_predict_data_selected('../data/predictions/1200/09161142_1144.xlsx')
+    # cal_predict_data_selected('../data/predictions/1400/09161428_1431.xlsx')
+    # cal_predict_data_selected('../data/predictions/1600/09161509_1510.xlsx')
+
+    # 17日数据
+    auto_shoupan.cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
+    # auto_shoupan.cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
+    # auto_shoupan.cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
+    # auto_shoupan.cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
+
+
+# 分析各个板块的数据，挑选出最有潜力的几个
+# 1、流入为正数，选择最大的一个
+# 2、按涨幅排序，选择前3名
+# 3、Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3     调整 Q>Q_1 Q_1<Q3
+# 4、量比大于1 涨幅>0  或 量比小于1 涨幅<0
+
+def main():
     blocknames = [
         # "07170948",
         # "07171244",
@@ -104,3 +138,13 @@ if __name__ == '__main__':
     # start_predict_date_data(blocknames)
 
     # minite_data = get_minite_band_width( blocknames)
+
+
+
+if __name__ == '__main__':
+    # 基本测试
+    # main()
+
+    # 推测目录下的数据
+    start_cal_predict_data_selected("../data/predictions/")
+

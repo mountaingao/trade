@@ -713,7 +713,7 @@ if __name__ == "__main__":
 
     # 增加文件比较分析调用
     print("\n开始进行文件差异分析...")
-    analyze_by_type_comparison('1400', '0912')
+    # analyze_by_type_comparison('1400', '0912')
     # analyze_by_type_comparison('1600', '0912')
 
     # 结论： 1000 1200 以 资金流入+概念为主
