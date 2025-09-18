@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import pyautogui
 import time
-
+from data_prepare import get_data_from_files
 
 
 def merge_test_data(blocknames):
@@ -89,7 +89,18 @@ def start_cal_predict_data_selected(file_path):
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
 
+def cal_daily_canshu_data():
+    """重新合并数据"""
+    # 这是一个数组，逐个去读并合并数据
+    files= [
+        "../data/predictions/1600/09171504_1506.xlsx",
+    ]
+    df = get_data_from_files(files)
 
+    df['概念'] = df['概念'].apply(lambda x: x.split(' ')[0])
+    df['概念'] = df['概念'].apply(lambda x: x.split('+')[0])
+
+    auto_shoupan.select_from_block_data(df)
 
 def main():
     blocknames = [
@@ -140,6 +151,7 @@ if __name__ == '__main__':
     # 基本测试
     # main()
 
+    cal_daily_canshu_data()
     # 推测目录下的数据
-    start_cal_predict_data_selected("../data/predictions/")
+    # start_cal_predict_data_selected("../data/predictions/")
 

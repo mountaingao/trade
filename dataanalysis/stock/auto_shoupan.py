@@ -1041,9 +1041,62 @@ def select_from_block_data(df):
     # 4、量比大于1 涨幅>0  或 量比小于1 涨幅<0
     # 信号天数小一些，如果是强势,可以忽略
     df_local = df.copy()
-    df_value = df_local[(df_local['当日资金流入'] >= 2.5) & (df_local['当日资金流入'] >= -0.2) ]
+    
+    # 实现条件1：流入为正数，选择最大的一个（按行业分组）
+    df_local['当日资金流入'] = pd.to_numeric(df_local['当日资金流入'], errors='coerce')
+    df_local['当日涨幅'] = pd.to_numeric(df_local['当日涨幅'], errors='coerce')
+    df_local['量比'] = pd.to_numeric(df_local['量比'], errors='coerce')
+    df_local['Q'] = pd.to_numeric(df_local['Q'], errors='coerce')
+    df_local['Q_1'] = pd.to_numeric(df_local['Q_1'], errors='coerce')
+    df_local['Q3'] = pd.to_numeric(df_local['Q3'], errors='coerce')
+    df_local['信号天数'] = pd.to_numeric(df_local['信号天数'], errors='coerce')
 
-    df['Q'] = np.where(df['当日资金流入']>0, df['Q'], 0)
+
+
+    group_by = '概念'
+    # 按日期、group_by字段统计数量，筛选出数量大于2的组合
+    df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
+    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+
+    # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-group_by组合）
+    df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    print(f"按日期、{group_by}分组数量大于2的{group_by}:")
+    print(df_filtered_groups)
+    print(f"按日期、{group_by}分组数量大于2的股票:")
+    print(df_filtered)
+    # 条件1：流入为正数，选择最大的一个（按细分行业分组）
+    df_positive_flow = df_local[df_local['当日资金流入'] > 0]
+    print(df_filtered)
+
+    max_flow_by_industry = df_positive_flow.loc[df_positive_flow.groupby('概念')['当日资金流入'].idxmax()]
+    print(max_flow_by_industry)
+
+    # 条件2：按涨幅排序，选择前3名（按细分行业分组）
+    top_gainers_by_industry = df_positive_flow.groupby('概念').apply(
+        lambda x: x.nlargest(1, '当日涨幅')
+    ).reset_index(drop=True)
+    print(top_gainers_by_industry)
+
+    df_local_filter = df_positive_flow
+    # 条件3：Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3 => 调整为 Q>Q_1 且 Q_1<Q3
+    condition_3 = df_local_filter[(df_local_filter['Q'] > df_local_filter['Q_1']) & (df_local_filter['Q_1'] < df_local_filter['Q3'])]
+    
+    # 条件4：量比大于1且涨幅>0 或 量比小于1且涨幅<0
+    condition_4 = df_local_filter[((df_local_filter['量比'] > 1) & (df_local_filter['当日涨幅'] > 0)) |
+                          ((df_local_filter['量比'] < 1) & (df_local_filter['当日涨幅'] < 0))]
+    
+    # 综合筛选结果
+    selected_stocks = pd.concat([
+        max_flow_by_industry,
+        top_gainers_by_industry,
+        condition_3,
+        condition_4
+    ]).drop_duplicates()
+    
+    print("符合条件的股票:")
+    print(selected_stocks[['代码', '名称', '当日资金流入', '当日涨幅', '量比', 'Q', 'Q_1', 'Q3', '信号天数']])
+    
+    return selected_stocks
 
 def no_step_shoupan():
     x, y = pyautogui.position()
