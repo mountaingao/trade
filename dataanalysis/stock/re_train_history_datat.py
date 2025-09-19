@@ -344,6 +344,97 @@ def calculate_data_accuracy_by_type(df, group_by='细分行业'):
         '次日最高涨幅平均': df_filtered_sum['次日最高涨幅'].mean()
     }
 
+def select_from_block_data(df, selection_strategy='default'):
+    """
+    从板块数据中选择股票的通用方法
+
+    Parameters:
+    df: DataFrame - 输入的数据
+    selection_strategy: str - 选择策略，可以是 'default', 'aggressive', 'conservative' 等
+
+    Returns:
+    dict - 包含不同类别选择结果的字典
+    """
+    # 1、流入为正数，选择最大的一个（按行业分组）
+    df_local = df.copy()
+
+    # 数据类型转换
+    numeric_columns = ['当日资金流入', '当日涨幅', '量比', 'Q', 'Q_1', 'Q3', '信号天数']
+    for col in numeric_columns:
+        if col in df_local.columns:
+            df_local[col] = pd.to_numeric(df_local[col], errors='coerce')
+
+    group_by = '概念'
+    # 按日期、group_by字段统计数量，筛选出数量大于2的组合
+    df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
+    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+    print(df_filtered_groups.tail(10))
+
+    # 挑出数量最大的前2个概念
+    df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
+
+    # 得到这前2个分组的数据
+    df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅']])
+
+    results = {}
+
+    if selection_strategy == 'default':
+        # 默认策略：强势龙头和调整龙头
+        df_max_up = df_max[
+            (df_max['量比'] > 1) &
+            (df_max['当日涨幅'] > 0) &
+            (df_max['当日资金流入'] > -0.2) &
+            (
+                    ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] >= df_max['Q3'])) |
+                    ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] <= df_max['Q3']))
+            )
+            ]
+        print(f"强势板块龙头 数据量: {len(df_max_up)}")
+        print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+
+        df_max_down = df_max[
+            (df_max['当日涨幅'] < 0) &
+            (df_max['当日资金流入'] > -0.2) &
+            (((df_max['Q'] < df_max['Q_1']) & (df_max['Q_1'] < df_max['Q3'])))
+            ]
+        print(f"龙头板块调整 数据量: {len(df_max_down)}")
+        print(df_max_down.tail(3))
+
+        results = {
+            'strong_leaders': df_max_up,
+            'adjusting_leaders': df_max_down,
+            'all_max_group': df_max
+        }
+
+    elif selection_strategy == 'aggressive':
+        # 激进策略：选择资金流入大且涨幅高的股票
+        df_aggressive = df_max[
+            (df_max['当日资金流入'] > 0) &
+            (df_max['当日涨幅'] > 2) &
+            (df_max['量比'] > 1.5) &
+            (df_max['Q'] > df_max['Q_1'])
+            ]
+        results = {
+            'aggressive_picks': df_aggressive,
+            'all_max_group': df_max
+        }
+
+    elif selection_strategy == 'conservative':
+        # 保守策略：选择稳定增长的股票
+        df_conservative = df_max[
+            (df_max['当日资金流入'] > -0.1) &
+            (df_max['当日涨幅'] > 0) &
+            (df_max['量比'] > 0.8) &
+            (df_max['Q'] > df_max['Q3'])
+            ]
+        results = {
+            'conservative_picks': df_conservative,
+            'all_max_group': df_max
+        }
+
+    return results
+
 
 def calculate_data_accuracy(df):
     # 确保相关列是数值类型，如果不是则进行转换
@@ -422,10 +513,70 @@ def calculate_data_accuracy(df):
         '次日最高涨幅>5比例': 100*len(df_copy[df_copy['次日最高涨幅'] > 5])/len(df_copy) if len(df_copy) > 0 else 0
     }
 
-# 收集分析结果的函数
-def collect_analysis_results(last_date_suffix):
+def collect_analysis_results(df):
     """
-    收集所有分析结果并生成报表
+    收集各种分析策略的结果
+
+    Parameters:
+    df: DataFrame - 输入的数据
+
+    Returns:
+    dict - 包含所有策略分析结果的字典
+    """
+    # 定义要测试的策略列表
+    strategies = ['default', 'aggressive', 'conservative']
+
+    # 存储所有结果
+    all_results = {}
+
+    print("开始执行多策略分析...")
+
+    for strategy in strategies:
+        print(f"\n=== 执行 {strategy} 策略 ===")
+        try:
+            strategy_results = select_from_block_data(df, selection_strategy=strategy)
+            all_results[strategy] = strategy_results
+
+            # 打印每种策略的关键统计信息
+            print(f"{strategy} 策略结果统计:")
+            for key, result_df in strategy_results.items():
+                if isinstance(result_df, pd.DataFrame):
+                    print(f"  {key}: {len(result_df)} 条记录")
+
+        except Exception as e:
+            print(f"执行 {strategy} 策略时出错: {str(e)}")
+            all_results[strategy] = {'error': str(e)}
+
+    # 汇总分析
+    summary = {}
+    for strategy, results in all_results.items():
+        if 'error' not in results:
+            summary[strategy] = {
+                result_type: len(result_df) if isinstance(result_df, pd.DataFrame) else 0
+                for result_type, result_df in results.items()
+            }
+
+    print("\n=== 分析汇总 ===")
+    for strategy, counts in summary.items():
+        print(f"{strategy} 策略:")
+        for result_type, count in counts.items():
+            print(f"  {result_type}: {count} 条记录")
+
+    return {
+        'detailed_results': all_results,
+        'summary': summary
+    }
+
+# 收集分析结果的函数
+def collect_historical_analysis_results(last_date_suffix):
+    """
+    收集历史分析结果并生成报表（历史数据汇总版本）
+
+    Parameters:
+    last_date_suffix: str - 日期后缀
+
+    Returns:
+    list - 分析结果列表
     """
     results = []
     
@@ -693,7 +844,7 @@ def main():
     # 收集所有分析结果并生成报表
     print("正在收集分析结果...")
     last_date_suffix= "0917"
-    results = collect_analysis_results(last_date_suffix)
+    results = collect_historical_analysis_results(last_date_suffix)
     
     # 保存结果到Excel文件
     if not os.path.exists('./temp'):

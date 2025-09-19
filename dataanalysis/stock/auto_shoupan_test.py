@@ -6,6 +6,7 @@ import numpy as np
 import pyautogui
 import time
 from data_prepare import get_data_from_files
+from sqllite_block_manager import add_blockname_data
 
 
 def merge_test_data(blocknames):
@@ -63,9 +64,9 @@ def start_predict_date_data(blocknames):
 
 def start_cal_predict_data_selected(file_path):
     """重新合并数据"""
-    # auto_shoupan.cal_predict_data_selected(file_path)
+    auto_shoupan.cal_predict_data_selected(file_path)
 
-    # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
+    # auto_shoupan.cal_predict_data_selected('../data/predictions/1000/09120952_0954.xlsx')
     # cal_predict_data_selected('../data/predictions/1200/09121136_1137.xlsx')
     # cal_predict_data_selected('../data/predictions/1400/09121440_1442.xlsx')
     # cal_predict_data_selected('../data/predictions/1600/09121517_1522.xlsx')
@@ -92,13 +93,46 @@ def start_cal_predict_data_selected(file_path):
 def cal_daily_canshu_data():
     """重新合并数据"""
     # 这是一个数组，逐个去读并合并数据
+
     files= [
-        "../data/predictions/1600/09171504_1506.xlsx",
+
+        # '../data/predictions/1000/09120939_0942.xlsx',
+        # '../data/predictions/1200/09121136_1137.xlsx',
+        # '../data/predictions/1400/09121440_1442.xlsx',
+        # '../data/predictions/1600/09121517_1522.xlsx',
+        # '../data/predictions/1000/09150954_0956.xlsx',
+        # '../data/predictions/1200/09151132_1133.xlsx',
+        # '../data/predictions/1400/09151359_1401.xlsx',
+        # '../data/predictions/1600/09151506_1507.xlsx',
+        # '../data/predictions/1000/09160943_0945.xlsx',
+        # '../data/predictions/1200/09161142_1144.xlsx',
+        # '../data/predictions/1400/09161428_1431.xlsx',
+        # '../data/predictions/1600/09161509_1510.xlsx',
+        # '../data/predictions/1000/09170940_0942.xlsx',
+        # '../data/predictions/1200/09171143_1145.xlsx',
+        # '../data/predictions/1400/09171416_1418.xlsx',
+        # '../data/predictions/1600/09171504_1506.xlsx',
+
+        # '../data/predictions/1000/09180942_0944.xlsx',
+        # '../data/predictions/1200/09181142_1144.xlsx',
+        # '../data/predictions/1400/09181412_1414.xlsx',
+        # '../data/predictions/1600/09181507_1509.xlsx',
+
+        # '../data/predictions/1000/09190945_0948.xlsx',
+        # "../data/predictions/1200/09191239_1242.xlsx"""
+        # '../data/predictions/1400/09191357_1359.xlsx',
+        '../data/predictions/1600/09191522_1526.xlsx',
     ]
     df = get_data_from_files(files)
 
-    df['概念'] = df['概念'].apply(lambda x: x.split(' ')[0])
-    df['概念'] = df['概念'].apply(lambda x: x.split('+')[0])
+    df = add_blockname_data(df)
+    # 如果概念为空，获取概念
+# 17  688028   沃尔德  -2.67  0.75  2.35  3.56  3.79    0.01   16.43  13.79
+# 11  688028   沃尔德 -3.45   3.84  2.25  3.56  3.76   -0.03   17.38  13.79
+    df['概念'] = df['概念'].apply(lambda x: x.split(' ')[0] if isinstance(x, str) else x)
+    df['概念'] = df['概念'].apply(lambda x: x.split('+')[0] if isinstance(x, str) else x)
+
+    # df['概念'] = df['概念'].apply(lambda x: x.split('+')[0])
 
     auto_shoupan.select_from_block_data(df)
 

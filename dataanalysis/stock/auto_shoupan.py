@@ -1057,12 +1057,95 @@ def select_from_block_data(df):
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+    print(df_filtered_groups.tail(10))
 
-    # 从原始数据中筛选出符合要求的记录（属于数量大于2的日期-group_by组合）
+    # 挑出数量最大的概念
+    # df_filtered_groups = df_filtered_groups.loc[df_filtered_groups.groupby('日期')['count'].idxmax()]
+    df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
+    # 得到这个分组的数据
+    df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    # print(df_max.tail(20))
+    # print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
+
+    # df_max 得到符合条件的数据 量比大于1 涨幅>0 资金流入>0 Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3
+    df_max_up = df_max[
+        (df_max['量比'] > 1) &
+        (df_max['当日涨幅'] < 19.95) &
+        (df_max['当日涨幅'] > 0) &
+        (df_max['当日资金流入'] > -0.2) &
+        (
+                ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] >= df_max['Q3'])) |
+                ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] <= df_max['Q3']))
+        )
+        ]
+    print(f"强势板块龙头 数据量: {len(df_max_up)}")
+    # 排序 按 Q 和 当日资金流入排序，每个概念只保留3个
+    df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
+    df_max_up = df_max_up.groupby('概念').head(3)
+    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
+    df_max_down = df_max[
+        # (df_max['量比'] < 1) &
+        (df_max['当日涨幅'] < 0) &
+        (df_max['当日资金流入'] > -0.2) &
+        (
+                ((df_max['Q'] < df_max['Q_1']) & (df_max['Q_1'] < df_max['Q3']))
+        )
+        ]
+    if len(df_max_down) > 0:
+        print(f"龙头板块调整 数据量: {len(df_max_down)}")
+        print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+
+    exit()
+    # 得到其他分组的数据
+    df_other = df_local[~df_local.index.isin(df_max.index)]
+    if len(df_other) > 0:
+        print(f"其他板块 数据量: {len(df_other)}")
+    # 其他板块按 Q 排序，选择最大的一个
+    df_other_q = df_other.loc[df_other.groupby('概念')['Q'].idxmax()]
+    # print(df_other_q.tail(20)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    print(df_other_q[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
+
+    df_other_q = df_other_q[
+        # (df_max['量比'] < 1) &
+        (df_other_q['Q'] > 1.5) &
+        (df_other_q['当日资金流入'] > -0.2) &
+        (
+            ((df_other_q['Q'] > df_other_q['Q_1']) & (df_other_q['Q_1'] >= df_other_q['Q3']))|
+            ((df_other_q['Q'] > df_other_q['Q_1']) & (df_other_q['Q_1'] <= df_other_q['Q3']))
+        )
+        ]
+    df_other_q = df_other_q.sort_values(by=['Q', '当日资金流入'], ascending=[False, False])
+    print(df_other_q.tail(20)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', '次日最高涨幅','次日涨幅']])
+    # 其他板块按资金流入排序，选择最大的一个
+    if len(df_other_q) > 0:
+        print(f"其他Q 数据量: {len(df_other_q)}")
+        df_other_q = df_other_q.sort_values(by=['Q', '当日资金流入'], ascending=[False, False])
+        print(df_other_q.tail(20)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+
+    df_other = df_other.loc[df_other.groupby('概念')['当日资金流入'].idxmax()]
+    df_other = df_other[
+        # (df_max['量比'] < 1) &
+        (df_other['Q'] > 1.5) &
+        (df_other['当日资金流入'] > -0.2) &
+        (
+                ((df_other['Q'] > df_other['Q_1']) & (df_other['Q_1'] >= df_other['Q3']))|
+                ((df_other['Q'] > df_other['Q_1']) & (df_other['Q_1'] <= df_other['Q3']))
+        )
+    ]
+    if len(df_other) > 0:
+        print(f"其他资金流入 数据量: {len(df_other)}")
+        df_other = df_other.sort_values(by=['Q','当日资金流入'], ascending=[False, False])
+        print(df_other.tail(20)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', '次日最高涨幅','次日涨幅']])
+
+
+
+    exit()
     df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
     print(f"按日期、{group_by}分组数量大于2的{group_by}:")
     print(df_filtered_groups)
-    print(f"按日期、{group_by}分组数量大于2的股票:")
+    print(f"按日期、{group_by}分组数量大于2:")
     print(df_filtered)
     # 条件1：流入为正数，选择最大的一个（按细分行业分组）
     df_positive_flow = df_local[df_local['当日资金流入'] > 0]
