@@ -603,6 +603,8 @@ def collect_history_analysis_results(last_date_suffix):
                 # 指定目录数据，一个个的来处理
                 files = get_dir_files("../data/predictions/"+hour, "0805", date_suffix)
                 if len(files) > 0:
+
+                    report_data = []
                     for file in files:
                         print(file)
                         df = get_file_data(file)
@@ -612,18 +614,21 @@ def collect_history_analysis_results(last_date_suffix):
                             # 过滤掉数据中 次日涨幅为空的数据
                             df = df[df['次日涨幅'].notna()]
                             stats = collect_analysis_results(df)
+                            report_data.append( stats)
                             exit()
-                            results.append({
-                                '分析类型': 'get_existing_accuracy_data_2',
-                                '时间': hour,
-                                '日期': date_suffix,
-                                '数据量': stats.get('数据量', 0),
-                                '筛选后数据量': stats.get('筛选后数据量', 0),
-                                '次日涨幅总和': stats.get('次日涨幅总和', 0),
-                                '次日涨幅平均': stats.get('次日涨幅平均', 0),
-                                '次日最高涨幅总和': stats.get('次日最高涨幅总和', 0),
-                                '次日最高涨幅平均': stats.get('次日最高涨幅平均', 0)
-                            })
+
+                    print(report_data)
+                    results.append({
+                        '分析类型': 'get_existing_accuracy_data_2',
+                        '时间': hour,
+                        '日期': date_suffix,
+                        '数据量': stats.get('数据量', 0),
+                        '筛选后数据量': stats.get('筛选后数据量', 0),
+                        '次日涨幅总和': stats.get('次日涨幅总和', 0),
+                        '次日涨幅平均': stats.get('次日涨幅平均', 0),
+                        '次日最高涨幅总和': stats.get('次日最高涨幅总和', 0),
+                        '次日最高涨幅平均': stats.get('次日最高涨幅平均', 0)
+                    })
             except Exception as e:
                 print(f"处理 {hour}_{date_suffix} 时出错: {e}")
 
