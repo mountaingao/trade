@@ -601,18 +601,18 @@ def collect_history_analysis_results(last_date_suffix):
         for date_suffix in [last_date_suffix]:
             try:
                 # 指定目录数据，一个个的来处理
-                files = get_dir_files("../data/predictions/"+hour, "0801", date_suffix)
+                files = get_dir_files("../data/predictions/"+hour, "0805", date_suffix)
                 if len(files) > 0:
                     for file in files:
                         print(file)
                         df = get_file_data(file)
 
                         print(f'数据量：{len(df)}')
-                        # exit()
                         if df is not None:
                             # 过滤掉数据中 次日涨幅为空的数据
                             df = df[df['次日涨幅'].notna()]
                             stats = collect_analysis_results(df)
+                            exit()
                             results.append({
                                 '分析类型': 'get_existing_accuracy_data_2',
                                 '时间': hour,
