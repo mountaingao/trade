@@ -109,14 +109,24 @@ def get_dir_files_date(dir_path: str,start_md: str,end_mmdd: str):
 
     return dates
 
-def get_dir_files(dir_path):
+def get_dir_files(dir_path,start_md: str,end_mmdd: str):
     """读取指定目录下的所有文件名的日期"""
     files = []
+    if start_md is not None:
+        start_md = start_md
+    else:
+        start_md = '0630'
+    if end_mmdd is not None:
+        end_mmdd = end_mmdd
+    else:
+        # end_mmdd 默认值为今天的日期
+        end_mmdd = datetime.now().strftime("%m%d")
     # 3. 遍历文件夹中的所有文件，读取文件内容
     for filename in os.listdir(dir_path):
-        file_path = os.path.join(dir_path, filename)
-        print(f"读取文件: {file_path}")
-        files.append(file_path)
+        if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
+            file_path = os.path.join(dir_path, filename)
+            print(f"读取文件: {file_path}")
+            files.append(file_path)
     return files
 
 def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):

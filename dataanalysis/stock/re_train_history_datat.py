@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 导入原有数据读取函数
-from data_prepare import prepare_all_data,prepare_prediction_dir_data,get_dir_files,prepare_prediction_data
+from data_prepare import prepare_all_data,prepare_prediction_dir_data,get_dir_files,get_data_from_files
 from tdx_day_data import get_daily_data,get_stock_daily_data
 from sqllite_block_manager import get_stocks_block,add_blockname_data
 
@@ -566,6 +566,24 @@ def collect_analysis_results(df):
         'detailed_results': all_results,
         'summary': summary
     }
+
+def get_file_data(file_path):
+    """
+    从文件中获取数据
+
+    Parameters:
+    file_path: str - 文件路径
+
+    Returns:
+    DataFrame - 获取的数据
+    """
+    try:
+        df = pd.read_excel(file_path)
+        df = add_blockname_data(df)
+        return df
+    except Exception as e:
+        print(f"无法从文件 {file_path} 获取数据: {str(e)}")
+        return None
 def collect_history_analysis_results(last_date_suffix):
     """
     收集历史分析结果并生成报表（历史数据汇总版本）
@@ -583,23 +601,29 @@ def collect_history_analysis_results(last_date_suffix):
         for date_suffix in [last_date_suffix]:
             try:
                 # 指定目录数据，一个个的来处理
-                df = get_existing_accuracy_data_2(hour, "0717", date_suffix)
-                df = prepare_prediction_dir_data(hour, "0717", date_suffix)
-                if df is not None:
-                    # 过滤掉数据中 次日涨幅为空的数据
-                    df = df[df['次日涨幅'].notna()]
-                    stats = collect_analysis_results(df)
-                    results.append({
-                        '分析类型': 'get_existing_accuracy_data_2',
-                        '时间': hour,
-                        '日期': date_suffix,
-                        '数据量': stats.get('数据量', 0),
-                        '筛选后数据量': stats.get('筛选后数据量', 0),
-                        '次日涨幅总和': stats.get('次日涨幅总和', 0),
-                        '次日涨幅平均': stats.get('次日涨幅平均', 0),
-                        '次日最高涨幅总和': stats.get('次日最高涨幅总和', 0),
-                        '次日最高涨幅平均': stats.get('次日最高涨幅平均', 0)
-                    })
+                files = get_dir_files("../data/predictions/"+hour, "0801", date_suffix)
+                if len(files) > 0:
+                    for file in files:
+                        print(file)
+                        df = get_file_data(file)
+
+                        print(f'数据量：{len(df)}')
+                        # exit()
+                        if df is not None:
+                            # 过滤掉数据中 次日涨幅为空的数据
+                            df = df[df['次日涨幅'].notna()]
+                            stats = collect_analysis_results(df)
+                            results.append({
+                                '分析类型': 'get_existing_accuracy_data_2',
+                                '时间': hour,
+                                '日期': date_suffix,
+                                '数据量': stats.get('数据量', 0),
+                                '筛选后数据量': stats.get('筛选后数据量', 0),
+                                '次日涨幅总和': stats.get('次日涨幅总和', 0),
+                                '次日涨幅平均': stats.get('次日涨幅平均', 0),
+                                '次日最高涨幅总和': stats.get('次日最高涨幅总和', 0),
+                                '次日最高涨幅平均': stats.get('次日最高涨幅平均', 0)
+                            })
             except Exception as e:
                 print(f"处理 {hour}_{date_suffix} 时出错: {e}")
 
@@ -882,6 +906,7 @@ def main():
     last_date_suffix= "0917"
     # results = collect_historical_analysis_results(last_date_suffix)
     results = collect_history_analysis_results(last_date_suffix)
+    exit()
 
     # 保存结果到Excel文件
     if not os.path.exists('./temp'):
