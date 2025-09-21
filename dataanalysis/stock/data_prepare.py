@@ -125,8 +125,9 @@ def get_dir_files(dir_path,start_md: str,end_mmdd: str):
     for filename in os.listdir(dir_path):
         if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
             file_path = os.path.join(dir_path, filename)
-            print(f"读取文件: {file_path}")
+            # print(f"读取文件: {file_path}")
             files.append(file_path)
+    print(f"读取文件数: {len(files)}")
     return files
 
 def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):

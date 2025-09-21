@@ -308,7 +308,7 @@ def add_blockname_data(df):
     # df = df.dropna(subset=[group_by])
     # 过滤概念为空的数据 或 ‘’ 字符串
     df = df[(df['概念'].notna()) & (df['概念'] != '')]
-    print(f'概念数据量：{len(df)}') # 查询得到板块数据
+    print(f'增加概念字段，概念数据量：{len(df)}') # 查询得到板块数据
     return df
 
 if __name__ == "__main__":
