@@ -875,7 +875,7 @@ def collect_history_analysis_results(start_date,last_date_suffix):
         print(f"\n所有天数数据已保存到: {output_file}")
     
     return results
-def collect_historical_analysis_results(last_date_suffix):
+def collect_historical_analysis_results_0922(last_date_suffix):
     """
     收集历史分析结果并生成报表（历史数据汇总版本）
 
