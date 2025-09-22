@@ -118,10 +118,11 @@ def cal_daily_canshu_data():
         # '../data/predictions/1400/09181412_1414.xlsx',
         # '../data/predictions/1600/09181507_1509.xlsx',
 
-        # '../data/predictions/1000/09190945_0948.xlsx',
+        '../data/predictions/1000/09190945_0948.xlsx',
         # "../data/predictions/1200/09191239_1242.xlsx"""
         # '../data/predictions/1400/09191357_1359.xlsx',
-        '../data/predictions/1600/09191522_1526.xlsx',
+        # '../data/predictions/1600/09191522_1526.xlsx',
+        # '../data/predictions/1600/09221516_1518.xlsx',
     ]
     df = get_data_from_files(files)
 

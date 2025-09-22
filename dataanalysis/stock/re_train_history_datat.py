@@ -1151,7 +1151,7 @@ def main():
     # 收集所有分析结果并生成报表
     print("正在收集分析结果...")
     last_date_suffix= "0920"
-    start_date="0901"
+    start_date="0730"
     # results = collect_historical_analysis_results(last_date_suffix)
     results = collect_history_analysis_results(start_date,last_date_suffix)
     print(f"已收集 {len(results)} 条分析结果")

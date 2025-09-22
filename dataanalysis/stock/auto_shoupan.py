@@ -997,9 +997,11 @@ def cal_predict_data_selected(predictions_file):
 
     # 输出筛选结果
     get_selected_from_type(df, 'Q', '细分行业')
-    get_selected_from_type(df, 'Q', '概念')
+    # get_selected_from_type(df, 'Q', '概念')
     # get_selected_from_type(df_filtered, '量比')
-    get_selected_from_type(df, '当日资金流入', '概念')
+    # get_selected_from_type(df, '当日资金流入', '概念')
+
+    select_from_block_data(df)
 
 
 # 1000 1200 以 资金流入+概念为主
@@ -1066,8 +1068,15 @@ def select_from_block_data(df):
     df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
     # print(df_max.tail(20))
     # print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
-    print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
-
+    # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
+    # 修改为以下代码：
+    df_sorted = df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
+    # 按概念分组并分别打印
+    for concept, group in df_sorted.groupby('概念'):
+        print(f"\n概念: {concept}")
+        group_reset = group[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']].reset_index(drop=True)
+        group_reset.insert(0, '序号', range(1, len(group_reset) + 1))
+        print(group_reset)
     # df_max 得到符合条件的数据 量比大于1 涨幅>0 资金流入>0 Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3
     df_max_up = df_max[
         (df_max['量比'] > 1) &
