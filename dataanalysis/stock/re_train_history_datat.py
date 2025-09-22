@@ -969,6 +969,217 @@ def collect_historical_analysis_results(last_date_suffix):
     
     return results
 
+def collect_history_analysis_results(start_date, last_date_suffix):
+    """
+    收集历史分析结果并生成报表（历史数据汇总版本）
+
+    Parameters:
+    start_date: str - 开始日期
+    last_date_suffix: str - 日期后缀
+
+    Returns:
+    list - 分析结果列表
+    """
+    results = []
+
+    # report_data 初始化为 pandas DataFrame
+    report_data = pd.DataFrame()
+    # 按小时分类的report_data
+    hourly_report_data = {}
+
+    # 收集 get_existing_accuracy_data_2 的结果
+    for hour in ['1000', '1200', '1400', '1600']:
+        # 初始化每个小时的数据
+        hourly_report_data[hour] = pd.DataFrame()
+
+        for date_suffix in [last_date_suffix]:
+            try:
+                # 指定目录数据，一个个的来处理
+                files = get_dir_files("../data/predictions/"+hour, start_date, date_suffix)
+                if len(files) > 0:
+                    # 为每种策略结果创建存储结构
+                    strategy_results = {}
+
+                    for file in files:
+                        df = get_file_data(file)
+
+                        if df is not None:
+                            # 过滤掉数据中 次日涨幅为空的数据
+                            df = df[df['次日涨幅'].notna()]
+                            # 获取所有策略的分析结果
+                            stats = collect_analysis_results(df)
+
+                            # 处理每种策略的结果
+                            for strategy_name, strategy_data in stats['detailed_results'].items():
+                                if strategy_name not in strategy_results:
+                                    strategy_results[strategy_name] = {}
+
+                            # 处理每种策略下的不同类型数据
+                            for data_type, data_df in strategy_data.items():
+                                if data_type not in strategy_results[strategy_name]:
+                                    strategy_results[strategy_name][data_type] = pd.DataFrame()
+
+                            if len(data_df) > 0:
+                                strategy_results[strategy_name][data_type] = pd.concat([
+                                    strategy_results[strategy_name][data_type],
+                                    data_df
+                                ])
+
+                            # 处理并保存每种策略的结果
+                            for strategy_name, strategy_data in strategy_results.items():
+                                for data_type, data_df in strategy_data.items():
+                                    if len(data_df) > 0:
+                                        print(f"hour {hour} strategy {strategy_name} data_type {data_type} 统计结果：")
+                                    print(len(data_df))
+
+                            # 保存每种策略和数据类型的组合到单独的Excel文件
+                            if not os.path.exists('./temp'):
+                                os.makedirs('./temp')
+                            output_file = f'./temp/report_data_{hour}_{strategy_name}_{data_type}_{last_date_suffix}.xlsx'
+                            data_df.to_excel(output_file, index=False)
+
+                            # 计算统计数据
+                            if len(data_df) > 0:
+                                data_results = calculate_data_accuracy(data_df)
+                            results.append({
+                                '分析类型': f'{strategy_name}_{data_type}',
+                                '时间': hour,
+                                '日期': date_suffix,
+                                '数据量': len(data_df),
+                                '筛选后数据量': len(data_df),
+                                '次日涨幅总和': data_results.get('次日涨幅总和', 0),
+                                '次日涨幅平均': data_results.get('次日涨幅平均', 0),
+                                '次日最高涨幅总和': data_results.get('次日最高涨幅总和', 0),
+                                '次日最高涨幅平均': data_results.get('次日最高涨幅平均', 0),
+                                '次日涨幅>1数量': data_results.get('次日涨幅>1数量', 0),
+                                '次日涨幅>1比例': data_results.get('次日涨幅>1比例', 0),
+                                '次日最高涨幅>1数量': data_results.get('次日最高涨幅>1数量', 0),
+                                '次日最高涨幅>1比例': data_results.get('次日最高涨幅>1比例', 0),
+                                '次日涨幅>5数量': data_results.get('次日涨幅>5数量', 0),
+                                '次日涨幅>5比例': data_results.get('次日涨幅>5比例', 0),
+                                '次日最高涨幅>5数量': data_results.get('次日最高涨幅>5数量', 0),
+                                '次日最高涨幅>5比例': data_results.get('次日最高涨幅>5比例', 0)
+                            })
+
+                            # 将数据合并到对应小时的总数据中
+                            if data_type == 'strong_leaders':  # 保持与原逻辑一致，只合并strong_leaders
+                                hourly_report_data[hour] = pd.concat([hourly_report_data[hour], data_df])
+
+                            # 保存每个小时的汇总数据（仅包含strong_leaders）
+                            print(f"hour {hour} report_data统计结果：")
+                            print(len(hourly_report_data[hour]))
+
+                            if len(hourly_report_data[hour]) > 0:
+                            # 保存每个小时的数据到Excel文件
+                                if not os.path.exists('./temp'):
+                                    os.makedirs('./temp')
+                                    output_file = f'./temp/report_data_{hour}_{last_date_suffix}.xlsx'
+                                    hourly_report_data[hour].to_excel(output_file, index=False)
+
+                            # 计算每个小时的数据统计结果
+                            hourly_results = calculate_data_accuracy(hourly_report_data[hour])
+                            results.append({
+                                '分析类型': 'get_existing_accuracy_data_2',
+                                '时间': hour,
+                                '日期': date_suffix,
+                                '数据量': len(hourly_report_data[hour]),
+                                '筛选后数据量': len(hourly_report_data[hour]),
+                                '次日涨幅总和': hourly_results.get('次日涨幅总和', 0),
+                                '次日涨幅平均': hourly_results.get('次日涨幅平均', 0),
+                                '次日最高涨幅总和': hourly_results.get('次日最高涨幅总和', 0),
+                                '次日最高涨幅平均': hourly_results.get('次日最高涨幅平均', 0),
+                                '次日涨幅>1数量': hourly_results.get('次日涨幅>1数量', 0),
+                                '次日涨幅>1比例': hourly_results.get('次日涨幅>1比例', 0),
+                                '次日最高涨幅>1数量': hourly_results.get('次日最高涨幅>1数量', 0),
+                                '次日最高涨幅>1比例': hourly_results.get('次日最高涨幅>1比例', 0),
+                                '次日涨幅>5数量': hourly_results.get('次日涨幅>5数量', 0),
+                                '次日涨幅>5比例': hourly_results.get('次日涨幅>5比例', 0),
+                                '次日最高涨幅>5数量': hourly_results.get('次日最高涨幅>5数量', 0),
+                                '次日最高涨幅>5比例': hourly_results.get('次日最高涨幅>5比例', 0)
+                            })
+
+                            # 将每个小时的数据合并到总report_data中
+                            report_data = pd.concat([report_data, hourly_report_data[hour]])
+
+            except Exception as e:
+                print(f"处理 {hour}_{date_suffix} 时出错: {e}")
+
+    print("report_data统计结果：")
+    print(len(report_data))
+
+    # 保存总的数据到Excel文件
+    if not os.path.exists('./temp'):
+        os.makedirs('./temp')
+    output_file = f'./temp/report_data_{last_date_suffix}.xlsx'
+    if len(report_data) > 0:
+        report_data.to_excel(output_file, index=False)
+        results_all = calculate_data_accuracy(report_data)
+
+        # 添加总体统计结果
+        results.append({
+            '分析类型': 'get_existing_accuracy_data_2_总计',
+            '时间': '全部',
+            '日期': last_date_suffix,
+            '数据量': len(report_data),
+            '筛选后数据量': len(report_data),
+            '次日涨幅总和': results_all.get('次日涨幅总和', 0),
+            '次日涨幅平均': results_all.get('次日涨幅平均', 0),
+            '次日最高涨幅总和': results_all.get('次日最高涨幅总和', 0),
+            '次日最高涨幅平均': results_all.get('次日最高涨幅平均', 0),
+            '次日涨幅>1数量': results_all.get('次日涨幅>1数量', 0),
+            '次日涨幅>1比例': results_all.get('次日涨幅>1比例', 0),
+            '次日最高涨幅>1数量': results_all.get('次日最高涨幅>1数量', 0),
+            '次日最高涨幅>1比例': results_all.get('次日最高涨幅>1比例', 0),
+            '次日涨幅>5数量': results_all.get('次日涨幅>5数量', 0),
+            '次日涨幅>5比例': results_all.get('次日涨幅>5比例', 0),
+            '次日最高涨幅>5数量': results_all.get('次日最高涨幅>5数量', 0),
+            '次日最高涨幅>5比例': results_all.get('次日最高涨幅>5比例', 0)
+        })
+
+    # 按不同方法分类打印结果
+    method_results = {}
+
+    for result in results:
+        method = result['分析类型']
+        if method not in method_results:
+            method_results[method] = []
+        method_results[method].append(result)
+
+    # 打印每种方法的结果
+    print("\n=== 分析结果汇总 ===")
+    index = 1
+    for method, data_list in method_results.items():
+        print(f"\n{index}. {method} 方法结果:")
+        index += 1
+        for i, data in enumerate(data_list, 1):
+            print(f"   {i}) 时间: {data['时间']}, 日期: {data['日期']}")
+            print(f"      数据量: {data['数据量']}")
+            print(f"      次日涨幅总和: {data['次日涨幅总和']:.2f}")
+            print(f"      次日涨幅平均: {data['次日涨幅平均']:.4f}")
+            print(f"      次日最高涨幅总和: {data['次日最高涨幅总和']:.2f}")
+            print(f"      次日最高涨幅平均: {data['次日最高涨幅平均']:.4f}")
+            if '次日涨幅>1数量' in data:
+                print(f"      次日涨幅>1数量: {data['次日涨幅>1数量']} ({data['次日涨幅>1比例']:.2f}%)")
+                print(f"      次日最高涨幅>1数量: {data['次日最高涨幅>1数量']} ({data['次日最高涨幅>1比例']:.2f}%)")
+                print(f"      次日涨幅>5数量: {data['次日涨幅>5数量']} ({data['次日涨幅>5比例']:.2f}%)")
+                print(f"      次日最高涨幅>5数量: {data['次日最高涨幅>5数量']} ({data['次日最高涨幅>5比例']:.2f}%)")
+
+    # 修改：将所有天数的数据列在同一张表格中并打印
+    if results:
+        # 创建一个DataFrame包含所有结果
+        all_results_df = pd.DataFrame(results)
+        print("\n=== 所有天数数据汇总表 ===")
+        print(all_results_df.to_string(index=False))
+
+        # 保存到Excel文件
+        if not os.path.exists('./temp'):
+            os.makedirs('./temp')
+        output_file = f'./temp/history_analysis_results_{last_date_suffix}.xlsx'
+        all_results_df.to_excel(output_file, index=False)
+        print(f"\n所有天数数据已保存到: {output_file}")
+
+    return results
+
 def compare_files(file1_path, file2_path, output_path=None):
     """
     比较两个Excel文件的内容差异
