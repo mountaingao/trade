@@ -85,7 +85,7 @@ def start_cal_predict_data_selected(file_path):
     # cal_predict_data_selected('../data/predictions/1600/09161509_1510.xlsx')
 
     # 17日数据
-    auto_shoupan.cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
+    # auto_shoupan.cal_predict_data_selected('../data/predictions/1000/09170940_0942.xlsx')
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1200/09171143_1145.xlsx')
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1400/09171416_1418.xlsx')
     # auto_shoupan.cal_predict_data_selected('../data/predictions/1600/09171504_1506.xlsx')
@@ -184,9 +184,12 @@ def main():
 
 if __name__ == '__main__':
     # 基本测试
-    # main()
+    main()
 
-    cal_daily_canshu_data()
+    # cal_daily_canshu_data()
+
     # 推测目录下的数据
     # start_cal_predict_data_selected("../data/predictions/")
+    # start_cal_predict_data_selected("../data/predictions/1000/09170940_0942.xlsx")
+    start_cal_predict_data_selected("../data/predictions/1200/09231132_1134.xlsx")
 

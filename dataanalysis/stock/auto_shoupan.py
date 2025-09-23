@@ -9,6 +9,7 @@ import numpy as np
 import datetime  # 新增导入datetime模块
 from tdx_mini_data import process_multiple_codes
 from sqllite_block_manager import StockDataStorage,add_blockname_data
+from stock.read_tdx_alert import  show_alert
 
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
@@ -1001,8 +1002,46 @@ def cal_predict_data_selected(predictions_file):
     # get_selected_from_type(df_filtered, '量比')
     # get_selected_from_type(df, '当日资金流入', '概念')
 
-    select_from_block_data(df)
+    selected_stocks = select_from_block_data(df)
+    if selected_stocks is not None:
+        # 参考 输出弹出界面
+        # print(selected_stocks)
+        alert_info(selected_stocks)
 
+def alert_info(selected_stocks):
+    if selected_stocks is None:
+        return
+
+    # 将 selected_stocks 转换为字符串格式用于显示
+    alert_content = format_selected_stocks_for_alert(selected_stocks)
+
+    # 调用 show_alert 函数显示提醒
+    show_alert(alert_content, '../../mp3/alert.mp3')
+
+def format_selected_stocks_for_alert(selected_stocks):
+    """
+    将选中的股票数据格式化为适合显示的文本
+    """
+    if isinstance(selected_stocks, pd.DataFrame):
+        # 提取关键信息用于显示
+        content_lines = []
+        content_lines.append("=== 选中股票提醒 ===")
+        # 添加表格头部
+        content_lines.append(f"{'代码':<8} {'名称':<6} {'涨幅':<8} {'资金流入':<10}{'Q':<8}")
+        # content_lines.append("-" * 35)
+        for _, row in selected_stocks.iterrows():
+            code = row.get('代码', '')
+            name = row.get('名称', '')
+            change = f"{row.get('当日涨幅', '')}%"
+            flow = row.get('当日资金流入', '')
+            content_lines.append(f"{code:<8} {name:<6} {change:<8} {flow:<10}")
+            # content_lines.append("-" * 35)
+        return "\n".join(content_lines)
+    else:
+        return str(selected_stocks)
+
+# 你可能需要从 read_tdx_alert.py 中复制 show_alert 函数的实现
+# 或者导入它（如果模块结构允许）
 
 # 1000 1200 以 资金流入+概念为主
 # 1200 1400 以 Q+细分行业为主
@@ -1071,6 +1110,7 @@ def select_from_block_data(df):
     # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
     # 修改为以下代码：
     df_sorted = df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
+    selected_stocks = {}
     # 按概念分组并分别打印
     for concept, group in df_sorted.groupby('概念'):
         print(f"\n概念: {concept}")
@@ -1093,6 +1133,7 @@ def select_from_block_data(df):
     df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
     df_max_up = df_max_up.groupby('概念').head(3)
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    selected_stocks['df_max_up'] = df_max_up
     print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
     df_max_down = df_max[
         # (df_max['量比'] < 1) &
@@ -1105,7 +1146,8 @@ def select_from_block_data(df):
     if len(df_max_down) > 0:
         print(f"龙头板块调整 数据量: {len(df_max_down)}")
         print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
-
+        selected_stocks['df_max_down'] = df_max_down
+    return selected_stocks
     exit()
     # 得到其他分组的数据
     df_other = df_local[~df_local.index.isin(df_max.index)]
@@ -1145,48 +1187,50 @@ def select_from_block_data(df):
     ]
     if len(df_other) > 0:
         print(f"其他资金流入 数据量: {len(df_other)}")
+
+
         df_other = df_other.sort_values(by=['Q','当日资金流入'], ascending=[False, False])
         print(df_other.tail(20)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', '次日最高涨幅','次日涨幅']])
 
 
-
-    exit()
-    df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
-    print(f"按日期、{group_by}分组数量大于2的{group_by}:")
-    print(df_filtered_groups)
-    print(f"按日期、{group_by}分组数量大于2:")
-    print(df_filtered)
-    # 条件1：流入为正数，选择最大的一个（按细分行业分组）
-    df_positive_flow = df_local[df_local['当日资金流入'] > 0]
-    print(df_filtered)
-
-    max_flow_by_industry = df_positive_flow.loc[df_positive_flow.groupby('概念')['当日资金流入'].idxmax()]
-    print(max_flow_by_industry)
-
-    # 条件2：按涨幅排序，选择前3名（按细分行业分组）
-    top_gainers_by_industry = df_positive_flow.groupby('概念').apply(
-        lambda x: x.nlargest(1, '当日涨幅')
-    ).reset_index(drop=True)
-    print(top_gainers_by_industry)
-
-    df_local_filter = df_positive_flow
-    # 条件3：Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3 => 调整为 Q>Q_1 且 Q_1<Q3
-    condition_3 = df_local_filter[(df_local_filter['Q'] > df_local_filter['Q_1']) & (df_local_filter['Q_1'] < df_local_filter['Q3'])]
-    
-    # 条件4：量比大于1且涨幅>0 或 量比小于1且涨幅<0
-    condition_4 = df_local_filter[((df_local_filter['量比'] > 1) & (df_local_filter['当日涨幅'] > 0)) |
-                          ((df_local_filter['量比'] < 1) & (df_local_filter['当日涨幅'] < 0))]
-    
-    # 综合筛选结果
-    selected_stocks = pd.concat([
-        max_flow_by_industry,
-        top_gainers_by_industry,
-        condition_3,
-        condition_4
-    ]).drop_duplicates()
-    
-    print("符合条件的股票:")
-    print(selected_stocks[['代码', '名称', '当日资金流入', '当日涨幅', '量比', 'Q', 'Q_1', 'Q3', '信号天数']])
+    #
+    # exit()
+    # df_filtered = df.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    # print(f"按日期、{group_by}分组数量大于2的{group_by}:")
+    # print(df_filtered_groups)
+    # print(f"按日期、{group_by}分组数量大于2:")
+    # print(df_filtered)
+    # # 条件1：流入为正数，选择最大的一个（按细分行业分组）
+    # df_positive_flow = df_local[df_local['当日资金流入'] > 0]
+    # print(df_filtered)
+    #
+    # max_flow_by_industry = df_positive_flow.loc[df_positive_flow.groupby('概念')['当日资金流入'].idxmax()]
+    # print(max_flow_by_industry)
+    #
+    # # 条件2：按涨幅排序，选择前3名（按细分行业分组）
+    # top_gainers_by_industry = df_positive_flow.groupby('概念').apply(
+    #     lambda x: x.nlargest(1, '当日涨幅')
+    # ).reset_index(drop=True)
+    # print(top_gainers_by_industry)
+    #
+    # df_local_filter = df_positive_flow
+    # # 条件3：Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3 => 调整为 Q>Q_1 且 Q_1<Q3
+    # condition_3 = df_local_filter[(df_local_filter['Q'] > df_local_filter['Q_1']) & (df_local_filter['Q_1'] < df_local_filter['Q3'])]
+    #
+    # # 条件4：量比大于1且涨幅>0 或 量比小于1且涨幅<0
+    # condition_4 = df_local_filter[((df_local_filter['量比'] > 1) & (df_local_filter['当日涨幅'] > 0)) |
+    #                       ((df_local_filter['量比'] < 1) & (df_local_filter['当日涨幅'] < 0))]
+    #
+    # # 综合筛选结果
+    # selected_stocks = pd.concat([
+    #     max_flow_by_industry,
+    #     top_gainers_by_industry,
+    #     condition_3,
+    #     condition_4
+    # ]).drop_duplicates()
+    #
+    # print("符合条件的股票:")
+    # print(selected_stocks[['代码', '名称', '当日资金流入', '当日涨幅', '量比', 'Q', 'Q_1', 'Q3', '信号天数']])
     
     return selected_stocks
 
