@@ -48,13 +48,13 @@ with open(file_path, 'r', encoding='GBK') as file:
 # 数据库连接配置
 db_config = config['db_config']
 
-def show_alert(new_content, mp3_path):
+def show_alert(new_content, mp3_path,time=15000):
     root = tk.Tk()
     root.title("提醒")  # 设置窗口标题
     root.attributes('-topmost', True)  # 确保窗口始终在最前面
     # 显示消息内容
     message = new_content
-    label = tk.Label(root, text=message, wraplength=420, justify="left", padx=20,  # 内部水平填充
+    label = tk.Label(root, text=message, wraplength=620, justify="left", padx=20,  # 内部水平填充
                      pady=20,  # 内部垂直填充
                      borderwidth=2,  # 边框宽度
                      relief="groove",  # 边框样式
@@ -66,11 +66,11 @@ def show_alert(new_content, mp3_path):
     # playsound("alarm.mp3")
 
     # 设置定时器，10秒后关闭窗口
-    root.after(15000, root.destroy)
+    root.after(time, root.destroy)
 
     # 播放音频
-    sound = AudioSegment.from_mp3(mp3_path)
-    play(sound)
+    # sound = AudioSegment.from_mp3(mp3_path)
+    # play(sound)
     # playsound(mp3_path)
 
     # 阻止窗口关闭按钮关闭窗口
@@ -382,8 +382,6 @@ if __name__ == "__main__":
     # 构造音频文件的完整路径
     mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
     print(mp3_path)
-
-    mp3_path = os.path.join(script_dir, "mp3", "alarm.mp3")
 
     # sound = AudioSegment.from_mp3(mp3_path)
     # play(sound)

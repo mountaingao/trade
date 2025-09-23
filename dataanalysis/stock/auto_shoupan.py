@@ -1014,32 +1014,198 @@ def alert_info(selected_stocks):
 
     # 将 selected_stocks 转换为字符串格式用于显示
     alert_content = format_selected_stocks_for_alert(selected_stocks)
+    print(alert_content)
 
     # 调用 show_alert 函数显示提醒
-    show_alert(alert_content, '../../mp3/alert.mp3')
+    show_alert(alert_content, '../../mp3/alert.mp3',25000)
 
 def format_selected_stocks_for_alert(selected_stocks):
     """
     将选中的股票数据格式化为适合显示的文本
     """
-    if isinstance(selected_stocks, pd.DataFrame):
-        # 提取关键信息用于显示
+    print(f"selected_stocks type: {type(selected_stocks)}")
+
+    if isinstance(selected_stocks, dict):
+        # 处理字典类型的数据（包含多个DataFrame）
+        content_lines = []
+        # content_lines.append("=== 选中提醒 ===")
+
+        # 首先显示分组信息（如果存在）
+        if 'group' in selected_stocks and isinstance(selected_stocks['group'], pd.DataFrame) and len(selected_stocks['group']) > 0:
+            # content_lines.append(f"\n【热门概念】 (数据量: {len(selected_stocks['group'])})")
+
+            # 定义列宽
+            date_width = 12
+            concept_width = 12
+            count_width = 6
+
+            # 添加表格头部
+            header = f"{'日期':<{date_width}} {'概念':<{concept_width}} {'数量':<{count_width}}"
+            content_lines.append(header)
+
+            # 添加分隔线
+            separator = "-" * (date_width + concept_width + count_width + 8)  # 2个空格分隔符
+            content_lines.append(separator)
+
+            # 显示分组数据
+            for _, row in selected_stocks['group'].iterrows():
+                date = str(row.get('日期', ''))[:date_width]
+                concept = str(row.get('概念', ''))[:concept_width]
+                count = str(row.get('count', ''))[:count_width]
+
+                line = f"{date:<{date_width}} {concept:<{concept_width}} {count:<{count_width}}"
+                content_lines.append(line)
+
+        # 显示强势板块龙头
+        if 'df_max_up' in selected_stocks and isinstance(selected_stocks['df_max_up'], pd.DataFrame) and len(selected_stocks['df_max_up']) > 0:
+            df = selected_stocks['df_max_up']
+            content_lines.append(f"\n【龙头】 (数据量: {len(df)})")
+
+            # 定义列宽
+            code_width = 8
+            name_width = 10
+            change_width = 8
+            flow_width = 8
+            q_width = 6
+            ai_width = 4
+            ai_amp_width = 8
+            overlap_width = 4
+            concept_width = 10
+
+            # 添加表格头部
+            header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'流入':<{flow_width}} {'Q值':<{q_width}} {'AI':<{ai_width}} {'AI幅度':<{ai_amp_width}} {'重合':<{overlap_width}} {'概念':<{concept_width}}"
+            content_lines.append(header)
+
+            # 添加分隔线
+            separator = "-" * (code_width + name_width + change_width + flow_width + q_width + ai_width + ai_amp_width + overlap_width + concept_width + 18)  # 8个空格分隔符
+            content_lines.append(separator)
+
+            # 循环展示数据
+            for _, row in df.iterrows():
+                code = str(row.get('代码', ''))[:code_width]
+                name = str(row.get('名称', ''))[:name_width]
+                change_val = row.get('当日涨幅', '')
+                change = f"{change_val:.2f}%" if pd.notna(change_val) else "N/A"
+                change = change[:change_width]
+
+                flow_val = row.get('当日资金流入', '')
+                flow = f"{flow_val:.2f}" if pd.notna(flow_val) else "N/A"
+                flow = flow[:flow_width]
+
+                q_val = row.get('Q', '')
+                q = f"{q_val:.2f}" if pd.notna(q_val) else "N/A"
+                q = q[:q_width]
+
+                ai_pred = str(row.get('AI预测', ''))[:ai_width]
+                ai_amp_val = row.get('AI幅度', '')
+                ai_amp = f"{ai_amp_val:.2f}" if pd.notna(ai_amp_val) else "N/A"
+                ai_amp = ai_amp[:ai_amp_width]
+
+                overlap = str(row.get('重合', ''))[:overlap_width]
+                concept = str(row.get('概念', ''))[:concept_width]
+
+                line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}} {ai_pred:<{ai_width}} {ai_amp:<{ai_amp_width}} {overlap:<{overlap_width}} {concept:<{concept_width}}"
+                content_lines.append(line)
+
+        # 显示龙头板块调整
+        if 'df_max_down' in selected_stocks and isinstance(selected_stocks['df_max_down'], pd.DataFrame) and len(selected_stocks['df_max_down']) > 0:
+            df = selected_stocks['df_max_down']
+            content_lines.append(f"\n【强调】 (数据量: {len(df)})")
+
+            # 使用相同的列宽定义
+            code_width = 8
+            name_width = 10
+            change_width = 8
+            flow_width = 8
+            q_width = 6
+            ai_width = 4
+            ai_amp_width = 8
+            overlap_width = 4
+            concept_width = 10
+
+            # 添加表格头部
+            header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'流入':<{flow_width}} {'Q值':<{q_width}} {'AI':<{ai_width}} {'AI幅度':<{ai_amp_width}} {'重合':<{overlap_width}} {'概念':<{concept_width}}"
+            content_lines.append(header)
+
+            # 添加分隔线
+            separator = "-" * (code_width + name_width + change_width + flow_width + q_width + ai_width + ai_amp_width + overlap_width + concept_width + 18)
+            content_lines.append(separator)
+
+            # 循环展示数据
+            for _, row in df.iterrows():
+                code = str(row.get('代码', ''))[:code_width]
+                name = str(row.get('名称', ''))[:name_width]
+                change_val = row.get('当日涨幅', '')
+                change = f"{change_val:.2f}%" if pd.notna(change_val) else "N/A"
+                change = change[:change_width]
+
+                flow_val = row.get('当日资金流入', '')
+                flow = f"{flow_val:.2f}" if pd.notna(flow_val) else "N/A"
+                flow = flow[:flow_width]
+
+                q_val = row.get('Q', '')
+                q = f"{q_val:.2f}" if pd.notna(q_val) else "N/A"
+                q = q[:q_width]
+
+                ai_pred = str(row.get('AI预测', ''))[:ai_width]
+                ai_amp_val = row.get('AI幅度', '')
+                ai_amp = f"{ai_amp_val:.2f}" if pd.notna(ai_amp_val) else "N/A"
+                ai_amp = ai_amp[:ai_amp_width]
+
+                overlap = str(row.get('重合', ''))[:overlap_width]
+                concept = str(row.get('概念', ''))[:concept_width]
+
+                line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}} {ai_pred:<{ai_width}} {ai_amp:<{ai_amp_width}} {overlap:<{overlap_width}} {concept:<{concept_width}}"
+                content_lines.append(line)
+
+        return "\n".join(content_lines)
+
+    elif isinstance(selected_stocks, pd.DataFrame):
+        # 处理单个DataFrame的情况
+        if len(selected_stocks) == 0:
+            return "没有选中任何股票"
+
         content_lines = []
         content_lines.append("=== 选中股票提醒 ===")
+
+        # 定义列宽
+        code_width = 8
+        name_width = 10
+        change_width = 8
+        flow_width = 10
+        q_width = 8
+
         # 添加表格头部
-        content_lines.append(f"{'代码':<8} {'名称':<6} {'涨幅':<8} {'资金流入':<10}{'Q':<8}")
-        # content_lines.append("-" * 35)
+        header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'资金流入':<{flow_width}} {'Q值':<{q_width}}"
+        content_lines.append(header)
+
+        # 添加分隔线
+        separator = "-" * (code_width + name_width + change_width + flow_width + q_width + 10)  # 4个空格分隔符
+        content_lines.append(separator)
+
+        # 循环展示数据
         for _, row in selected_stocks.iterrows():
-            code = row.get('代码', '')
-            name = row.get('名称', '')
-            change = f"{row.get('当日涨幅', '')}%"
-            flow = row.get('当日资金流入', '')
-            content_lines.append(f"{code:<8} {name:<6} {change:<8} {flow:<10}")
-            # content_lines.append("-" * 35)
+            code = str(row.get('代码', ''))[:code_width]
+            name = str(row.get('名称', ''))[:name_width]
+
+            change_val = row.get('当日涨幅', '')
+            change = f"{change_val:.2f}%" if pd.notna(change_val) else "N/A"
+            change = change[:change_width]
+
+            flow_val = row.get('当日资金流入', '')
+            flow = f"{flow_val:.2f}" if pd.notna(flow_val) else "N/A"
+            flow = flow[:flow_width]
+
+            q_val = row.get('Q', '')
+            q = f"{q_val:.2f}" if pd.notna(q_val) else "N/A"
+            q = q[:q_width]
+
+            line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}}"
+            content_lines.append(line)
+
         return "\n".join(content_lines)
     else:
         return str(selected_stocks)
-
 # 你可能需要从 read_tdx_alert.py 中复制 show_alert 函数的实现
 # 或者导入它（如果模块结构允许）
 
@@ -1093,12 +1259,15 @@ def select_from_block_data(df):
     df_local['信号天数'] = pd.to_numeric(df_local['信号天数'], errors='coerce')
 
 
+    selected_stocks = {}
 
     group_by = '概念'
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
     print(df_filtered_groups.tail(10))
+    selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
+
 
     # 挑出数量最大的概念
     # df_filtered_groups = df_filtered_groups.loc[df_filtered_groups.groupby('日期')['count'].idxmax()]
@@ -1110,7 +1279,6 @@ def select_from_block_data(df):
     # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
     # 修改为以下代码：
     df_sorted = df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
-    selected_stocks = {}
     # 按概念分组并分别打印
     for concept, group in df_sorted.groupby('概念'):
         print(f"\n概念: {concept}")
@@ -1134,7 +1302,7 @@ def select_from_block_data(df):
     df_max_up = df_max_up.groupby('概念').head(3)
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     selected_stocks['df_max_up'] = df_max_up
-    print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
+    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
     df_max_down = df_max[
         # (df_max['量比'] < 1) &
         (df_max['当日涨幅'] < 0) &
@@ -1145,7 +1313,7 @@ def select_from_block_data(df):
         ]
     if len(df_max_down) > 0:
         print(f"龙头板块调整 数据量: {len(df_max_down)}")
-        print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+        # print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
         selected_stocks['df_max_down'] = df_max_down
     return selected_stocks
     exit()
