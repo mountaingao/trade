@@ -121,13 +121,24 @@ def get_dir_files(dir_path,start_md: str,end_mmdd: str):
     else:
         # end_mmdd 默认值为今天的日期
         end_mmdd = datetime.now().strftime("%m%d")
-    # 3. 遍历文件夹中的所有文件，读取文件内容
-    for filename in os.listdir(dir_path):
-        if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] < end_mmdd:
-            file_path = os.path.join(dir_path, filename)
-            # print(f"读取文件: {file_path}")
-            files.append(file_path)
-    print(f"读取文件数: {len(files)}")
+    # 2. 遍历base_dir下的所有文件夹
+    for folder_name in os.listdir(dir_path):
+        folder_path = os.path.join(dir_path, folder_name)
+
+        # 确保是文件夹
+        if not os.path.isdir(folder_path):
+            continue
+
+        print(f"正在处理文件夹: {folder_name}")
+        print(f"文件夹路径: {folder_path}")
+
+        # 3. 遍历文件夹中的所有文件，读取文件内容
+        for filename in os.listdir(folder_path):
+            if len(filename) >= 4 and filename[:4] >= start_md and filename[:4] <= end_mmdd:
+                file_path = os.path.join(folder_path, filename)
+                print(f"读取文件: {file_path}")
+                files.append(file_path)
+        print(f"读取文件数: {len(files)}")
     return files
 
 def get_dir_files_data(dir_path: str,start_md: str,end_mmdd: str):

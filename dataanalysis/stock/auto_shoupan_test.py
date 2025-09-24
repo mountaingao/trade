@@ -184,7 +184,7 @@ def main():
 
 if __name__ == '__main__':
     # 基本测试
-    main()
+    # main()
 
     # cal_daily_canshu_data()
 
@@ -192,6 +192,7 @@ if __name__ == '__main__':
     # start_cal_predict_data_selected("../data/predictions/")
     # start_cal_predict_data_selected("../data/predictions/1000/09170940_0942.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1200/09231132_1134.xlsx")
-    start_cal_predict_data_selected("../data/predictions/1400/09231409_1411.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1400/09231409_1411.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1600/09231503_1505.xlsx")
+    start_cal_predict_data_selected("../data/predictions/1400/09241351_1353.xlsx")
 

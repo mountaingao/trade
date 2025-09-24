@@ -1322,7 +1322,82 @@ def analyze_by_type_comparison(hour='1600', date_suffix='0912'):
     
     return comparison_results
 
+def cal_daily_stock_data(date):
+    """重新合并数据"""
+    # 修改文件路径，包含日期参数
+    daily_stock_data_file = f'./temp/predictions/daily_stock_data_{date}.xlsx'
+    statistics_file = f'./temp/predictions/daily_stock_data_statistics_{date}.xlsx'
+
+    if os.path.exists(daily_stock_data_file):
+        os.remove(daily_stock_data_file)
+
+    if date is None:
+        date = datetime.now().strftime("%m%d")
+
+    files = get_dir_files('../data/predictions/', date, date)
+    if files:
+        result = pd.DataFrame()
+        for file in files:
+            df = get_data_from_files([file])
+            if df is not None and not df.empty:
+                df = add_blockname_data(df)
+                df_result = select_from_block_data(df)
+
+                # df_result是一个字典，需要提取其中的DataFrame
+                # 提取strong_leaders数据（主要选股结果）
+                if isinstance(df_result, dict) and 'strong_leaders' in df_result:
+                    strong_leaders_df = df_result['strong_leaders']
+                    if not strong_leaders_df.empty:
+                        # 添加文件名信息
+                        strong_leaders_df['filename'] = os.path.basename(file).split('_')[0]
+                        # 合并到结果中
+                        result = pd.concat([result, strong_leaders_df], ignore_index=True)
+
+        if not result.empty:
+            # 保存主要数据，文件名包含日期
+            result.to_excel(daily_stock_data_file, index=False)
+
+            # 分析该内容，统计代码、名称的数量，并保存到一个新的Excel文件中
+            stats_dfs = []
+
+            # 统计filename出现次数
+            if 'filename' in result.columns:
+                filename_count = result['filename'].value_counts()
+                filename_count_df = filename_count.reset_index()
+                filename_count_df.columns = ['filename', 'count']
+                stats_dfs.append(('filename_count', filename_count_df))
+
+            # 统计代码和名称出现次数（合并统计）
+            if '代码' in result.columns and '名称' in result.columns:
+                code_name_count = result.groupby(['代码', '名称']).size().reset_index(name='count')
+                stats_dfs.append(('code_name_count', code_name_count))
+
+            # 统计概念出现次数
+            if '概念' in result.columns:
+                concept_count = result['概念'].value_counts()
+                concept_count_df = concept_count.reset_index()
+                concept_count_df.columns = ['概念', 'count']
+                stats_dfs.append(('concept_count', concept_count_df))
+
+            # 保存统计信息到同一个Excel文件的不同工作表中，文件名包含日期
+            if stats_dfs:
+                with pd.ExcelWriter(statistics_file) as writer:
+                    for sheet_name, stat_df in stats_dfs:
+                        stat_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+                # 打印统计摘要
+                print("数据统计摘要:")
+                for sheet_name, stat_df in stats_dfs:
+                    print(f"  {sheet_name}: {len(stat_df)} 项")
+                print(f"数据文件已保存至: {daily_stock_data_file}")
+                print(f"统计文件已保存至: {statistics_file}")
+        else:
+            print("没有有效的数据可供处理")
+    else:
+        print(f"日期 {date} 没有找到匹配的文件")
 def main():
+    cal_daily_stock_data('0923')
+    exit()
     # 历史数据分析
     # get_history_accuracy_data()
 

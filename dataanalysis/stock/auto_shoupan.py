@@ -1288,7 +1288,7 @@ def select_from_block_data(df):
     # df_max 得到符合条件的数据 量比大于1 涨幅>0 资金流入>0 Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3
     df_max_up = df_max[
         (df_max['量比'] > 1) &
-        (df_max['当日涨幅'] < 19.95) &
+        # (df_max['当日涨幅'] < 19.95) &
         (df_max['当日涨幅'] > 0) &
         (df_max['当日资金流入'] > -0.2) &
         (
@@ -1299,7 +1299,7 @@ def select_from_block_data(df):
     print(f"强势板块龙头 数据量: {len(df_max_up)}")
     # 排序 按 Q 和 当日资金流入排序，每个概念只保留3个
     df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
-    df_max_up = df_max_up.groupby('概念').head(3)
+    df_max_up = df_max_up.groupby('概念').head(6)
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     selected_stocks['df_max_up'] = df_max_up
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
