@@ -74,21 +74,25 @@ class StockPredictor:
     def _create_features(self, df):
         """创建新特征"""
         # 量价关系特征
-        df['量价比'] = df['量比'] / (abs(df['当日涨幅']) + 1)  # 避免除零
-        df['资金强度'] = df['净流入'] / (df['总金额'] + 1)
+        df['量价比'] = df['量比'] / (abs(df['当日涨幅']) + 1e-6)  # 更小的epsilon值
+        df['资金强度'] = df['净流入'] / (df['总金额'] + 1e-6)
         df['Q动量'] = df['Q'] * df['当日涨幅']
 
         # 技术指标组合
         df['Q系列均值'] = (df['Q'] + df['Q_1'] + df['Q3']) / 3
         df['Q系列稳定性'] = df[['Q', 'Q_1', 'Q3']].std(axis=1)
-        df['Q系列离散度'] = (df[['Q', 'Q_1', 'Q3']].max(axis=1) - df[['Q', 'Q_1', 'Q3']].min(axis=1)) / df['Q系列均值']
+        df['Q系列趋势'] = (df['Q'] - df['Q3']) / (df['Q系列均值'] + 1e-6)
 
         # 相对强度特征
-        df['涨幅强度'] = df['当日涨幅'] / (df['量比'] + 1)
-        df['金额强度'] = df['总金额'] / df['总金额'].median()
+        df['涨幅强度'] = df['当日涨幅'] / (df['量比'] + 1e-6)
+        df['金额强度'] = df['总金额'] / (df['总金额'].median() + 1e-6)
 
         # 信号持续性
         df['信号强度'] = df['信号天数'] * df['Q']
+
+        # 新增特征
+        df['Q_变化率'] = (df['Q'] - df['Q_1']) / (df['Q_1'] + 1e-6)
+        df['资金流入比例'] = df['净流入'] / (df['总金额'] + 1e-6)
 
         return df
 
@@ -96,13 +100,31 @@ class StockPredictor:
         """准备特征矩阵和目标向量"""
         # 选择最终特征集
         base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
-        new_features = ['量价比', '资金强度', 'Q动量', 'Q系列均值', 'Q系列稳定性', 'Q系列离散度', '涨幅强度', '金额强度', '信号强度']
+        new_features = ['量价比', '资金强度', 'Q动量', 'Q系列均值', 'Q系列稳定性', 'Q系列趋势',
+                       '涨幅强度', '金额强度', '信号强度', 'Q_变化率', '资金流入比例']
 
         all_features = base_features + new_features
         self.feature_names = all_features
 
         X = df[all_features]
         y = df[target]
+
+        # 检查特征是否有常数列
+        constant_features = []
+        for col in X.columns:
+            if X[col].nunique() <= 1:
+                constant_features.append(col)
+
+        if constant_features:
+            print(f"发现常数特征: {constant_features}")
+            # 移除常数特征
+            X = X.drop(columns=constant_features)
+            self.feature_names = [f for f in self.feature_names if f not in constant_features]
+
+        # 检查是否有NaN或inf值
+        print(f"特征矩阵形状: {X.shape}")
+        print(f"NaN值数量: {X.isnull().sum().sum()}")
+        print(f"Inf值数量: {np.isinf(X).sum().sum()}")
 
         return X, y
 
@@ -119,30 +141,37 @@ class StockPredictor:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # 计算类别权重
-        scale_pos_weight = len(y_train[y_train==0]) / len(y_train[y_train==1])
-
-        # 定义模型
+        # 定义模型（优化参数）
         models = {
             'XGBoost': xgb.XGBClassifier(
-                scale_pos_weight=scale_pos_weight,
-                max_depth=6,
+                scale_pos_weight=len(y_train[y_train==0]) / len(y_train[y_train==1]),
+                max_depth=4,  # 减小深度
                 learning_rate=0.1,
                 n_estimators=100,
                 random_state=42,
-                eval_metric='logloss'
+                eval_metric='logloss',
+                min_child_weight=10,  # 增加最小叶子节点样本数
+                subsample=0.8,        # 增加随机采样比例
+                colsample_bytree=0.8  # 增加特征采样比例
             ),
             'LightGBM': LGBMClassifier(
                 class_weight='balanced',
                 random_state=42,
                 n_estimators=100,
-                max_depth=6
+                max_depth=4,          # 减小深度
+                learning_rate=0.1,
+                min_child_samples=20, # 增加最小叶子节点样本数
+                subsample=0.8,        # 增加随机采样比例
+                colsample_bytree=0.8, # 增加特征采样比例
+                verbose=-1            # 减少警告信息
             ),
             'RandomForest': RandomForestClassifier(
                 class_weight='balanced',
                 n_estimators=100,
                 max_depth=6,
-                random_state=42
+                random_state=42,
+                min_samples_split=10,  # 增加分割所需的最小样本数
+                min_samples_leaf=5     # 增加叶子节点最小样本数
             )
         }
 
