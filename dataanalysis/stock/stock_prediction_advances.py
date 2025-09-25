@@ -16,6 +16,11 @@ from sklearn.svm import SVC
 import warnings
 warnings.filterwarnings('ignore')
 from data_prepare import get_dir_files_data
+import os
+os.environ['MPLBACKEND'] = 'Agg'
+import matplotlib
+matplotlib.use('Agg')
+
 
 class AdvancedStockPredictor:
     def __init__(self):

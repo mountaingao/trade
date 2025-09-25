@@ -18,6 +18,10 @@ from data_prepare import get_dir_files_data
 
 from sklearn.feature_selection import SelectKBest, f_classif
 
+import os
+os.environ['MPLBACKEND'] = 'Agg'
+import matplotlib
+matplotlib.use('Agg')
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei']
