@@ -39,7 +39,8 @@ class StockPredictor:
         print("=== 数据预处理 ===")
 
         # 选择特征列
-        features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
+        # features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
+        features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入']
         target = 'value'
 
         # 检查缺失值
@@ -85,9 +86,9 @@ class StockPredictor:
         df['Q动量'] = df['Q'] * df['当日涨幅']
 
         # 技术指标组合
-        df['Q系列均值'] = (df['Q'] + df['Q_1'] + df['Q3']) / 3
-        df['Q系列稳定性'] = df[['Q', 'Q_1', 'Q3']].std(axis=1)
-        df['Q系列趋势'] = (df['Q'] - df['Q3']) / (df['Q系列均值'] + 1e-6)
+        # df['Q系列均值'] = (df['Q'] + df['Q_1'] + df['Q3']) / 3
+        # df['Q系列稳定性'] = df[['Q', 'Q_1', 'Q3']].std(axis=1)
+        # df['Q系列趋势'] = (df['Q'] - df['Q3']) / (df['Q系列均值'] + 1e-6)
 
         # 相对强度特征
         df['涨幅强度'] = df['当日涨幅'] / (df['量比'] + 1e-6)
@@ -97,7 +98,7 @@ class StockPredictor:
         df['信号强度'] = df['信号天数'] * df['Q']
 
         # 新增特征
-        df['Q_变化率'] = (df['Q'] - df['Q_1']) / (df['Q_1'] + 1e-6)
+        # df['Q_变化率'] = (df['Q'] - df['Q_1']) / (df['Q_1'] + 1e-6)
         df['资金流入比例'] = df['净流入'] / (df['总金额'] + 1e-6)
 
         return df
@@ -106,9 +107,10 @@ class StockPredictor:
     def prepare_features(self, df, target='value'):
         """准备特征矩阵和目标向量"""
         # 选择最终特征集
-        base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
-        new_features = ['量价比', '资金强度', 'Q动量', 'Q系列均值', 'Q系列稳定性', 'Q系列趋势',
-                       '涨幅强度', '金额强度', '信号强度', 'Q_变化率', '资金流入比例']
+        # base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
+        base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入']
+        # new_features = ['量价比', '资金强度', 'Q动量', 'Q系列均值', 'Q系列稳定性', 'Q系列趋势','涨幅强度', '金额强度', '信号强度', 'Q_变化率', '资金流入比例']
+        new_features = ['量价比', '资金强度','涨幅强度', '金额强度', '信号强度', '资金流入比例']
 
         all_features = base_features + new_features
         self.feature_names = all_features
@@ -440,7 +442,7 @@ def main():
     # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
     df =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
     # 将df写入到临时文件中 temp/0801-0923.csv
-
+    df.to_excel("temp/0801-0923.xlsx", index=False)
     # df.to_excel(df, "")
     print(len(df))
 

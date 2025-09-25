@@ -392,7 +392,7 @@ def select_stock_with_block_and_date(df):
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    print(df_filtered_groups.tail(10))
+    # print(df_filtered_groups.tail(10))
     selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
 
 
@@ -1536,10 +1536,11 @@ def get_dir_files_data_value(dir_path="1000", start_md=None, end_mmdd=None):
                     if not strong_leaders_df.empty:
                         # 添加文件名信息
                         strong_leaders_df['filename'] = os.path.basename(file).split('_')[0]
+                        print(strong_leaders_df)
                         # 合并到结果中
                         result = pd.concat([result, strong_leaders_df], ignore_index=True)
                         print(f'处理文件：{file}')
-    print( result)
+    # print( result)
     return result
 
 
