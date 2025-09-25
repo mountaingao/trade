@@ -41,4 +41,5 @@ keyboard
 pytest
 bayesian-optimization
 shap
+imbalanced-learn
 

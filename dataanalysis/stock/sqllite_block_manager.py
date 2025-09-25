@@ -291,7 +291,8 @@ def add_blockname_data(df):
     codes = df['代码'].unique()
     # 查询得到板块数据
     block_df = get_stocks_block(codes.tolist())
-    # print(block_df.tail(20))
+    print(block_df.tail(20))
+    print(block_df[['code', 'blockname']])
 
     # 修改: 统一代码列的数据类型为字符串,    NaN 转换为空字符串
     df['代码'] = df['代码'].astype(str)

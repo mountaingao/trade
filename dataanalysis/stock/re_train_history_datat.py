@@ -344,6 +344,108 @@ def calculate_data_accuracy_by_type(df, group_by='细分行业'):
         '次日最高涨幅平均': df_filtered_sum['次日最高涨幅'].mean()
     }
 
+
+# 分析各个板块的数据，挑选出最有潜力的几个
+# 修改后的代码：
+def get_top_groups_with_ties(group_df, n=2):
+    """
+    获取每个日期中count值最高的前n个概念，但如果存在相同count值的情况，则全部保留
+    """
+    result = []
+    for date, group in group_df.groupby('日期'):
+        # 按count降序排序
+        sorted_group = group.sort_values('count', ascending=False)
+
+        # 获取前n个不同的count值
+        unique_counts = sorted(sorted_group['count'].unique(), reverse=True)[:n]
+
+        # 保留所有count值在前n个范围内的行
+        filtered_group = sorted_group[sorted_group['count'].isin(unique_counts)]
+        result.append(filtered_group)
+
+    if result:
+        return pd.concat(result, ignore_index=True)
+    else:
+        return pd.DataFrame(columns=group_df.columns)
+
+def select_stock_with_block_and_date(df):
+    # 1、流入为正数，选择最大的一个
+    # 2、按涨幅排序，选择前3名
+    # 3、Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3     调整 Q>Q_1 Q_1<Q3
+    # 4、量比大于1 涨幅>0  或 量比小于1 涨幅<0
+    # 信号天数小一些，如果是强势,可以忽略
+    df_local = df.copy()
+
+    # 实现条件1：流入为正数，选择最大的一个（按行业分组）
+    df_local['当日资金流入'] = pd.to_numeric(df_local['当日资金流入'], errors='coerce')
+    df_local['当日涨幅'] = pd.to_numeric(df_local['当日涨幅'], errors='coerce')
+    df_local['量比'] = pd.to_numeric(df_local['量比'], errors='coerce')
+    df_local['Q'] = pd.to_numeric(df_local['Q'], errors='coerce')
+    df_local['Q_1'] = pd.to_numeric(df_local['Q_1'], errors='coerce')
+    df_local['Q3'] = pd.to_numeric(df_local['Q3'], errors='coerce')
+    df_local['信号天数'] = pd.to_numeric(df_local['信号天数'], errors='coerce')
+
+
+    selected_stocks = {}
+
+    group_by = '概念'
+    # 按日期、group_by字段统计数量，筛选出数量大于2的组合
+    df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
+    df_filtered_groups = df_grouped[df_grouped['count'] > 2]
+    print(df_filtered_groups.tail(10))
+    selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
+
+
+    # 挑出数量最大的概念
+    # df_filtered_groups = df_filtered_groups.loc[df_filtered_groups.groupby('日期')['count'].idxmax()]
+    # df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
+    # 应用修改后的函数
+    df_filtered_groups = get_top_groups_with_ties(df_filtered_groups, 2)
+    # 得到这个分组的数据
+    df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
+    # print(df_max.tail(20))
+    # print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
+    # 修改为以下代码：
+    df_sorted = df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
+    # 按概念分组并分别打印
+    for concept, group in df_sorted.groupby('概念'):
+        print(f"\n概念: {concept}")
+        group_reset = group[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']].reset_index(drop=True)
+        group_reset.insert(0, '序号', range(1, len(group_reset) + 1))
+        print(group_reset)
+    # df_max 得到符合条件的数据 量比大于1 涨幅>0 资金流入>0 Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3
+    df_max_up = df_max[
+        (df_max['量比'] > 1) &
+        # (df_max['当日涨幅'] < 19.95) &
+        (df_max['当日涨幅'] > 0) &
+        (df_max['当日资金流入'] > -0.2) &
+        (
+                ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] >= df_max['Q3'])) |
+                ((df_max['Q'] > df_max['Q_1']) & (df_max['Q_1'] <= df_max['Q3']))
+        )
+        ]
+    print(f"强势板块龙头 数据量: {len(df_max_up)}")
+    # 排序 按 Q 和 当日资金流入排序，每个概念只保留3个
+    df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
+    df_max_up = df_max_up.groupby('概念').head(6)
+    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    selected_stocks['df_max_up'] = df_max_up
+    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
+    df_max_down = df_max[
+        # (df_max['量比'] < 1) &
+        (df_max['当日涨幅'] < 0) &
+        (df_max['当日资金流入'] > -0.2) &
+        (
+            ((df_max['Q'] < df_max['Q_1']) & (df_max['Q_1'] < df_max['Q3']))
+        )
+        ]
+    if len(df_max_down) > 0:
+        print(f"龙头板块调整 数据量: {len(df_max_down)}")
+        # print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+        selected_stocks['df_max_down'] = df_max_down
+    return selected_stocks
+
 def select_from_block_data(df, selection_strategy='default'):
     """
     从板块数据中选择股票的通用方法
@@ -1395,6 +1497,52 @@ def cal_daily_stock_data(date=None):
             print("没有有效的数据可供处理")
     else:
         print(f"日期 {date} 没有找到匹配的文件")
+
+def get_dir_files_data_value(dir_path="1000", start_md=None, end_mmdd=None):
+    """读取指定目录下的文件数据并进行分析
+
+    Parameters:
+    dir_path (str): 目录路径，默认为"1000"
+    start_md (str): 开始日期，格式为月日，如"0801"，允许为空
+    end_mmdd (str): 结束日期，格式为月日，如"0916"，允许为空
+    """
+
+    # 处理默认日期参数
+    if start_md is None:
+        start_md = '0801'  # 默认开始日期
+    if end_mmdd is None:
+        end_mmdd = datetime.now().strftime("%m%d")  # 默认结束日期为今天
+    print(f"处理日期：{start_md} ~ {end_mmdd}")
+    print(f"处理日期：'../data/predictions/{dir_path}")
+    file_path = '../data/predictions/'+dir_path
+    files = get_dir_files(file_path, start_md, end_mmdd)
+    print(files)
+    result = pd.DataFrame()
+
+    if files:
+        for file in files:
+            df = get_file_data(file)
+
+            print(f'{file}的数据量：{len(df)}')
+            # print(df.columns)
+            if df is not None:
+                # 过滤掉数据中 次日涨幅为空的数据
+                df = df[df['次日涨幅'].notna()]
+                # df = add_blockname_data(df)
+                df_result = select_stock_with_block_and_date(df)
+
+                if isinstance(df_result, dict) and 'df_max_up' in df_result:
+                    strong_leaders_df = df_result['df_max_up']
+                    if not strong_leaders_df.empty:
+                        # 添加文件名信息
+                        strong_leaders_df['filename'] = os.path.basename(file).split('_')[0]
+                        # 合并到结果中
+                        result = pd.concat([result, strong_leaders_df], ignore_index=True)
+                        print(f'处理文件：{file}')
+    print( result)
+    return result
+
+
 def main():
     cal_daily_stock_data()
     exit()
@@ -1457,7 +1605,9 @@ def main():
     analyze_by_type_comparison('1600', '0912')
 
 if __name__ == "__main__":
-    main()
+
+    get_dir_files_data_value('1000', '0801', '0920')
+    # main()
 
     # 增加文件比较分析调用
     print("\n开始进行文件差异分析...")

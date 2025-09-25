@@ -20,6 +20,7 @@ import os
 os.environ['MPLBACKEND'] = 'Agg'
 import matplotlib
 matplotlib.use('Agg')
+from re_train_history_datat import get_dir_files_data_value
 
 
 class AdvancedStockPredictor:
@@ -482,7 +483,10 @@ def main():
         '最优阈值': [0.107, 0.092, 0.373]
     }, index=['XGBoost', 'LightGBM', 'RandomForest'])
 
-    df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
+    # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
+
+    df =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
+
     print(len(df))
 
 

@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import warnings
 warnings.filterwarnings('ignore')
-from data_prepare import get_dir_files_data
+from re_train_history_datat import get_dir_files_data_value
 
 from sklearn.feature_selection import SelectKBest, f_classif
 
@@ -437,7 +437,11 @@ def main():
 
     # 假设df是您的数据框，包含1980条记录
     # df = pd.read_excel('your_data.xlsx')  # 请替换为您的数据加载代码
-    df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
+    # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
+    df =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
+    # 将df写入到临时文件中 temp/0801-0923.csv
+
+    # df.to_excel(df, "")
     print(len(df))
 
     # 数据预处理
