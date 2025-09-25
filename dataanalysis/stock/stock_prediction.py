@@ -16,6 +16,8 @@ import warnings
 warnings.filterwarnings('ignore')
 from data_prepare import get_dir_files_data
 
+from sklearn.feature_selection import SelectKBest, f_classif
+
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -96,6 +98,7 @@ class StockPredictor:
 
         return df
 
+
     def prepare_features(self, df, target='value'):
         """准备特征矩阵和目标向量"""
         # 选择最终特征集
@@ -121,12 +124,22 @@ class StockPredictor:
             X = X.drop(columns=constant_features)
             self.feature_names = [f for f in self.feature_names if f not in constant_features]
 
-        # 检查是否有NaN或inf值
-        print(f"特征矩阵形状: {X.shape}")
-        print(f"NaN值数量: {X.isnull().sum().sum()}")
-        print(f"Inf值数量: {np.isinf(X).sum().sum()}")
+        # 特征选择：选择最重要的15个特征
+        selector = SelectKBest(score_func=f_classif, k=min(15, X.shape[1]))
+        X_selected = selector.fit_transform(X, y)
 
-        return X, y
+        # 更新特征名称
+        selected_features_idx = selector.get_support(indices=True)
+        self.feature_names = [self.feature_names[i] for i in selected_features_idx]
+
+        print(f"特征选择后矩阵形状: {X_selected.shape}")
+        print(f"选择的特征: {self.feature_names}")
+
+        # 检查是否有NaN或inf值
+        print(f"NaN值数量: {np.isnan(X_selected).sum()}")
+        print(f"Inf值数量: {np.isinf(X_selected).sum()}")
+
+        return X_selected, y
 
     def train_models(self, X, y, test_size=0.3):
         """训练多个模型"""
@@ -141,37 +154,63 @@ class StockPredictor:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # 定义模型（优化参数）
+        # 对于需要标准化的模型，使用采样技术处理不平衡
+        from imblearn.over_sampling import SMOTE
+        from imblearn.under_sampling import RandomUnderSampler
+        from imblearn.pipeline import Pipeline as ImbPipeline
+
+        # 创建采样管道
+        smote = SMOTE(random_state=42, sampling_strategy=0.6)  # 增加正样本比例到60%
+
+        # 对于RandomForest使用采样
+        rf_pipeline = ImbPipeline([
+            ('smote', smote),
+            ('classifier', RandomForestClassifier(
+                n_estimators=50,
+                max_depth=4,
+                random_state=42,
+                min_samples_split=20,
+                min_samples_leaf=10,
+                max_features='sqrt'
+            ))
+        ])
+
+        # 定义模型（进一步优化参数）
         models = {
             'XGBoost': xgb.XGBClassifier(
                 scale_pos_weight=len(y_train[y_train==0]) / len(y_train[y_train==1]),
-                max_depth=4,  # 减小深度
+                max_depth=3,  # 进一步减小深度
                 learning_rate=0.1,
-                n_estimators=100,
+                n_estimators=50,  # 减少树的数量
                 random_state=42,
                 eval_metric='logloss',
-                min_child_weight=10,  # 增加最小叶子节点样本数
-                subsample=0.8,        # 增加随机采样比例
-                colsample_bytree=0.8  # 增加特征采样比例
+                min_child_weight=20,  # 增加最小叶子节点样本数
+                subsample=0.7,        # 减少随机采样比例
+                colsample_bytree=0.7, # 减少特征采样比例
+                reg_alpha=1,          # 增加L1正则化
+                reg_lambda=1          # 增加L2正则化
             ),
             'LightGBM': LGBMClassifier(
                 class_weight='balanced',
                 random_state=42,
-                n_estimators=100,
-                max_depth=4,          # 减小深度
+                n_estimators=50,
+                max_depth=3,          # 减小深度
                 learning_rate=0.1,
-                min_child_samples=20, # 增加最小叶子节点样本数
-                subsample=0.8,        # 增加随机采样比例
-                colsample_bytree=0.8, # 增加特征采样比例
-                verbose=-1            # 减少警告信息
+                min_child_samples=30, # 增加最小叶子节点样本数
+                subsample=0.7,        # 减少随机采样比例
+                colsample_bytree=0.7, # 减少特征采样比例
+                reg_alpha=1,          # 增加L1正则化
+                reg_lambda=1,         # 增加L2正则化
+                verbose=-1
             ),
             'RandomForest': RandomForestClassifier(
                 class_weight='balanced',
-                n_estimators=100,
-                max_depth=6,
+                n_estimators=50,
+                max_depth=4,
                 random_state=42,
-                min_samples_split=10,  # 增加分割所需的最小样本数
-                min_samples_leaf=5     # 增加叶子节点最小样本数
+                min_samples_split=20,  # 增加分割所需的最小样本数
+                min_samples_leaf=10,   # 增加叶子节点最小样本数
+                max_features='sqrt'    # 减少每次分割考虑的特征数
             )
         }
 

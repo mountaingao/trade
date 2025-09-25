@@ -1239,8 +1239,27 @@ def get_selected_from_type(df, type='Q',group_by='细分行业'):
 
 
 # 分析各个板块的数据，挑选出最有潜力的几个
+# 修改后的代码：
+def get_top_groups_with_ties(group_df, n=2):
+    """
+    获取每个日期中count值最高的前n个概念，但如果存在相同count值的情况，则全部保留
+    """
+    result = []
+    for date, group in group_df.groupby('日期'):
+        # 按count降序排序
+        sorted_group = group.sort_values('count', ascending=False)
 
+        # 获取前n个不同的count值
+        unique_counts = sorted(sorted_group['count'].unique(), reverse=True)[:n]
 
+        # 保留所有count值在前n个范围内的行
+        filtered_group = sorted_group[sorted_group['count'].isin(unique_counts)]
+        result.append(filtered_group)
+
+    if result:
+        return pd.concat(result, ignore_index=True)
+    else:
+        return pd.DataFrame(columns=group_df.columns)
 def select_from_block_data(df):
     # 1、流入为正数，选择最大的一个
     # 2、按涨幅排序，选择前3名
@@ -1271,7 +1290,9 @@ def select_from_block_data(df):
 
     # 挑出数量最大的概念
     # df_filtered_groups = df_filtered_groups.loc[df_filtered_groups.groupby('日期')['count'].idxmax()]
-    df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
+    # df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
+    # 应用修改后的函数
+    df_filtered_groups = get_top_groups_with_ties(df_filtered_groups, 2)
     # 得到这个分组的数据
     df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
     # print(df_max.tail(20))

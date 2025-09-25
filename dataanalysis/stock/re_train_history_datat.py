@@ -1322,7 +1322,7 @@ def analyze_by_type_comparison(hour='1600', date_suffix='0912'):
     
     return comparison_results
 
-def cal_daily_stock_data(date):
+def cal_daily_stock_data(date=None):
     """重新合并数据"""
     # 修改文件路径，包含日期参数
     daily_stock_data_file = f'./temp/predictions/daily_stock_data_{date}.xlsx'
@@ -1396,7 +1396,7 @@ def cal_daily_stock_data(date):
     else:
         print(f"日期 {date} 没有找到匹配的文件")
 def main():
-    cal_daily_stock_data('0923')
+    cal_daily_stock_data()
     exit()
     # 历史数据分析
     # get_history_accuracy_data()
