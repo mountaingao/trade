@@ -17,8 +17,6 @@ import warnings
 warnings.filterwarnings('ignore')
 from data_prepare import get_dir_files_data
 
-
-
 class AdvancedStockPredictor:
     def __init__(self):
         self.models = {}
@@ -86,13 +84,38 @@ class AdvancedStockPredictor:
 
         return df
 
+    def prepare_features(self, df, target='value'):
+        """准备特征矩阵和目标向量 - 新增方法"""
+        # 基础特征
+        base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
+
+        # 新创建的特征
+        new_features = ['价格动量', '强势指标', '主力净流入率', '资金效率', 'Q波动率',
+                        'Q趋势', '量价背离', '放量上涨', '综合强度', '有效信号']
+
+        # 确保所有特征都存在
+        available_features = []
+        for feature in base_features + new_features:
+            if feature in df.columns:
+                available_features.append(feature)
+
+        self.feature_names = available_features
+
+        X = df[available_features]
+        y = df[target]
+
+        print(f"使用的特征数量: {len(available_features)}")
+        print(f"特征列表: {available_features}")
+
+        return X, y
+
     def feature_selection(self, X, y, k=15):
         """特征选择优化"""
         print("\n=== 特征选择 ===")
 
         # 使用多种方法进行特征选择
-        selector_anova = SelectKBest(score_func=f_classif, k=k)
-        selector_mutual = SelectKBest(score_func=mutual_info_classif, k=k)
+        selector_anova = SelectKBest(score_func=f_classif, k=min(k, X.shape[1]))
+        selector_mutual = SelectKBest(score_func=mutual_info_classif, k=min(k, X.shape[1]))
 
         X_anova = selector_anova.fit_transform(X, y)
         X_mutual = selector_mutual.fit_transform(X, y)
@@ -113,7 +136,7 @@ class AdvancedStockPredictor:
         feature_scores['combined_score'] = (feature_scores['anova_score'] +
                                             feature_scores['mutual_score'] * 100)  # 调整权重
 
-        selected_features = feature_scores.nlargest(k, 'combined_score')['feature'].tolist()
+        selected_features = feature_scores.nlargest(min(k, X.shape[1]), 'combined_score')['feature'].tolist()
 
         print(f"选择的特征数量: {len(selected_features)}")
         print("重要特征:", selected_features[:10])
@@ -125,7 +148,7 @@ class AdvancedStockPredictor:
         print("\n=== 优化模型训练 ===")
 
         # 特征选择
-        selected_features = self.feature_selection(X, y)
+        selected_features = self.feature_selection(X, y, k=15)
         X_selected = X[selected_features]
         self.feature_names = selected_features
 
@@ -167,7 +190,7 @@ class AdvancedStockPredictor:
                 subsample=0.8,
                 colsample_bytree=0.8,
                 reg_alpha=0.1,
-                reg_llambda=0.1,
+                reg_lambda=0.1,
                 random_state=42
             ),
             'RandomForest_Opt': RandomForestClassifier(
@@ -229,9 +252,9 @@ class AdvancedStockPredictor:
                 'auc_roc': auc_roc,
                 'threshold': balanced_threshold,
                 'classification_report': report,
-                'precision_1': report['1']['precision'],
-                'recall_1': report['1']['recall'],
-                'f1_1': report['1']['f1-score']
+                'precision_1': report['1']['precision'] if '1' in report else 0,
+                'recall_1': report['1']['recall'] if '1' in report else 0,
+                'f1_1': report['1']['f1-score'] if '1' in report else 0
             }
 
             print(f"{name} - 准确率: {accuracy:.3f}, 精确率: {report['1']['precision']:.3f}, "
@@ -263,7 +286,8 @@ class AdvancedStockPredictor:
             print(f"\n{model_name} 阈值优化结果:")
             print(f"新阈值: {best_threshold:.3f}")
             print(f"精确率: {best_precision:.3f}, 召回率: {best_recall:.3f}")
-            print(f"F1-score: {new_report['1']['f1-score']:.3f}")
+            if '1' in new_report:
+                print(f"F1-score: {new_report['1']['f1-score']:.3f}")
 
             # 更新模型结果
             self.models[model_name].update({
@@ -314,9 +338,9 @@ class AdvancedStockPredictor:
             'auc_roc': auc_roc,
             'threshold': optimal_threshold,
             'classification_report': report,
-            'precision_1': report['1']['precision'],
-            'recall_1': report['1']['recall'],
-            'f1_1': report['1']['f1-score']
+            'precision_1': report['1']['precision'] if '1' in report else 0,
+            'recall_1': report['1']['recall'] if '1' in report else 0,
+            'f1_1': report['1']['f1-score'] if '1' in report else 0
         }
 
         print(f"集成模型 - 准确率: {accuracy:.3f}, 精确率: {report['1']['precision']:.3f}, "
@@ -357,13 +381,17 @@ class AdvancedStockPredictor:
         # 精确率对比
         models = ['XGBoost', 'LightGBM', 'RandomForest']
         old_precision = [old_results.loc[model, '正类精确率'] for model in models]
-        new_precision = [new_results.loc[model, '正类精确率'] for model in models if model in new_results.index]
+
+        # 确保新结果中有对应的模型
+        new_models = [model for model in models if model+'_Opt' in new_results.index]
+        new_precision = [new_results.loc[model+'_Opt', '正类精确率'] for model in models if model+'_Opt' in new_results.index]
 
         x = np.arange(len(models))
         width = 0.35
 
         axes[0,0].bar(x - width/2, old_precision, width, label='优化前', alpha=0.7)
-        axes[0,0].bar(x + width/2, new_precision[:len(models)], width, label='优化后', alpha=0.7)
+        if new_precision:
+            axes[0,0].bar(x[:len(new_precision)] + width/2, new_precision, width, label='优化后', alpha=0.7)
         axes[0,0].set_title('正类精确率对比')
         axes[0,0].set_xticks(x)
         axes[0,0].set_xticklabels(models)
@@ -371,10 +399,11 @@ class AdvancedStockPredictor:
 
         # F1-score对比
         old_f1 = [old_results.loc[model, '正类F1'] for model in models]
-        new_f1 = [new_results.loc[model, '正类F1'] for model in models if model in new_results.index]
+        new_f1 = [new_results.loc[model+'_Opt', '正类F1'] for model in models if model+'_Opt' in new_results.index]
 
         axes[0,1].bar(x - width/2, old_f1, width, label='优化前', alpha=0.7)
-        axes[0,1].bar(x + width/2, new_f1[:len(models)], width, label='优化后', alpha=0.7)
+        if new_f1:
+            axes[0,1].bar(x[:len(new_f1)] + width/2, new_f1, width, label='优化后', alpha=0.7)
         axes[0,1].set_title('正类F1-score对比')
         axes[0,1].set_xticks(x)
         axes[0,1].set_xticklabels(models)
@@ -382,10 +411,11 @@ class AdvancedStockPredictor:
 
         # 阈值对比
         old_threshold = [old_results.loc[model, '最优阈值'] for model in models]
-        new_threshold = [new_results.loc[model, '阈值'] for model in models if model in new_results.index]
+        new_threshold = [new_results.loc[model+'_Opt', '阈值'] for model in models if model+'_Opt' in new_results.index]
 
         axes[1,0].bar(x - width/2, old_threshold, width, label='优化前', alpha=0.7)
-        axes[1,0].bar(x + width/2, new_threshold[:len(models)], width, label='优化后', alpha=0.7)
+        if new_threshold:
+            axes[1,0].bar(x[:len(new_threshold)] + width/2, new_threshold, width, label='优化后', alpha=0.7)
         axes[1,0].set_title('预测阈值对比')
         axes[1,0].set_xticks(x)
         axes[1,0].set_xticklabels(models)
@@ -393,10 +423,11 @@ class AdvancedStockPredictor:
 
         # AUC-ROC对比
         old_auc = [old_results.loc[model, 'AUC-ROC'] for model in models]
-        new_auc = [new_results.loc[model, 'AUC-ROC'] for model in models if model in new_results.index]
+        new_auc = [new_results.loc[model+'_Opt', 'AUC-ROC'] for model in models if model+'_Opt' in new_results.index]
 
         axes[1,1].bar(x - width/2, old_auc, width, label='优化前', alpha=0.7)
-        axes[1,1].bar(x + width/2, new_auc[:len(models)], width, label='优化后', alpha=0.7)
+        if new_auc:
+            axes[1,1].bar(x[:len(new_auc)] + width/2, new_auc, width, label='优化后', alpha=0.7)
         axes[1,1].set_title('AUC-ROC对比')
         axes[1,1].set_xticks(x)
         axes[1,1].set_xticklabels(models)
@@ -448,6 +479,8 @@ def main():
 
     df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
     print(len(df))
+
+
     # 运行优化版本
     predictor, new_results = run_optimized_predictor(df, old_results)
 
