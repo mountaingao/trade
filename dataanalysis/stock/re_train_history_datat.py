@@ -387,12 +387,13 @@ def select_stock_with_block_and_date(df):
 
 
     selected_stocks = {}
+    print(df.tail(10))
 
     group_by = '概念'
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    # print(df_filtered_groups.tail(10))
+    print(df_filtered_groups.tail(10))
     selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
 
 
@@ -403,7 +404,7 @@ def select_stock_with_block_and_date(df):
     df_filtered_groups = get_top_groups_with_ties(df_filtered_groups, 2)
     # 得到这个分组的数据
     df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
-    # print(df_max.tail(20))
+    print(df_max.tail(20))
     # print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
     # 修改为以下代码：
@@ -693,7 +694,7 @@ def get_file_data(file_path):
     """
     try:
         df = pd.read_excel(file_path)
-        print("数据获取成功！"+file_path)
+        # print("数据获取成功！"+file_path)
         df = add_blockname_data(df)
         return df
     except Exception as e:
@@ -1516,18 +1517,18 @@ def get_dir_files_data_value(dir_path="1000", start_md=None, end_mmdd=None):
     print(f"处理日期：'../data/predictions/{dir_path}")
     file_path = '../data/predictions/'+dir_path
     files = get_dir_files(file_path, start_md, end_mmdd)
-    print(files)
+    # print(files)
     result = pd.DataFrame()
 
     if files:
         for file in files:
             df = get_file_data(file)
 
-            print(f'{file}的数据量：{len(df)}')
-            # print(df.columns)
             if df is not None:
+                print(f'{file}的数据量：{len(df)}')
+                # print(df)
                 # 过滤掉数据中 次日涨幅为空的数据
-                df = df[df['次日涨幅'].notna()]
+                # df = df[df['次日涨幅'].notna()]
                 # df = add_blockname_data(df)
                 df_result = select_stock_with_block_and_date(df)
 
@@ -1541,6 +1542,8 @@ def get_dir_files_data_value(dir_path="1000", start_md=None, end_mmdd=None):
                         result = pd.concat([result, strong_leaders_df], ignore_index=True)
                         print(f'处理文件：{file}')
     # print( result)
+    # result['time'] = dir_path
+    result['time'] = pd.to_numeric(dir_path, errors='coerce')
     return result
 
 

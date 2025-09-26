@@ -22,6 +22,7 @@ import os
 os.environ['MPLBACKEND'] = 'Agg'
 import matplotlib
 matplotlib.use('Agg')
+import joblib
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -40,18 +41,24 @@ class StockPredictor:
 
         # 选择特征列
         # features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
-        features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入']
+        features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']
         target = 'value'
 
         # 检查缺失值
         print(f"数据形状: {df.shape}")
         print(f"缺失值情况:\n{df[features + [target]].isnull().sum()}")
 
+
         # 检查目标变量分布
         print(f"目标变量分布:\n{df[target].value_counts()}")
 
         # 处理无限值和异常值
         df_clean = df[features + [target]].copy()
+        # 特别处理time列 - 转换为数值类型
+        if 'time' in df_clean.columns:
+            # 将time列转换为数值类型（例如：'1000' -> 1000）
+            df_clean['time'] = pd.to_numeric(df_clean['time'], errors='coerce').fillna(0)
+
         for col in features:
             if df_clean[col].dtype in ['float64', 'int64']:
                 # 替换无限值
@@ -100,7 +107,13 @@ class StockPredictor:
         # 新增特征
         # df['Q_变化率'] = (df['Q'] - df['Q_1']) / (df['Q_1'] + 1e-6)
         df['资金流入比例'] = df['净流入'] / (df['总金额'] + 1e-6)
-
+        # 增加更多技术指标
+        df['涨跌动能'] = df['当日涨幅'] * df['量比']
+        df['价格趋势'] = df['当日涨幅'].rolling(3).mean()  # 3日价格趋势
+        df['量能趋势'] = df['量比'].rolling(3).mean()      # 3日量能趋势
+        df['波动率'] = df['当日涨幅'].rolling(5).std()  # 5日波动率
+        # 填充NaN值
+        df[['价格趋势', '量能趋势', '波动率']] = df[['价格趋势', '量能趋势', '波动率']].fillna(method='bfill')
         return df
 
 
@@ -108,9 +121,11 @@ class StockPredictor:
         """准备特征矩阵和目标向量"""
         # 选择最终特征集
         # base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
-        base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入']
+        base_features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']
         # new_features = ['量价比', '资金强度', 'Q动量', 'Q系列均值', 'Q系列稳定性', 'Q系列趋势','涨幅强度', '金额强度', '信号强度', 'Q_变化率', '资金流入比例']
-        new_features = ['量价比', '资金强度','涨幅强度', '金额强度', '信号强度', '资金流入比例']
+        # new_features = ['量价比', '资金强度','涨幅强度', '金额强度', '信号强度', '资金流入比例']
+        # new_features = [ '资金强度', '信号强度', '资金流入比例']
+        new_features = ['资金流入比例','涨幅强度','价格趋势','量能趋势','波动率']
 
         all_features = base_features + new_features
         self.feature_names = all_features
@@ -150,10 +165,29 @@ class StockPredictor:
     def train_models(self, X, y, test_size=0.3):
         """训练多个模型"""
         print("\n=== 模型训练 ===")
+        # 检查并重新编码目标变量，确保标签是连续的
+        unique_labels = np.unique(y)
+        print(f"原始目标变量唯一值: {unique_labels}")
 
-        # 分割数据
+        if len(unique_labels) > 2 and not np.array_equal(unique_labels, np.arange(len(unique_labels))):
+            # 如果标签不是连续的，需要重新编码
+            from sklearn.preprocessing import LabelEncoder
+            label_encoder = LabelEncoder()
+            y_encoded = label_encoder.fit_transform(y)
+            print(f"重新编码后的目标变量唯一值: {np.unique(y_encoded)}")
+            y = y_encoded
+        elif len(unique_labels) == 2 and not np.array_equal(unique_labels, [0, 1]):
+            # 如果是二分类但标签不是0和1，也需要重新编码
+            from sklearn.preprocessing import LabelEncoder
+            label_encoder = LabelEncoder()
+            y_encoded = label_encoder.fit_transform(y)
+            print(f"重新编码后的二分类目标变量唯一值: {np.unique(y_encoded)}")
+            y = y_encoded
+
+
+        # 分割数据 移除分层抽样参数 stratify=y
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42, stratify=y
+            X, y, test_size=test_size, random_state=42
         )
 
         # 标准化特征
@@ -181,20 +215,47 @@ class StockPredictor:
             ))
         ])
 
-        # 定义模型（进一步优化参数）
         models = {
+            # 如果您追求的是高质量、高可信度的交易信号
+            # 'XGBoost': xgb.XGBClassifier(
+            #     scale_pos_weight=len(y_train[y_train==0]) / len(y_train[y_train==1]),
+            #     max_depth=5,
+            #     learning_rate=0.02,       # 进一步降低学习率
+            #     n_estimators=250,         # 增加树的数量
+            #     min_child_weight=8,       # 略微降低
+            #     subsample=0.9,            # 增加样本采样比例
+            #     colsample_bytree=0.9,     # 增加特征采样比例
+            #     reg_alpha=0.2,            # 略微降低正则化
+            #     reg_lambda=0.2,           # 略微降低正则化
+            #     random_state=42,
+            #     eval_metric='logloss'
+            # ),
+            # 望最大化机会捕捉
+            # 'XGBoost': xgb.XGBClassifier(
+            #     scale_pos_weight=len(y_train[y_train==0]) / len(y_train[y_train==1]),
+            #     max_depth=5,
+            #     learning_rate=0.015,      # 进一步降低学习率
+            #     n_estimators=300,         # 增加树的数量
+            #     min_child_weight=6,       # 略微降低
+            #     subsample=0.95,           # 略微增加
+            #     colsample_bytree=0.95,    # 略微增加
+            #     reg_alpha=0.1,            # 进一步降低正则化
+            #     reg_lambda=0.1,           # 进一步降低正则化
+            #     random_state=42,
+            #     eval_metric='logloss'
+            # ),
             'XGBoost': xgb.XGBClassifier(
                 scale_pos_weight=len(y_train[y_train==0]) / len(y_train[y_train==1]),
-                max_depth=3,  # 进一步减小深度
-                learning_rate=0.1,
-                n_estimators=50,  # 减少树的数量
+                max_depth=5,              # 略微降低深度防止过拟合
+                learning_rate=0.015,       # 进一步降低学习率
+                n_estimators=400,         # 增加树的数量
+                min_child_weight=6,      # 增加最小叶子节点样本数
+                subsample=0.8,            # 适度采样
+                colsample_bytree=0.8,     # 适度特征采样
+                reg_alpha=0.1,            # 增加L1正则化
+                reg_lambda=0.1,           # 增加L2正则化
                 random_state=42,
-                eval_metric='logloss',
-                min_child_weight=20,  # 增加最小叶子节点样本数
-                subsample=0.7,        # 减少随机采样比例
-                colsample_bytree=0.7, # 减少特征采样比例
-                reg_alpha=1,          # 增加L1正则化
-                reg_lambda=1          # 增加L2正则化
+                eval_metric='logloss'
             ),
             'LightGBM': LGBMClassifier(
                 class_weight='balanced',
@@ -432,6 +493,185 @@ class StockPredictor:
 
         return result_df
 
+
+    # 添加到StockPredictor类中
+    def save_trained_model(self, model_name, save_path):
+        """
+        保存训练好的模型
+
+        Parameters:
+        model_name (str): 要保存的模型名称 ('XGBoost', 'LightGBM', 'RandomForest')
+        save_path (str): 保存路径
+        """
+        if model_name not in self.models:
+            print(f"错误: 模型 {model_name} 未训练或不存在")
+            return False
+
+        try:
+            # 确保保存目录存在
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+            # 保存模型和相关信息
+            model_package = {
+                'model': self.models[model_name]['model'],
+                'feature_names': self.feature_names,
+                'scaler': self.scaler,
+                'optimal_threshold': self.models[model_name]['optimal_threshold'],
+                'model_type': model_name
+            }
+
+            joblib.dump(model_package, save_path)
+            print(f"模型 {model_name} 已成功保存到: {save_path}")
+            return True
+        except Exception as e:
+            print(f"保存模型时出错: {e}")
+            return False
+
+    def load_trained_model(self, model_path):
+        """
+        加载已保存的模型
+
+        Parameters:
+        model_path (str): 模型文件路径
+
+        Returns:
+        str: 加载的模型名称
+        """
+        try:
+            if not os.path.exists(model_path):
+                print(f"错误: 模型文件 {model_path} 不存在")
+                return None
+
+            model_package = joblib.load(model_path)
+
+            model_name = model_package['model_type']
+            self.models[model_name] = {
+                'model': model_package['model'],
+                'optimal_threshold': model_package['optimal_threshold']
+            }
+            self.feature_names = model_package['feature_names']
+            self.scaler = model_package['scaler']
+
+            print(f"模型 {model_name} 已成功加载")
+            return model_name
+        except Exception as e:
+            print(f"加载模型时出错: {e}")
+            return None
+
+    def predict_dataframe(self, df, model_name='XGBoost'):
+        """
+        使用训练好的模型对DataFrame进行预测
+
+        Parameters:
+        df (pd.DataFrame): 需要预测的数据框
+        model_name (str): 使用的模型名称，默认为'XGBoost'
+
+        Returns:
+        pd.DataFrame: 包含预测结果的DataFrame
+        """
+        if model_name not in self.models:
+            print(f"错误: 模型 {model_name} 未训练或不存在")
+            return None
+
+        print(f"使用 {model_name} 模型进行预测...")
+
+        try:
+            # 对数据进行预处理和特征工程
+            df_processed = self._create_features(df)
+
+            # 选择训练时使用的特征
+            X_new = df_processed[self.feature_names]
+
+            # 获取模型和阈值
+            model = self.models[model_name]['model']
+            threshold = self.models[model_name]['optimal_threshold']
+
+            # 进行预测
+            if model_name in ['XGBoost', 'LightGBM']:
+                y_proba = model.predict_proba(X_new)[:, 1]
+            else:
+                # 对于需要标准化的模型
+                X_new_scaled = self.scaler.transform(X_new)
+                y_proba = model.predict_proba(X_new_scaled)[:, 1]
+
+            # 根据最优阈值进行分类
+            y_pred = (y_proba >= threshold).astype(int)
+
+            # 创建结果DataFrame
+            result_df = df.copy()
+            result_df['预测概率'] = y_proba
+            result_df['预测结果'] = y_pred
+            result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
+
+            print(f"预测完成，共预测 {len(result_df)} 条记录")
+            print(f"看多信号: {result_df['预测结果'].sum()} 条")
+            print(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
+            print(result_df[['日期', '代码', '名称', '当日涨幅','blockname','次日最高涨幅','预测概率', '预测结果', '交易信号']])
+
+            return result_df
+
+        except Exception as e:
+            print(f"预测过程中出错: {e}")
+            return None
+
+    def save_predictions_to_excel(self, df, filename, model_name='XGBoost'):
+        """
+        对DataFrame进行预测并将结果保存到Excel文件
+
+        Parameters:
+        df (pd.DataFrame): 需要预测的数据框
+        filename (str): 保存的文件名
+        model_name (str): 使用的模型名称，默认为'XGBoost'
+        """
+        # 进行预测
+        predictions = self.predict_dataframe(df, model_name)
+
+        if predictions is not None:
+            try:
+                # 保存到Excel文件
+                predictions.to_excel(filename, index=False)
+                print(f"预测结果已保存到: {filename}")
+                return predictions
+            except Exception as e:
+                print(f"保存文件时出错: {e}")
+                return predictions
+        else:
+            print("预测失败，无法保存结果")
+            return None
+
+
+def model_train():
+    # 初始化预测器
+    predictor = StockPredictor()
+
+    # 加载数据
+    df = pd.read_excel("temp/0801-0923.xlsx")
+    print(len(df))
+
+    # 数据预处理
+    df_processed = predictor.load_and_preprocess(df)
+
+    # 准备特征
+    X, y = predictor.prepare_features(df_processed)
+
+    # 训练模型
+    predictor.train_models(X, y)
+
+    # 保存XGBoost模型
+    predictor.save_trained_model('XGBoost', 'saved_models/xgboost_stock_model.pkl')
+
+    # 如果需要保存所有模型
+    # for model_name in ['XGBoost', 'LightGBM', 'RandomForest']:
+    #     predictor.save_trained_model(model_name, f'saved_models/{model_name.lower()}_stock_model.pkl')
+
+    # 评估模型
+    evaluation_df = predictor.evaluate_models()
+
+    # ... 其余代码 ...
+
+    return predictor
+
+
 # 使用示例
 def main():
     # 初始化预测器
@@ -440,9 +680,18 @@ def main():
     # 假设df是您的数据框，包含1980条记录
     # df = pd.read_excel('your_data.xlsx')  # 请替换为您的数据加载代码
     # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
-    df =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
+
+    # df0 =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
+    # df1 =get_dir_files_data_value("1200",start_md="0801",end_mmdd="0923")
+    # df2 =get_dir_files_data_value("1400",start_md="0801",end_mmdd="0923")
+    # df3 =get_dir_files_data_value("1600",start_md="0801",end_mmdd="0923")
+
+    # df = pd.concat([df0,df1,df2,df3])
     # 将df写入到临时文件中 temp/0801-0923.csv
-    df.to_excel("temp/0801-0923.xlsx", index=False)
+    # df.to_excel("temp/0801-0923.xlsx", index=False)
+    # 读取tmp/0801-0923.xlsx
+    df = pd.read_excel("temp/0801-0923.xlsx")
+
     # df.to_excel(df, "")
     print(len(df))
 
@@ -473,5 +722,46 @@ def main():
 
     return predictor
 
+
+def load_model_and_predict():
+    # 初始化预测器
+    predictor = StockPredictor()
+
+    # 加载已保存的模型
+    model_name = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
+
+    if model_name:
+        # 加载需要预测的数据
+        new_df =get_dir_files_data_value("1000",start_md="0925",end_mmdd="0926")
+
+        # 进行预测
+        predictions = predictor.predict_dataframe(new_df, 'XGBoost')
+
+        if predictions is not None:
+            # 保存预测结果
+            predictions.to_excel("temp/new_predictions.xlsx", index=False)
+            print("新数据预测完成并已保存")
+
+            # 显示部分预测结果
+            print("\n前10条预测结果:")
+            # 打印 预测结果为1的记录 ,'次日最高涨幅'
+            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','预测概率', '预测结果', '交易信号']])
+            # 打印 次日涨幅 的和  次日最高涨幅的和
+            print(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
+            print(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
+
+        return predictions
+    else:
+        print("模型加载失败")
+        return None
+
 if __name__ == "__main__":
-    predictor = main()
+    # 分析数据
+    # predictor = main()
+
+    # 训练模型
+    # predictor = model_train()
+    print("训练完成")
+    # predictor.run_optimized_predictor(df, predictor.results)
+    # 加载模型并进行预测
+    load_model_and_predict()
