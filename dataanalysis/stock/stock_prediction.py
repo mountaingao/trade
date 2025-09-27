@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 import warnings
 warnings.filterwarnings('ignore')
 from re_train_history_datat import get_dir_files_data_value
-
+from data_prepare import get_prediction_files_data
 from sklearn.feature_selection import SelectKBest, f_classif
 
 import os
@@ -203,15 +203,17 @@ class StockPredictor:
         smote = SMOTE(random_state=42, sampling_strategy=0.6)  # 增加正样本比例到60%
 
         # 对于RandomForest使用采样
+        # 修改rf_pipeline部分
         rf_pipeline = ImbPipeline([
-            ('smote', smote),
+            ('smote', SMOTE(random_state=42, sampling_strategy=0.3)),  # 减少正样本比例
             ('classifier', RandomForestClassifier(
-                n_estimators=50,
-                max_depth=4,
+                n_estimators=150,
+                max_depth=5,
                 random_state=42,
-                min_samples_split=20,
-                min_samples_leaf=10,
-                max_features='sqrt'
+                min_samples_split=25,
+                min_samples_leaf=12,
+                max_features='sqrt',
+                ccp_alpha=0.005
             ))
         ])
 
@@ -257,27 +259,59 @@ class StockPredictor:
                 random_state=42,
                 eval_metric='logloss'
             ),
+            # 'LightGBM': LGBMClassifier(
+            #     class_weight='balanced',
+            #     random_state=42,
+            #     n_estimators=50,
+            #     max_depth=3,          # 减小深度
+            #     learning_rate=0.1,
+            #     min_child_samples=30, # 增加最小叶子节点样本数
+            #     subsample=0.7,        # 减少随机采样比例
+            #     colsample_bytree=0.7, # 减少特征采样比例
+            #     reg_alpha=1,          # 增加L1正则化
+            #     reg_lambda=1,         # 增加L2正则化
+            #     verbose=-1
+            # ),
+            # 'LightGBM': LGBMClassifier(  #LightGBM      0.650    0.679  0.500  0.653  0.566  0.462
+            #     class_weight='balanced',
+            #     random_state=42,
+            #     n_estimators=100,         # 增加树的数量
+            #     max_depth=6,              # 适当增加深度
+            #     learning_rate=0.05,       # 调整学习率
+            #     num_leaves=31,            # 控制叶子节点数
+            #     min_child_samples=20,     # 调整子节点最小样本数
+            #     subsample=0.8,            # 增加样本采样比例
+            #     colsample_bytree=0.8,     # 增加特征采样比例
+            #     reg_alpha=0.1,            # L1正则化
+            #     reg_lambda=0.1,           # L2正则化
+            #     min_split_gain=0.01,      # 最小分割增益
+            #     verbose=-1
+            # ),
             'LightGBM': LGBMClassifier(
                 class_weight='balanced',
                 random_state=42,
-                n_estimators=50,
-                max_depth=3,          # 减小深度
-                learning_rate=0.1,
-                min_child_samples=30, # 增加最小叶子节点样本数
-                subsample=0.7,        # 减少随机采样比例
-                colsample_bytree=0.7, # 减少特征采样比例
-                reg_alpha=1,          # 增加L1正则化
-                reg_lambda=1,         # 增加L2正则化
+                n_estimators=200,         # 增加树的数量
+                max_depth=6,              # 适当增加深度
+                learning_rate=0.05,       # 降低学习率
+                num_leaves=31,            # 增加叶子节点数
+                min_child_samples=20,     # 减少子节点最小样本数
+                subsample=0.8,            # 增加样本采样比例
+                colsample_bytree=0.8,     # 增加特征采样比例
+                reg_alpha=0.1,            # 减少L1正则化
+                reg_lambda=0.1,           # 减少L2正则化
+                min_split_gain=0.01,      # 最小分割增益
                 verbose=-1
             ),
             'RandomForest': RandomForestClassifier(
                 class_weight='balanced',
-                n_estimators=50,
-                max_depth=4,
+                n_estimators=200,
+                max_depth=5,              # 降低深度防止过拟合
                 random_state=42,
-                min_samples_split=20,  # 增加分割所需的最小样本数
-                min_samples_leaf=10,   # 增加叶子节点最小样本数
-                max_features='sqrt'    # 减少每次分割考虑的特征数
+                min_samples_split=50,     # 增加分割所需最小样本数
+                min_samples_leaf=25,      # 增加叶节点最小样本数
+                max_features='sqrt',
+                bootstrap=True,
+                ccp_alpha=0.01           # 增加剪枝强度
             )
         }
 
@@ -606,13 +640,211 @@ class StockPredictor:
             print(f"预测完成，共预测 {len(result_df)} 条记录")
             print(f"看多信号: {result_df['预测结果'].sum()} 条")
             print(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
-            print(result_df[['日期', '代码', '名称', '当日涨幅','blockname','次日最高涨幅','预测概率', '预测结果', '交易信号']])
+            print(result_df[['日期', '代码', '名称', 'blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
 
             return result_df
 
         except Exception as e:
             print(f"预测过程中出错: {e}")
             return None
+
+    def predict_ensemble(self, df, method='average'):
+        """
+        使用集成模型进行预测
+        
+        Parameters:
+        df (pd.DataFrame): 需要预测的数据框
+        method (str): 集成方法，'average'(平均概率), 'weighted'(加权平均), 'voting'(投票)
+        
+        Returns:
+        pd.DataFrame: 包含集成预测结果的DataFrame
+        """
+        print(f"使用{method}集成方法进行预测...")
+        
+        # 检查是否有训练好的模型
+        if not self.models:
+            print("错误: 没有训练好的模型可供预测")
+            return None
+            
+        # 检查是否所有需要的模型都存在
+        available_models = list(self.models.keys())
+        print(f"可用模型: {available_models}")
+        
+        # 确保至少有一个模型
+        if len(available_models) == 0:
+            print("错误: 没有可用的模型进行集成预测")
+            return None
+            
+        try:
+            # 对数据进行预处理和特征工程
+            df_processed = self._create_features(df)
+            X_new = df_processed[self.feature_names]
+            
+            # 存储各模型的预测概率
+            predictions_proba = {}
+            predictions_pred = {}
+            
+            # 获取各模型的预测概率和预测结果
+            for name, model_info in self.models.items():
+                try:
+                    model = model_info['model']
+                    threshold = model_info['optimal_threshold']
+                    
+                    if name in ['XGBoost', 'LightGBM']:
+                        y_proba = model.predict_proba(X_new)[:, 1]
+                    else:
+                        X_new_scaled = self.scaler.transform(X_new)
+                        y_proba = model.predict_proba(X_new_scaled)[:, 1]
+                    
+                    predictions_proba[name] = y_proba
+                    predictions_pred[name] = (y_proba >= threshold).astype(int)
+                except Exception as e:
+                    print(f"模型 {name} 预测时出错: {e}")
+                    continue
+            
+            # 检查是否有成功预测的模型
+            if not predictions_proba:
+                print("错误: 没有模型成功生成预测结果")
+                return None
+                
+            print(f"成功预测的模型: {list(predictions_proba.keys())}")
+            
+            # 根据不同方法进行集成
+            if method == 'average':
+                # 平均概率
+                ensemble_proba = np.mean(list(predictions_proba.values()), axis=0)
+                # 使用第一个模型的最优阈值作为默认阈值
+                first_model = list(predictions_proba.keys())[0]
+                optimal_threshold = self.models[first_model]['optimal_threshold']
+                ensemble_pred = (ensemble_proba >= optimal_threshold).astype(int)
+            elif method == 'weighted':
+                # 加权平均 (根据模型数量平均分配权重)
+                num_models = len(predictions_proba)
+                weights = {name: 1/num_models for name in predictions_proba.keys()}
+                ensemble_proba = np.zeros(len(df))
+                for name, weight in weights.items():
+                    ensemble_proba += predictions_proba[name] * weight
+                # 使用第一个模型的最优阈值作为默认阈值
+                first_model = list(predictions_proba.keys())[0]
+                optimal_threshold = self.models[first_model]['optimal_threshold']
+                ensemble_pred = (ensemble_proba >= optimal_threshold).astype(int)
+            elif method == 'voting':
+                # 投票 (多数模型预测为1则为1)
+                predictions_array = np.array(list(predictions_pred.values()))
+                ensemble_pred = np.mean(predictions_array, axis=0) >= 0.5
+                ensemble_pred = ensemble_pred.astype(int)
+                # 对于投票方法，使用平均概率作为参考
+                ensemble_proba = np.mean(list(predictions_proba.values()), axis=0)
+            else:
+                raise ValueError("method参数必须是'average', 'weighted'或'voting'之一")
+            
+            # 创建结果DataFrame
+            result_df = df.copy()
+            result_df['预测概率'] = ensemble_proba
+            result_df['预测结果'] = ensemble_pred
+            result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
+            
+            # 添加各模型的预测结果和概率
+            for name, pred in predictions_pred.items():
+                result_df[f'{name}_预测结果'] = pred
+            for name, proba in predictions_proba.items():
+                result_df[f'{name}_预测概率'] = proba
+            
+            print(f"集成预测完成，共预测 {len(result_df)} 条记录")
+            print(f"看多信号: {result_df['预测结果'].sum()} 条")
+            print(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
+            
+            return result_df
+            
+        except Exception as e:
+            print(f"集成预测过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def predict_all_models_and_ensemble(self, df):
+        """
+        并行使用所有模型进行预测，包括单独模型和集成模型
+        
+        Parameters:
+        df (pd.DataFrame): 需要预测的数据框
+        
+        Returns:
+        dict: 包含所有预测结果的字典
+        """
+        print("并行使用所有模型进行预测...")
+        
+        results = {}
+        
+        # 单独模型预测
+        for model_name in self.models.keys():
+            print(f"\n使用 {model_name} 模型进行预测...")
+            predictions = self.predict_dataframe(df, model_name)
+            if predictions is not None:
+                results[model_name] = predictions
+        
+        # 集成模型预测
+        print("\n使用集成模型进行预测...")
+        ensemble_methods = ['average', 'weighted', 'voting']
+        for method in ensemble_methods:
+            ensemble_predictions = self.predict_ensemble(df, method)
+            if ensemble_predictions is not None:
+                results[f'ensemble_{method}'] = ensemble_predictions
+        
+        return results
+
+    def save_ensemble_model(self, save_path):
+        """
+        保存集成模型
+        
+        Parameters:
+        save_path (str): 保存路径
+        """
+        try:
+            # 确保保存目录存在
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            
+            # 保存所有模型和相关信息
+            ensemble_package = {
+                'models': self.models,
+                'feature_names': self.feature_names,
+                'scaler': self.scaler,
+                'model_types': list(self.models.keys())
+            }
+            
+            joblib.dump(ensemble_package, save_path)
+            print(f"集成模型已成功保存到: {save_path}")
+            return True
+        except Exception as e:
+            print(f"保存集成模型时出错: {e}")
+            return False
+
+    def load_ensemble_model(self, model_path):
+        """
+        加载集成模型
+        
+        Parameters:
+        model_path (str): 模型文件路径
+        
+        Returns:
+        bool: 是否加载成功
+        """
+        try:
+            if not os.path.exists(model_path):
+                print(f"错误: 模型文件 {model_path} 不存在")
+                return False
+            
+            ensemble_package = joblib.load(model_path)
+            
+            self.models = ensemble_package['models']
+            self.feature_names = ensemble_package['feature_names']
+            self.scaler = ensemble_package['scaler']
+            
+            print(f"集成模型已成功加载，包含模型: {ensemble_package['model_types']}")
+            return True
+        except Exception as e:
+            print(f"加载集成模型时出错: {e}")
+            return False
 
     def save_predictions_to_excel(self, df, filename, model_name='XGBoost'):
         """
@@ -685,7 +917,6 @@ def main():
     # df1 =get_dir_files_data_value("1200",start_md="0801",end_mmdd="0923")
     # df2 =get_dir_files_data_value("1400",start_md="0801",end_mmdd="0923")
     # df3 =get_dir_files_data_value("1600",start_md="0801",end_mmdd="0923")
-
     # df = pd.concat([df0,df1,df2,df3])
     # 将df写入到临时文件中 temp/0801-0923.csv
     # df.to_excel("temp/0801-0923.xlsx", index=False)
@@ -732,36 +963,87 @@ def load_model_and_predict():
 
     if model_name:
         # 加载需要预测的数据
-        new_df =get_dir_files_data_value("1000",start_md="0925",end_mmdd="0926")
+        new_df =get_dir_files_data_value("1000",start_md="0924",end_mmdd="0926")
 
-        # 进行预测
-        predictions = predictor.predict_dataframe(new_df, 'XGBoost')
+        # 1. 单独模型预测
+        print("\n=== 单独模型预测 ===")
+        predictions_single_xgboost = predictor.predict_dataframe(new_df, 'XGBoost')
+        predictions_single_lightgbm = predictor.predict_dataframe(new_df, 'LightGBM')
 
-        if predictions is not None:
-            # 保存预测结果
-            predictions.to_excel("temp/new_predictions.xlsx", index=False)
-            print("新数据预测完成并已保存")
+        # 2. 集成模型预测
+        print("\n=== 集成模型预测 ===")
+        predictions_ensemble = predictor.predict_ensemble(new_df, 'average')
+        predictions_weighted = predictor.predict_ensemble(new_df, 'weighted')
+        predictions_voting = predictor.predict_ensemble(new_df, 'voting')
+
+        # 3. 所有模型并行预测
+        print("\n=== 所有模型并行预测 ===")
+        all_predictions = predictor.predict_all_models_and_ensemble(new_df)
+
+        if predictions_ensemble is not None:
+            # 保存集成预测结果
+            predictions_ensemble.to_excel("temp/ensemble_predictions.xlsx", index=False)
+            print("集成预测完成并已保存")
 
             # 显示部分预测结果
-            print("\n前10条预测结果:")
-            # 打印 预测结果为1的记录 ,'次日最高涨幅'
-            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','预测概率', '预测结果', '交易信号']])
-            # 打印 次日涨幅 的和  次日最高涨幅的和
-            print(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
-            print(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
+            print("\n集成预测前10条结果:")
+            print(predictions_ensemble[predictions_ensemble['预测结果'] == 1][
+                ['日期', '代码', '名称',  'blockname', '次日涨幅','次日最高涨幅', '预测概率', '预测结果', '交易信号']
+            ].head(10))
 
-        return predictions
+        return predictions_ensemble
     else:
         print("模型加载失败")
         return None
+
+# 所有数据建立一个新模型，来比较效果
+def all_data_model():
+    predictor = StockPredictor()
+
+    # 假设df是您的数据框，包含1980条记录
+    df = get_prediction_files_data("../data/predictions/","0801","0923")
+    # df.to_excel(df, "")
+    print(len(df))
+
+    # 数据预处理
+    df_processed = predictor.load_and_preprocess(df)
+
+    # 准备特征
+    X, y = predictor.prepare_features(df_processed)
+
+    # 训练模型
+    predictor.train_models(X, y)
+
+    # 评估模型
+    evaluation_df = predictor.evaluate_models()
+
+    # 绘制混淆矩阵
+    predictor.plot_confusion_matrices()
+
+    # 创建交易策略
+    rules = predictor.create_trading_strategy(top_features=5)
+
+    # 显示最佳模型详细报告
+    best_model_name = evaluation_df['AUC-ROC'].idxmax()
+    print(f"\n=== 最佳模型详细报告 ({best_model_name}) ===")
+    best_report = predictor.models[best_model_name]['classification_report']
+    print(classification_report(predictor.results['y_test'],
+                                predictor.models[best_model_name]['y_pred_optimal']))
+
+    return predictor
+
+
 
 if __name__ == "__main__":
     # 分析数据
     # predictor = main()
 
     # 训练模型
-    # predictor = model_train()
+    predictor = model_train()
     print("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
     load_model_and_predict()
+
+    # 所有数据的分析
+    # all_data_model()

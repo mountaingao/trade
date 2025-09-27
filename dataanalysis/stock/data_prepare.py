@@ -65,6 +65,7 @@ def get_prediction_files_data(base_dir="../data/predictions/",start_mmddend = No
                 # try:
                 # 4. 读取文件内容，组合数据以后进行训练
                 df_pred = pd.read_excel(file_path)
+                df_pred['time']= folder_name
                 dfs.append(df_pred)
                 # print(df_pred.head(10))
                 # print(len(df_pred))

@@ -393,7 +393,7 @@ def select_stock_with_block_and_date(df):
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    print(df_filtered_groups.tail(10))
+    # print(df_filtered_groups.tail(10))
     selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
 
 
@@ -404,7 +404,7 @@ def select_stock_with_block_and_date(df):
     df_filtered_groups = get_top_groups_with_ties(df_filtered_groups, 2)
     # 得到这个分组的数据
     df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
-    print(df_max.tail(20))
+    # print(df_max.tail(20))
     # print(df_max[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     # print(df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']])
     # 修改为以下代码：
@@ -414,7 +414,7 @@ def select_stock_with_block_and_date(df):
         print(f"\n概念: {concept}")
         group_reset = group[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']].reset_index(drop=True)
         group_reset.insert(0, '序号', range(1, len(group_reset) + 1))
-        print(group_reset)
+        # print(group_reset)
     # df_max 得到符合条件的数据 量比大于1 涨幅>0 资金流入>0 Q>Q_1 >Q3  and Q>Q_1 Q_1<Q3
     df_max_up = df_max[
         (df_max['量比'] > 1) &
