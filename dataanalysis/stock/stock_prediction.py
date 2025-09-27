@@ -889,19 +889,14 @@ def model_train():
     # 训练模型
     predictor.train_models(X, y)
 
-    # 保存XGBoost模型
-    # predictor.save_trained_model('XGBoost', 'saved_models/xgboost_stock_model.pkl')
-
-    # 如果需要保存所有模型
+    # 保存所有模型
     for model_name in ['XGBoost', 'LightGBM', 'RandomForest']:
         predictor.save_trained_model(model_name, f'saved_models/{model_name.lower()}_stock_model.pkl')
 
     # 评估模型
     evaluation_df = predictor.evaluate_models()
 
-    # ... 其余代码 ...
-
-    return evaluation_df
+    return predictor
 
 
 # 使用示例
@@ -959,39 +954,85 @@ def load_model_and_predict():
     predictor = StockPredictor()
 
     # 加载已保存的模型
-    model_name = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
+    print("加载XGBoost模型...")
+    xgboost_loaded = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
+    
+    print("加载LightGBM模型...")
+    lightgbm_loaded = predictor.load_trained_model('saved_models/lightgbm_stock_model.pkl')
+    
+    print("加载RandomForest模型...")
+    rf_loaded = predictor.load_trained_model('saved_models/randomforest_stock_model.pkl')
 
-    if model_name:
+    loaded_models = []
+    if xgboost_loaded:
+        loaded_models.append('XGBoost')
+    if lightgbm_loaded:
+        loaded_models.append('LightGBM')
+    if rf_loaded:
+        loaded_models.append('RandomForest')
+    
+    print(f"成功加载的模型: {loaded_models}")
+
+    if loaded_models:
         # 加载需要预测的数据
-        new_df =get_dir_files_data_value("1000",start_md="0924",end_mmdd="0926")
+        new_df = get_dir_files_data_value("1000", start_md="0924", end_mmdd="0926")
 
         # 1. 单独模型预测
         print("\n=== 单独模型预测 ===")
-        predictions_single_xgboost = predictor.predict_dataframe(new_df, 'XGBoost')
-        predictions_single_lightgbm = predictor.predict_dataframe(new_df, 'LightGBM')
+        single_predictions = {}
+        for model_name in loaded_models:
+            print(f"\n使用 {model_name} 模型进行预测...")
+            prediction = predictor.predict_dataframe(new_df, model_name)
+            if prediction is not None:
+                single_predictions[model_name] = prediction
 
-        # 2. 集成模型预测
-        print("\n=== 集成模型预测 ===")
-        predictions_ensemble = predictor.predict_ensemble(new_df, 'average')
-        predictions_weighted = predictor.predict_ensemble(new_df, 'weighted')
-        predictions_voting = predictor.predict_ensemble(new_df, 'voting')
+        # 2. 集成模型预测（仅在有多个模型时）
+        if len(loaded_models) > 1:
+            print("\n=== 集成模型预测 ===")
+            ensemble_predictions = {}
+            
+            # 平均集成
+            avg_pred = predictor.predict_ensemble(new_df, 'average')
+            if avg_pred is not None:
+                ensemble_predictions['average'] = avg_pred
+            
+            # 加权集成
+            weighted_pred = predictor.predict_ensemble(new_df, 'weighted')
+            if weighted_pred is not None:
+                ensemble_predictions['weighted'] = weighted_pred
+            
+            # 投票集成
+            voting_pred = predictor.predict_ensemble(new_df, 'voting')
+            if voting_pred is not None:
+                ensemble_predictions['voting'] = voting_pred
+            
+            # 显示集成预测结果
+            for method, pred in ensemble_predictions.items():
+                print(f"\n{method} 集成方法预测结果:")
+                if pred is not None:
+                    print(pred[pred['预测结果'] == 1][
+                        ['日期', '代码', '名称', 'blockname', '次日涨幅', '次日最高涨幅', '预测概率', '预测结果', '交易信号']
+                    ].head(10))
+        else:
+            print("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
 
-        # 3. 所有模型并行预测
-        print("\n=== 所有模型并行预测 ===")
-        all_predictions = predictor.predict_all_models_and_ensemble(new_df)
+        # 保存所有预测结果
+        print("\n=== 保存预测结果 ===")
+        # 保存单独模型预测结果
+        for model_name, pred in single_predictions.items():
+            filename = f"temp/{model_name.lower()}_predictions.xlsx"
+            try:
+                pred.to_excel(filename, index=False)
+                print(f"{model_name} 预测结果已保存到: {filename}")
+            except Exception as e:
+                print(f"保存 {model_name} 预测结果时出错: {e}")
+        
+        # 如果有集成预测结果，保存集成结果
+        if len(loaded_models) > 1:
+            # 这里可以保存集成预测结果
+            pass
 
-        if predictions_ensemble is not None:
-            # 保存集成预测结果
-            predictions_ensemble.to_excel("temp/ensemble_predictions.xlsx", index=False)
-            print("集成预测完成并已保存")
-
-            # 显示部分预测结果
-            print("\n集成预测前10条结果:")
-            print(predictions_ensemble[predictions_ensemble['预测结果'] == 1][
-                ['日期', '代码', '名称',  'blockname', '次日涨幅','次日最高涨幅', '预测概率', '预测结果', '交易信号']
-            ].head(10))
-
-        return predictions_ensemble
+        return single_predictions
     else:
         print("模型加载失败")
         return None
@@ -1039,8 +1080,8 @@ if __name__ == "__main__":
     # predictor = main()
 
     # 训练模型
-    predictor = model_train()
-    print("训练完成")
+    # predictor = model_train()
+    # print("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
     load_model_and_predict()
