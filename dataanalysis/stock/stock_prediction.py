@@ -890,18 +890,18 @@ def model_train():
     predictor.train_models(X, y)
 
     # 保存XGBoost模型
-    predictor.save_trained_model('XGBoost', 'saved_models/xgboost_stock_model.pkl')
+    # predictor.save_trained_model('XGBoost', 'saved_models/xgboost_stock_model.pkl')
 
     # 如果需要保存所有模型
-    # for model_name in ['XGBoost', 'LightGBM', 'RandomForest']:
-    #     predictor.save_trained_model(model_name, f'saved_models/{model_name.lower()}_stock_model.pkl')
+    for model_name in ['XGBoost', 'LightGBM', 'RandomForest']:
+        predictor.save_trained_model(model_name, f'saved_models/{model_name.lower()}_stock_model.pkl')
 
     # 评估模型
     evaluation_df = predictor.evaluate_models()
 
     # ... 其余代码 ...
 
-    return predictor
+    return evaluation_df
 
 
 # 使用示例
