@@ -70,6 +70,13 @@ class StockPredictor:
                 upper = df_clean[col].quantile(0.99)
                 df_clean[col] = np.clip(df_clean[col], lower, upper)
 
+        # 关键：处理目标变量中的缺失值
+        df_clean[target] = df_clean[target].replace([np.inf, -np.inf], np.nan)
+        # 删除目标变量为NaN的行
+        df_clean = df_clean.dropna(subset=[target])
+        # 确保目标变量为整数类型
+        df_clean[target] = df_clean[target].astype(int)
+
         # 检查是否有足够的正负样本
         positive_samples = df_clean[target].sum()
         negative_samples = len(df_clean) - positive_samples
@@ -975,8 +982,10 @@ def load_model_and_predict():
     print(f"成功加载的模型: {loaded_models}")
 
     if loaded_models:
+        start = "0901"
+        end = "0926"
         # 加载需要预测的数据
-        new_df = get_dir_files_data_value("1000", start_md="0924", end_mmdd="0926")
+        new_df = get_dir_files_data_value("1000", start_md=start, end_mmdd=end)
 
         # 1. 单独模型预测
         print("\n=== 单独模型预测 ===")
@@ -985,6 +994,8 @@ def load_model_and_predict():
             print(f"\n使用 {model_name} 模型进行预测...")
             prediction = predictor.predict_dataframe(new_df, model_name)
             if prediction is not None:
+                # 只保留 预测结果为1的行
+                prediction = prediction[prediction['预测结果'] == 1]
                 single_predictions[model_name] = prediction
 
         # 2. 集成模型预测（仅在有多个模型时）
@@ -1021,7 +1032,7 @@ def load_model_and_predict():
         print("\n=== 保存预测结果 ===")
         # 保存单独模型预测结果
         for model_name, pred in single_predictions.items():
-            filename = f"temp/{model_name.lower()}_predictions.xlsx"
+            filename = f"temp/{start}-{end}{model_name.lower()}_predictions.xlsx"
             try:
                 pred.to_excel(filename, index=False)
                 print(f"{model_name} 预测结果已保存到: {filename}")
@@ -1031,6 +1042,15 @@ def load_model_and_predict():
         # 如果有集成预测结果，保存集成结果
         if len(loaded_models) > 1:
             # 这里可以保存集成预测结果
+            for method, pred in ensemble_predictions.items():
+                filename = f"temp/{start}-{end}{method}_predictions.xlsx"
+                try:
+                    pred.to_excel(filename, index=False)
+                    print(f"{method} 集成方法预测结果已保存到: {filename}")
+                except Exception as e:
+                    print(f"保存 {method} 集成方法预测结果时出错: {e}")
+        else:
+            print("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
             pass
 
         return single_predictions
@@ -1117,10 +1137,10 @@ if __name__ == "__main__":
     # print("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
-    # load_model_and_predict()
+    load_model_and_predict()
 
     # 所有数据的分析
-    all_data_model()
+    # all_data_model()
 
 # 单独预测一个文件
     # predictions_file = "../data/predictions/1600/09241501_1515.xlsx"

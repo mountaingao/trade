@@ -47,7 +47,8 @@ class StockDataAnalyzer:
             if col not in self.combined_df.columns:
                 st.write(f"缺少必要列: {col}")
                 return
-
+        # 去除 次日最高价为0的行
+        self.combined_df = self.combined_df[self.combined_df['次日最高涨幅'] != 0]
         # 1. 增加两列计算结果
         # ROUND(100000/(F544*100),0)*F544*100*X544/100
         self.combined_df['收盘利润'] = (100000 / (self.combined_df['现价'] * 100)).round() * \
