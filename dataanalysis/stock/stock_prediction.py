@@ -1074,6 +1074,38 @@ def all_data_model():
     return predictor
 
 
+def load_model_and_predict_from_dataframe(new_df):
+    # 初始化预测器
+    predictor = StockPredictor()
+
+    # 加载已保存的模型
+    model_name = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
+
+    if model_name:
+        # 加载需要预测的数据
+        # new_df =get_dir_files_data_value("1000",start_md="0925",end_mmdd="0926")
+
+        # 进行预测
+        predictions = predictor.predict_dataframe(new_df, 'XGBoost')
+
+        if predictions is not None:
+            # 保存预测结果
+            predictions.to_excel("temp/new_predictions.xlsx", index=False)
+            print("新数据预测完成并已保存")
+
+            # 显示部分预测结果
+            print("\n前10条预测结果:")
+            # 打印 预测结果为1的记录 ,'次日最高涨幅'
+            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','预测概率', '预测结果', '交易信号']])
+            # 打印 次日涨幅 的和  次日最高涨幅的和
+            print(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
+            print(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
+
+        return predictions
+    else:
+        print("模型加载失败")
+        return None
+
 
 if __name__ == "__main__":
     # 分析数据
@@ -1088,3 +1120,10 @@ if __name__ == "__main__":
 
     # 所有数据的分析
     # all_data_model()
+
+    predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
+    df = pd.read_excel(predictions_file)
+
+    df['time'] = 1000
+    df['blockname'] = df['概念']
+    load_model_and_predict_from_dataframe(df)
