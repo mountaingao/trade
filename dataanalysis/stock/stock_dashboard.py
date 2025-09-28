@@ -83,32 +83,32 @@ class StockDataAnalyzer:
 
         return stats
 
-    def plot_date_dimension_analysis(self):
+    def plot_date_dimension_analysis_date(self):
         """按日期维度进行分析并绘图"""
         if self.combined_df is None or self.combined_df.empty:
             st.write("没有数据可分析")
             return
 
-        # 按日期统计
+            # 按日期统计
         date_stats = self.combined_df.groupby('日期').agg({
             '收盘利润': ['count', 'sum'],
             '最高利润': 'sum',
             '次日最高涨幅': lambda x: (x > 0).sum()  # 盈利次数
         }).reset_index()
-        
+
         date_stats.columns = ['日期', '记录数', '收盘利润和', '最高利润和', '盈利次数']
         date_stats['盈利占比'] = date_stats['盈利次数'] / date_stats['记录数']
 
         # 创建图表
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        
+
         # 记录数趋势
         axes[0, 0].plot(date_stats['日期'], date_stats['记录数'], marker='o')
         axes[0, 0].set_title('每日记录数趋势')
         axes[0, 0].set_xlabel('日期')
         axes[0, 0].set_ylabel('记录数')
         axes[0, 0].tick_params(axis='x', rotation=45)
-        
+
         # 利润和趋势
         ax1 = axes[0, 1]
         ax2 = ax1.twinx()
@@ -119,24 +119,93 @@ class StockDataAnalyzer:
         ax1.set_ylabel('收盘利润和', color='blue')
         ax2.set_ylabel('最高利润和', color='red')
         ax1.tick_params(axis='x', rotation=45)
-        
+
         # 盈利次数趋势
         axes[1, 0].plot(date_stats['日期'], date_stats['盈利次数'], marker='o', color='green')
         axes[1, 0].set_title('每日盈利次数趋势')
         axes[1, 0].set_xlabel('日期')
         axes[1, 0].set_ylabel('盈利次数')
         axes[1, 0].tick_params(axis='x', rotation=45)
-        
+
         # 盈利占比趋势
         axes[1, 1].plot(date_stats['日期'], date_stats['盈利占比'], marker='o', color='orange')
         axes[1, 1].set_title('每日盈利占比趋势')
         axes[1, 1].set_xlabel('日期')
         axes[1, 1].set_ylabel('盈利占比')
         axes[1, 1].tick_params(axis='x', rotation=45)
-        
+
         plt.tight_layout()
         st.pyplot(fig)
 
+
+    def plot_date_dimension_analysis_time(self):
+        """按日期维度进行分析并绘图"""
+        if self.combined_df is None or self.combined_df.empty:
+            st.write("没有数据可分析")
+            return
+
+        # 按日期和time字段分别汇总统计
+        if 'time' in self.combined_df.columns:
+            time_stats = self.combined_df.groupby(['日期', 'time']).agg({
+                '收盘利润': ['count', 'sum'],
+                '最高利润': 'sum',
+                '次日最高涨幅': lambda x: (x > 0).sum()  # 盈利次数
+            }).reset_index()
+
+            # print(time_stats.columns)
+            # 修复列名，确保所有元素都是字符串
+            time_stats.columns = ['_'.join(map(str, col)).strip() for col in time_stats.columns.values]
+
+            # 重新命名列，避免多重索引造成的访问问题
+            new_columns = []
+            for col in time_stats.columns:
+                if col == '日期_' or col.startswith('日期_'):
+                    new_columns.append('日期')
+                elif col == 'time_' or col.startswith('time_'):
+                    new_columns.append('time')
+                else:
+                    new_columns.append(col)
+            time_stats.columns = new_columns
+
+            # 提取各time值的趋势数据
+            time_values = [1000, 1200, 1400, 1600]
+
+            # 创建四张独立的图表，每张图表展示所有time值的数据
+            metrics = ['记录数', '收盘利润和', '最高利润和', '盈利次数']
+            metric_columns = ['收盘利润_count', '收盘利润_sum', '最高利润_sum', '次日最高涨幅_<lambda>']
+
+            for i, (metric, col) in enumerate(zip(metrics, metric_columns)):
+                fig, ax = plt.subplots(figsize=(15, 8))
+                fig.suptitle(f'按日期和Time维度分析 - {metric}', fontsize=16)
+
+                # 定义颜色和标记
+                colors = ['blue', 'red', 'green', 'orange']
+                markers = ['o', 's', '^', 'd']
+
+                # 绘制每个time值的数据
+                for j, time_val in enumerate(time_values):
+                    # 筛选特定time值的数据
+                    time_data = time_stats[time_stats['time'] == time_val]
+
+                    if not time_data.empty:
+                        ax.plot(time_data['日期'], time_data[col],
+                                marker=markers[j], color=colors[j],
+                                label=f'Time {time_val}', linewidth=2, markersize=6)
+
+                ax.set_title(f'{metric}趋势分析')
+                ax.set_xlabel('日期')
+                ax.set_ylabel(metric)
+                ax.legend(loc='upper left')
+                ax.tick_params(axis='x', rotation=45)
+                ax.grid(True, alpha=0.3)
+
+                plt.tight_layout()
+                st.pyplot(fig)
+        else:
+            st.write("数据中缺少time列，无法按time维度分析")
+
+        plt.tight_layout()
+        st.pyplot(fig)
     def plot_code_dimension_analysis(self):
         """按代码维度进行分析并绘图"""
         if self.combined_df is None or self.combined_df.empty or '代码' not in self.combined_df.columns:
@@ -325,21 +394,33 @@ def main():
     
     # 侧边栏配置
     st.sidebar.header("数据配置")
-    
+
+    # 当前目录
+    # def get_current_directory():
+    #     return os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.dirname(os.path.abspath(__file__))
+    # 加上子目录 temp
+    data_dir = os.path.join(data_dir, 'temp')
     # 选择数据目录
-    data_dir = st.sidebar.text_input("Excel文件目录", "temp")
+    data_dir = st.sidebar.text_input("Excel文件目录", data_dir)
     
     # 获取目录下的所有Excel文件
     if os.path.exists(data_dir):
-        excel_files = [f for f in os.listdir(data_dir) if f.endswith(('.xlsx', '.xls'))]
-        if excel_files:
-            selected_files = st.sidebar.multiselect("选择Excel文件", excel_files, default=excel_files[:3] if len(excel_files) > 3 else excel_files)
-            file_paths = [os.path.join(data_dir, f) for f in selected_files]
+        if os.path.isfile(data_dir):
+            # 如果输入的是文件路径
+            excel_files = [os.path.basename(data_dir)] if data_dir.endswith(('.xlsx', '.xls')) else []
+            file_paths = [data_dir]
         else:
-            st.sidebar.warning("目录中没有找到Excel文件")
-            file_paths = []
+            # 如果输入的是目录路径
+            excel_files = [f for f in os.listdir(data_dir) if f.endswith(('.xlsx', '.xls'))]
+            if excel_files:
+                selected_files = st.sidebar.multiselect("选择Excel文件", excel_files, default=excel_files[:3] if len(excel_files) > 3 else excel_files)
+                file_paths = [os.path.join(data_dir, f) for f in selected_files]
+            else:
+                st.sidebar.warning("目录中没有找到Excel文件")
+                file_paths = []
     else:
-        st.sidebar.error("指定的目录不存在")
+        st.sidebar.error("指定的路径不存在，请检查路径是否正确")
         file_paths = []
 
     # 初始化分析器
@@ -371,7 +452,10 @@ def main():
 
             # 按日期维度分析
             st.header("按日期维度分析")
-            analyzer.plot_date_dimension_analysis()
+            analyzer.plot_date_dimension_analysis_date()
+
+            st.header("按日期+time维度分析")
+            analyzer.plot_date_dimension_analysis_time()
 
             # 按代码维度分析
             st.header("按代码维度分析")
