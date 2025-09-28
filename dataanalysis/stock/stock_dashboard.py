@@ -186,8 +186,19 @@ class StockDataAnalyzer:
                 for j, time_val in enumerate(time_values):
                     # 筛选特定time值的数据
                     time_data = time_stats[time_stats['time'] == time_val]
+                    # 将time_data 按日期进行排序
+                    time_data = time_data.sort_values('日期')
+                    time_data['日期'] = pd.to_datetime(time_data['日期'])
+                    print(f"time_val: {time_val}, len(time_data): {len(time_data)}")
+                    # print(time_data)
+
+
+                    # print(time_data[col])
 
                     if not time_data.empty:
+                        # 添加调试信息，确认每条线的数据
+                        print(f"Time {time_val} data points: {len(time_data)}")
+                        print(time_data[['日期', col]].head(100))
                         ax.plot(time_data['日期'], time_data[col],
                                 marker=markers[j], color=colors[j],
                                 label=f'Time {time_val}', linewidth=2, markersize=6)
@@ -204,8 +215,7 @@ class StockDataAnalyzer:
         else:
             st.write("数据中缺少time列，无法按time维度分析")
 
-        plt.tight_layout()
-        st.pyplot(fig)
+
     def plot_code_dimension_analysis(self):
         """按代码维度进行分析并绘图"""
         if self.combined_df is None or self.combined_df.empty or '代码' not in self.combined_df.columns:
@@ -414,7 +424,7 @@ def main():
             # 如果输入的是目录路径
             excel_files = [f for f in os.listdir(data_dir) if f.endswith(('.xlsx', '.xls'))]
             if excel_files:
-                selected_files = st.sidebar.multiselect("选择Excel文件", excel_files, default=excel_files[:3] if len(excel_files) > 3 else excel_files)
+                selected_files = st.sidebar.multiselect("选择Excel文件", excel_files, default=excel_files[:1] if len(excel_files) > 0 else excel_files)
                 file_paths = [os.path.join(data_dir, f) for f in selected_files]
             else:
                 st.sidebar.warning("目录中没有找到Excel文件")

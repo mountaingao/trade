@@ -907,16 +907,17 @@ def main():
     # 假设df是您的数据框，包含1980条记录
     # df = pd.read_excel('your_data.xlsx')  # 请替换为您的数据加载代码
     # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
-
-    # df0 =get_dir_files_data_value("1000",start_md="0801",end_mmdd="0923")
-    # df1 =get_dir_files_data_value("1200",start_md="0801",end_mmdd="0923")
-    # df2 =get_dir_files_data_value("1400",start_md="0801",end_mmdd="0923")
-    # df3 =get_dir_files_data_value("1600",start_md="0801",end_mmdd="0923")
-    # df = pd.concat([df0,df1,df2,df3])
+    start = "0901"
+    end = "0926"
+    df0 =get_dir_files_data_value("1000",start_md=start,end_mmdd=end)
+    df1 =get_dir_files_data_value("1200",start_md=start,end_mmdd=end)
+    df2 =get_dir_files_data_value("1400",start_md=start,end_mmdd=end)
+    df3 =get_dir_files_data_value("1600",start_md=start,end_mmdd=end)
+    df = pd.concat([df0,df1,df2,df3])
     # 将df写入到临时文件中 temp/0801-0923.csv
-    # df.to_excel("temp/0801-0923.xlsx", index=False)
+    df.to_excel(f"temp/{start}-{end}.xlsx", index=False)
     # 读取tmp/0801-0923.xlsx
-    df = pd.read_excel("temp/0801-0923.xlsx")
+    # df = pd.read_excel(f"temp/{start}-{end}.xlsx")
 
     # df.to_excel(df, "")
     print(len(df))
@@ -1116,16 +1117,17 @@ if __name__ == "__main__":
     # print("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
-    load_model_and_predict()
+    # load_model_and_predict()
 
     # 所有数据的分析
-    # all_data_model()
+    all_data_model()
 
-    predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
-    df = pd.read_excel(predictions_file)
-
-    df['time'] = 1000
-    df['blockname'] = df['概念']
-    load_model_and_predict_from_dataframe(df)
+# 单独预测一个文件
+    # predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
+    # df = pd.read_excel(predictions_file)
+    #
+    # df['time'] = 1000
+    # df['blockname'] = df['概念']
+    # load_model_and_predict_from_dataframe(df)
 
 
