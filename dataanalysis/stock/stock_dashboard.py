@@ -114,6 +114,7 @@ class StockDataAnalyzer:
         ax2 = ax1.twinx()
         ax1.plot(date_stats['日期'], date_stats['收盘利润和'], marker='o', color='blue', label='收盘利润和')
         ax2.plot(date_stats['日期'], date_stats['最高利润和'], marker='s', color='red', label='最高利润和')
+        ax1.axhline(0, color='gray', linestyle='--')
         ax1.set_title('每日利润和趋势')
         ax1.set_xlabel('日期')
         ax1.set_ylabel('收盘利润和', color='blue')
