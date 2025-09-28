@@ -4,6 +4,7 @@ import streamlit as st
 import os
 from collections import Counter
 import seaborn as sns
+import datetime
 
 # 设置中文字体支持
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -83,6 +84,78 @@ class StockDataAnalyzer:
         stats['当日涨幅>=19.97最高利润总和'] = filtered_df_high['最高利润'].sum()
 
         return stats
+
+    def export_to_excel(self, file_path):
+        """将统计数据导出到Excel文件"""
+        if self.combined_df is None or self.combined_df.empty:
+            st.write("没有数据可导出")
+            return False
+
+        try:
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                # 导出原始数据
+                self.combined_df.to_excel(writer, sheet_name='原始数据', index=False)
+                
+                # 导出汇总统计数据
+                stats = self.get_summary_stats()
+                if stats:
+                    stats_df = pd.DataFrame([stats])
+                    stats_df.to_excel(writer, sheet_name='汇总统计', index=False)
+                
+                # 按日期维度统计
+                if '日期' in self.combined_df.columns:
+                    date_stats = self.combined_df.groupby('日期').agg({
+                        '收盘利润': ['count', 'sum'],
+                        '最高利润': 'sum',
+                        '次日最高涨幅': lambda x: (x > 0).sum()
+                    }).reset_index()
+                    date_stats.columns = ['日期', '记录数', '收盘利润和', '最高利润和', '盈利次数']
+                    date_stats['盈利占比'] = date_stats['盈利次数'] / date_stats['记录数']
+                    date_stats.to_excel(writer, sheet_name='日期维度统计', index=False)
+                
+                # 按代码维度统计
+                if '代码' in self.combined_df.columns:
+                    code_stats = self.combined_df.groupby('代码').agg({
+                        '收盘利润': ['count', 'sum'],
+                        '最高利润': 'sum'
+                    }).reset_index()
+                    code_stats.columns = ['代码', '记录数', '收盘利润和', '最高利润和']
+                    code_stats.to_excel(writer, sheet_name='代码维度统计', index=False)
+                
+                # 按时间维度统计
+                if 'time' in self.combined_df.columns:
+                    time_stats = self.combined_df.groupby('time').agg({
+                        '收盘利润': ['count', 'sum'],
+                        '最高利润': 'sum',
+                        '次日最高涨幅': lambda x: (x > 0).sum()
+                    }).reset_index()
+                    time_stats.columns = ['time', '记录数', '收盘利润和', '最高利润和', '盈利次数']
+                    time_stats['盈利占比'] = time_stats['盈利次数'] / time_stats['记录数']
+                    time_stats.to_excel(writer, sheet_name='时间维度统计', index=False)
+                
+                # 按日期+time维度统计
+                if '日期' in self.combined_df.columns and 'time' in self.combined_df.columns:
+                    datetime_stats = self.combined_df.groupby(['日期', 'time']).agg({
+                        '收盘利润': ['count', 'sum'],
+                        '最高利润': 'sum'
+                    }).reset_index()
+                    datetime_stats.columns = ['日期', 'time', '记录数', '收盘利润和', '最高利润和']
+                    datetime_stats.to_excel(writer, sheet_name='日期时间维度统计', index=False)
+                
+                # 按日期+代码维度统计
+                if '日期' in self.combined_df.columns and '代码' in self.combined_df.columns:
+                    date_code_stats = self.combined_df.groupby(['日期', '代码']).agg({
+                        '收盘利润': ['count', 'sum'],
+                        '最高利润': 'sum'
+                    }).reset_index()
+                    date_code_stats.columns = ['日期', '代码', '记录数', '收盘利润和', '最高利润和']
+                    date_code_stats.to_excel(writer, sheet_name='日期代码维度统计', index=False)
+            
+            st.success(f"数据已成功导出到: {file_path}")
+            return True
+        except Exception as e:
+            st.error(f"导出数据时发生错误: {str(e)}")
+            return False
 
     def plot_date_dimension_analysis_date(self):
         """按日期维度进行分析并绘图"""
@@ -438,15 +511,19 @@ def main():
     # 初始化分析器
     analyzer = StockDataAnalyzer()
     
+    # 使用session_state保存analyzer状态
+    if 'analyzer' not in st.session_state:
+        st.session_state.analyzer = analyzer
+    
     # 加载数据
     if file_paths and st.sidebar.button("加载并分析数据"):
         with st.spinner("正在加载和分析数据..."):
-            analyzer.load_data(file_paths)
-            analyzer.process_data()
+            st.session_state.analyzer.load_data(file_paths)
+            st.session_state.analyzer.process_data()
             
             # 显示汇总统计
             st.header("数据汇总统计")
-            stats = analyzer.get_summary_stats()
+            stats = st.session_state.analyzer.get_summary_stats()
             if stats:
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -464,26 +541,45 @@ def main():
 
             # 按日期维度分析
             st.header("按日期维度分析")
-            analyzer.plot_date_dimension_analysis_date()
+            st.session_state.analyzer.plot_date_dimension_analysis_date()
 
             st.header("按日期+time维度分析")
-            analyzer.plot_date_dimension_analysis_time()
+            st.session_state.analyzer.plot_date_dimension_analysis_time()
 
             # 按代码维度分析
             st.header("按代码维度分析")
-            analyzer.plot_code_dimension_analysis()
+            st.session_state.analyzer.plot_code_dimension_analysis()
 
             # 按时间维度分析
             st.header("按时间维度分析")
-            analyzer.plot_time_dimension_analysis()
+            st.session_state.analyzer.plot_time_dimension_analysis()
 
             # 按日期+时间维度分析
             st.header("按日期+时间维度分析")
-            analyzer.plot_date_time_dimension_analysis()
+            st.session_state.analyzer.plot_date_time_dimension_analysis()
 
             # 按日期+代码维度分析
             st.header("按日期+代码维度分析")
-            analyzer.plot_date_code_dimension_analysis()
+            st.session_state.analyzer.plot_date_code_dimension_analysis()
+            
+            # 添加导出到Excel的按钮
+            st.sidebar.markdown("---")
+            st.sidebar.header("数据导出")
+            # 文件名使用选择的文件名+时间戳
+            export_filename = os.path.splitext(os.path.basename(file_paths[0]))[0] + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")+".xlsx"
+            export_path = os.path.join(data_dir, export_filename)
+            print(export_path)
+            st.session_state.analyzer.export_to_excel(export_path)
+
+            # export_filename = st.sidebar.text_input("导出文件名", "股票数据分析结果.xlsx")
+            if st.sidebar.button("导出到Excel"):
+                export_path = os.path.join(data_dir, export_filename)
+                print(export_path)
+                if st.session_state.analyzer.export_to_excel(export_path):
+                    st.sidebar.success(f"数据已导出到: {export_path}")
+                else:
+                    st.sidebar.error("数据导出失败")
+
     elif not file_paths:
         st.info("请在侧边栏选择数据目录和Excel文件，然后点击'加载并分析数据'按钮")
 
@@ -491,3 +587,5 @@ if __name__ == "__main__":
     main()
 
     # streamlit run D:/project/trade/dataanalysis/stock/stock_dashboard.py
+
+    # streamlit run F:/project/trade/dataanalysis/stock/stock_dashboard.py

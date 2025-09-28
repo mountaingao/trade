@@ -914,8 +914,8 @@ def main():
     # 假设df是您的数据框，包含1980条记录
     # df = pd.read_excel('your_data.xlsx')  # 请替换为您的数据加载代码
     # df= get_dir_files_data("../data/predictions/1000/",start_md="0801",end_mmdd="0916")
-    start = "0901"
-    end = "0926"
+    start = "0801"
+    end = "0923"
     df0 =get_dir_files_data_value("1000",start_md=start,end_mmdd=end)
     df1 =get_dir_files_data_value("1200",start_md=start,end_mmdd=end)
     df2 =get_dir_files_data_value("1400",start_md=start,end_mmdd=end)
@@ -982,8 +982,8 @@ def load_model_and_predict():
     print(f"成功加载的模型: {loaded_models}")
 
     if loaded_models:
-        start = "0901"
-        end = "0926"
+        start = "0801"
+        end = "0923"
         # 加载需要预测的数据
         new_df = get_dir_files_data_value("1000", start_md=start, end_mmdd=end)
 
@@ -1117,7 +1117,7 @@ def load_model_and_predict_from_dataframe(new_df):
             # 显示部分预测结果
             print("\n前10条预测结果:")
             # 打印 预测结果为1的记录 ,'次日最高涨幅'
-            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','预测概率', '预测结果', '交易信号']])
+            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
             # 打印 次日涨幅 的和  次日最高涨幅的和
             print(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
             print(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
@@ -1137,17 +1137,18 @@ if __name__ == "__main__":
     # print("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
-    load_model_and_predict()
+    # load_model_and_predict()
 
     # 所有数据的分析
     # all_data_model()
 
 # 单独预测一个文件
-    # predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
-    # df = pd.read_excel(predictions_file)
-    #
-    # df['time'] = 1000
-    # df['blockname'] = df['概念']
-    # load_model_and_predict_from_dataframe(df)
+#     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
+    predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
+    df = pd.read_excel(predictions_file)
+
+    df['time'] = 1000
+    df['blockname'] = df['概念']
+    load_model_and_predict_from_dataframe(df)
 
 

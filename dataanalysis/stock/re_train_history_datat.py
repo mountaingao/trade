@@ -402,6 +402,9 @@ def select_stock_with_block_and_date(df):
     # df_filtered_groups = df_filtered_groups.groupby('日期').apply(lambda x: x.nlargest(2, 'count')).reset_index(drop=True)
     # 应用修改后的函数
     df_filtered_groups = get_top_groups_with_ties(df_filtered_groups, 2)
+    # 得到实际的groups数量
+    groups = len(df_filtered_groups)
+    print(f'分组数量：{len(df_filtered_groups)}')
     # 得到这个分组的数据
     df_max = df_local.merge(df_filtered_groups[['日期', group_by]], on=['日期', group_by])
     # print(df_max.tail(20))
@@ -429,7 +432,8 @@ def select_stock_with_block_and_date(df):
     print(f"强势板块龙头 数据量: {len(df_max_up)}")
     # 排序 按 Q 和 当日资金流入排序，每个概念只保留3个
     df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
-    df_max_up = df_max_up.groupby('概念').head(6)
+    if len(df_max_up) > 0:
+        df_max_up = df_max_up.groupby('概念').head(groups*3)
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     selected_stocks['df_max_up'] = df_max_up
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])

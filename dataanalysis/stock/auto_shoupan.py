@@ -10,7 +10,7 @@ import datetime  # 新增导入datetime模块
 from tdx_mini_data import process_multiple_codes
 from sqllite_block_manager import StockDataStorage,add_blockname_data
 from stock.read_tdx_alert import  show_alert
-
+from stock_prediction import load_model_and_predict_from_dataframe
 # 新增代码：读取配置文件
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config', 'config.json')
 with open(config_path, 'r', encoding='utf-8') as config_file:  # 修改编码为utf-8
@@ -1003,6 +1003,11 @@ def cal_predict_data_selected(predictions_file):
     # get_selected_from_type(df, '当日资金流入', '概念')
 
     selected_stocks = select_from_block_data(df)
+    print(selected_stocks)
+    selected_stocks['time'] = 1000
+    selected_stocks['blockname'] = selected_stocks['概念']
+    load_model_and_predict_from_dataframe(selected_stocks)
+
     if selected_stocks is not None:
         # 参考 输出弹出界面
         # print(selected_stocks)
