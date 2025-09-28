@@ -1005,7 +1005,7 @@ def cal_predict_data_selected(predictions_file):
     selected_stocks = select_from_block_data(df)
     print(selected_stocks)
     selected_stocks['time'] = 1000
-    selected_stocks['blockname'] = selected_stocks['概念']
+    # selected_stocks['blockname'] = selected_stocks['概念']
     load_model_and_predict_from_dataframe(selected_stocks)
 
     if selected_stocks is not None:
