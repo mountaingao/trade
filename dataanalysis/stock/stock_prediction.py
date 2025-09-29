@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import warnings
 warnings.filterwarnings('ignore')
-from re_train_history_datat import get_dir_files_data_value
+from re_train_history_datat import get_dir_files_data_value,select_stock_with_block_and_date
 from data_prepare import get_prediction_files_data
 from sklearn.feature_selection import SelectKBest, f_classif
 
@@ -23,6 +23,23 @@ os.environ['MPLBACKEND'] = 'Agg'
 import matplotlib
 matplotlib.use('Agg')
 import joblib
+import logging
+import datetime
+
+# 设置日志
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# 创建控制台处理器
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# 创建格式器
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# 添加处理器到日志记录器
+logger.addHandler(console_handler)
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -37,7 +54,7 @@ class StockPredictor:
 
     def load_and_preprocess(self, df):
         """加载和预处理数据"""
-        print("=== 数据预处理 ===")
+        logger.debug("=== 数据预处理 ===")
 
         # 选择特征列
         # features = ['当日涨幅', '量比', '总金额', '信号天数', 'Q', 'Q_1', 'Q3', '净额', '净流入', '当日资金流入']
@@ -45,12 +62,12 @@ class StockPredictor:
         target = 'value'
 
         # 检查缺失值
-        print(f"数据形状: {df.shape}")
-        print(f"缺失值情况:\n{df[features + [target]].isnull().sum()}")
+        logger.debug(f"数据形状: {df.shape}")
+        logger.debug(f"缺失值情况:\n{df[features + [target]].isnull().sum()}")
 
 
         # 检查目标变量分布
-        print(f"目标变量分布:\n{df[target].value_counts()}")
+        logger.debug(f"目标变量分布:\n{df[target].value_counts()}")
 
         # 处理无限值和异常值
         df_clean = df[features + [target]].copy()
@@ -80,15 +97,15 @@ class StockPredictor:
         # 检查是否有足够的正负样本
         positive_samples = df_clean[target].sum()
         negative_samples = len(df_clean) - positive_samples
-        print(f"正样本: {positive_samples}, 负样本: {negative_samples}")
+        logger.debug(f"正样本: {positive_samples}, 负样本: {negative_samples}")
 
         if positive_samples < 10 or negative_samples < 10:
-            print("警告: 正负样本数量过少，可能影响模型训练")
+            logger.warning("警告: 正负样本数量过少，可能影响模型训练")
 
         # 创建新特征
         df_clean = self._create_features(df_clean)
 
-        print(f"正样本比例: {df_clean[target].mean():.3f} ({df_clean[target].sum()}/{len(df_clean)})")
+        logger.debug(f"正样本比例: {df_clean[target].mean():.3f} ({df_clean[target].sum()}/{len(df_clean)})")
 
         return df_clean
 
@@ -147,7 +164,7 @@ class StockPredictor:
                 constant_features.append(col)
 
         if constant_features:
-            print(f"发现常数特征: {constant_features}")
+            logger.debug(f"发现常数特征: {constant_features}")
             # 移除常数特征
             X = X.drop(columns=constant_features)
             self.feature_names = [f for f in self.feature_names if f not in constant_features]
@@ -160,35 +177,35 @@ class StockPredictor:
         selected_features_idx = selector.get_support(indices=True)
         self.feature_names = [self.feature_names[i] for i in selected_features_idx]
 
-        print(f"特征选择后矩阵形状: {X_selected.shape}")
-        print(f"选择的特征: {self.feature_names}")
+        logger.debug(f"特征选择后矩阵形状: {X_selected.shape}")
+        logger.debug(f"选择的特征: {self.feature_names}")
 
         # 检查是否有NaN或inf值
-        print(f"NaN值数量: {np.isnan(X_selected).sum()}")
-        print(f"Inf值数量: {np.isinf(X_selected).sum()}")
+        logger.debug(f"NaN值数量: {np.isnan(X_selected).sum()}")
+        logger.debug(f"Inf值数量: {np.isinf(X_selected).sum()}")
 
         return X_selected, y
 
     def train_models(self, X, y, test_size=0.3):
         """训练多个模型"""
-        print("\n=== 模型训练 ===")
+        logger.debug("\n=== 模型训练 ===")
         # 检查并重新编码目标变量，确保标签是连续的
         unique_labels = np.unique(y)
-        print(f"原始目标变量唯一值: {unique_labels}")
+        logger.debug(f"原始目标变量唯一值: {unique_labels}")
 
         if len(unique_labels) > 2 and not np.array_equal(unique_labels, np.arange(len(unique_labels))):
             # 如果标签不是连续的，需要重新编码
             from sklearn.preprocessing import LabelEncoder
             label_encoder = LabelEncoder()
             y_encoded = label_encoder.fit_transform(y)
-            print(f"重新编码后的目标变量唯一值: {np.unique(y_encoded)}")
+            logger.debug(f"重新编码后的目标变量唯一值: {np.unique(y_encoded)}")
             y = y_encoded
         elif len(unique_labels) == 2 and not np.array_equal(unique_labels, [0, 1]):
             # 如果是二分类但标签不是0和1，也需要重新编码
             from sklearn.preprocessing import LabelEncoder
             label_encoder = LabelEncoder()
             y_encoded = label_encoder.fit_transform(y)
-            print(f"重新编码后的二分类目标变量唯一值: {np.unique(y_encoded)}")
+            logger.debug(f"重新编码后的二分类目标变量唯一值: {np.unique(y_encoded)}")
             y = y_encoded
 
 
@@ -330,7 +347,7 @@ class StockPredictor:
 
         # 训练每个模型
         for name, model in models.items():
-            print(f"\n训练 {name}...")
+            logger.debug(f"\n训练 {name}...")
 
             if name in ['XGBoost', 'LightGBM']:
                 model.fit(X_train, y_train)
@@ -366,11 +383,11 @@ class StockPredictor:
                 'classification_report': classification_report(y_test, y_pred_optimal, output_dict=True)
             }
 
-            print(f"{name} - 准确率: {accuracy:.3f}, AUC-ROC: {auc_roc:.3f}, 最优阈值: {optimal_threshold:.3f}")
+            logger.debug(f"{name} - 准确率: {accuracy:.3f}, AUC-ROC: {auc_roc:.3f}, 最优阈值: {optimal_threshold:.3f}")
 
     def evaluate_models(self):
         """评估所有模型"""
-        print("\n=== 模型评估 ===")
+        logger.debug("\n=== 模型评估 ===")
 
         y_test = self.results['y_test']
 
@@ -387,14 +404,14 @@ class StockPredictor:
             evaluation_df.loc[name, '正类F1'] = report['1']['f1-score']
             evaluation_df.loc[name, '最优阈值'] = result['optimal_threshold']
 
-        print("模型性能对比:")
-        print(evaluation_df.round(3))
+        logger.debug("模型性能对比:")
+        logger.debug(evaluation_df.round(3))
 
         return evaluation_df
 
     def plot_feature_importance(self, top_n=15):
         """绘制特征重要性图"""
-        print("\n=== 特征重要性分析 ===")
+        logger.debug("\n=== 特征重要性分析 ===")
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
         axes = axes.ravel()
@@ -439,8 +456,8 @@ class StockPredictor:
                 '重要性': best_importance
             }).sort_values('重要性', ascending=False).head(10)
 
-            print(f"\n最佳模型 ({best_model_name}) 的特征重要性 Top 10:")
-            print(best_importance_df.round(4))
+            logger.debug(f"\n最佳模型 ({best_model_name}) 的特征重要性 Top 10:")
+            logger.debug(best_importance_df.round(4))
 
         plt.tight_layout()
         plt.show()
@@ -449,7 +466,7 @@ class StockPredictor:
 
     def plot_confusion_matrices(self):
         """绘制混淆矩阵"""
-        print("\n=== 混淆矩阵 ===")
+        logger.debug("\n=== 混淆矩阵 ===")
 
         fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
@@ -465,7 +482,7 @@ class StockPredictor:
 
     def create_trading_strategy(self, top_features=5):
         """创建交易策略规则"""
-        print("\n=== 交易策略建议 ===")
+        logger.debug("\n=== 交易策略建议 ===")
 
         # 获取最佳模型的特征重要性
         best_importance_df = self.plot_feature_importance(top_n=top_features)
@@ -474,7 +491,7 @@ class StockPredictor:
             top_features_list = best_importance_df['特征'].head(top_features).tolist()
             top_importances = best_importance_df['重要性'].head(top_features).tolist()
 
-            print(f"\n基于 Top {top_features} 特征的交易策略规则:")
+            logger.debug(f"\n基于 Top {top_features} 特征的交易策略规则:")
 
             rules = []
             for feature, importance in zip(top_features_list, top_importances):
@@ -498,7 +515,7 @@ class StockPredictor:
                     rules.append(f"{feature} > 阈值 (重要性: {importance:.3f})")
 
             for i, rule in enumerate(rules, 1):
-                print(f"{i}. {rule}")
+                logger.debug(f"{i}. {rule}")
 
             return rules
 
@@ -507,7 +524,7 @@ class StockPredictor:
     def predict_new_data(self, new_df, model_name='XGBoost'):
         """预测新数据"""
         if model_name not in self.models:
-            print(f"模型 {model_name} 不存在")
+            logger.debug(f"模型 {model_name} 不存在")
             return None
 
         # 预处理新数据
@@ -545,7 +562,7 @@ class StockPredictor:
         save_path (str): 保存路径
         """
         if model_name not in self.models:
-            print(f"错误: 模型 {model_name} 未训练或不存在")
+            logger.debug(f"错误: 模型 {model_name} 未训练或不存在")
             return False
 
         try:
@@ -562,10 +579,10 @@ class StockPredictor:
             }
 
             joblib.dump(model_package, save_path)
-            print(f"模型 {model_name} 已成功保存到: {save_path}")
+            logger.debug(f"模型 {model_name} 已成功保存到: {save_path}")
             return True
         except Exception as e:
-            print(f"保存模型时出错: {e}")
+            logger.debug(f"保存模型时出错: {e}")
             return False
 
     def load_trained_model(self, model_path):
@@ -580,7 +597,7 @@ class StockPredictor:
         """
         try:
             if not os.path.exists(model_path):
-                print(f"错误: 模型文件 {model_path} 不存在")
+                logger.debug(f"错误: 模型文件 {model_path} 不存在")
                 return None
 
             model_package = joblib.load(model_path)
@@ -593,10 +610,10 @@ class StockPredictor:
             self.feature_names = model_package['feature_names']
             self.scaler = model_package['scaler']
 
-            print(f"模型 {model_name} 已成功加载")
+            logger.debug(f"模型 {model_name} 已成功加载")
             return model_name
         except Exception as e:
-            print(f"加载模型时出错: {e}")
+            logger.debug(f"加载模型时出错: {e}")
             return None
 
     def predict_dataframe(self, df, model_name='XGBoost'):
@@ -611,49 +628,50 @@ class StockPredictor:
         pd.DataFrame: 包含预测结果的DataFrame
         """
         if model_name not in self.models:
-            print(f"错误: 模型 {model_name} 未训练或不存在")
+            logger.debug(f"错误: 模型 {model_name} 未训练或不存在")
             return None
 
-        print(f"使用 {model_name} 模型进行预测...")
+        logger.debug(f"使用 {model_name} 模型进行预测...")
+        print(df.columns)
+        print(df[['代码', '名称','当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']])
+    # try:
+        # 对数据进行预处理和特征工程
+        df_processed = self._create_features(df)
 
-        try:
-            # 对数据进行预处理和特征工程
-            df_processed = self._create_features(df)
+        # 选择训练时使用的特征
+        X_new = df_processed[self.feature_names]
 
-            # 选择训练时使用的特征
-            X_new = df_processed[self.feature_names]
+        # 获取模型和阈值
+        model = self.models[model_name]['model']
+        threshold = self.models[model_name]['optimal_threshold']
 
-            # 获取模型和阈值
-            model = self.models[model_name]['model']
-            threshold = self.models[model_name]['optimal_threshold']
+        # 进行预测
+        if model_name in ['XGBoost', 'LightGBM']:
+            y_proba = model.predict_proba(X_new)[:, 1]
+        else:
+            # 对于需要标准化的模型
+            X_new_scaled = self.scaler.transform(X_new)
+            y_proba = model.predict_proba(X_new_scaled)[:, 1]
 
-            # 进行预测
-            if model_name in ['XGBoost', 'LightGBM']:
-                y_proba = model.predict_proba(X_new)[:, 1]
-            else:
-                # 对于需要标准化的模型
-                X_new_scaled = self.scaler.transform(X_new)
-                y_proba = model.predict_proba(X_new_scaled)[:, 1]
+        # 根据最优阈值进行分类
+        y_pred = (y_proba >= threshold).astype(int)
 
-            # 根据最优阈值进行分类
-            y_pred = (y_proba >= threshold).astype(int)
+        # 创建结果DataFrame
+        result_df = df.copy()
+        result_df['预测概率'] = y_proba
+        result_df['预测结果'] = y_pred
+        result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
 
-            # 创建结果DataFrame
-            result_df = df.copy()
-            result_df['预测概率'] = y_proba
-            result_df['预测结果'] = y_pred
-            result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
+        logger.debug(f"预测完成，共预测 {len(result_df)} 条记录")
+        logger.debug(f"看多信号: {result_df['预测结果'].sum()} 条")
+        logger.debug(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
+        logger.debug(result_df[['日期', '代码', '名称', 'blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
 
-            print(f"预测完成，共预测 {len(result_df)} 条记录")
-            print(f"看多信号: {result_df['预测结果'].sum()} 条")
-            print(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
-            print(result_df[['日期', '代码', '名称', 'blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
+        return result_df
 
-            return result_df
-
-        except Exception as e:
-            print(f"预测过程中出错: {e}")
-            return None
+    # except Exception as e:
+    #     logger.debug(f"预测过程中出错: {e}")
+    #     return None
 
     def predict_ensemble(self, df, method='average'):
         """
@@ -666,20 +684,20 @@ class StockPredictor:
         Returns:
         pd.DataFrame: 包含集成预测结果的DataFrame
         """
-        print(f"使用{method}集成方法进行预测...")
+        logger.debug(f"使用{method}集成方法进行预测...")
         
         # 检查是否有训练好的模型
         if not self.models:
-            print("错误: 没有训练好的模型可供预测")
+            logger.debug("错误: 没有训练好的模型可供预测")
             return None
             
         # 检查是否所有需要的模型都存在
         available_models = list(self.models.keys())
-        print(f"可用模型: {available_models}")
+        logger.debug(f"可用模型: {available_models}")
         
         # 确保至少有一个模型
         if len(available_models) == 0:
-            print("错误: 没有可用的模型进行集成预测")
+            logger.debug("错误: 没有可用的模型进行集成预测")
             return None
             
         try:
@@ -706,15 +724,15 @@ class StockPredictor:
                     predictions_proba[name] = y_proba
                     predictions_pred[name] = (y_proba >= threshold).astype(int)
                 except Exception as e:
-                    print(f"模型 {name} 预测时出错: {e}")
+                    logger.debug(f"模型 {name} 预测时出错: {e}")
                     continue
             
             # 检查是否有成功预测的模型
             if not predictions_proba:
-                print("错误: 没有模型成功生成预测结果")
+                logger.debug("错误: 没有模型成功生成预测结果")
                 return None
                 
-            print(f"成功预测的模型: {list(predictions_proba.keys())}")
+            logger.debug(f"成功预测的模型: {list(predictions_proba.keys())}")
             
             # 根据不同方法进行集成
             if method == 'average':
@@ -757,14 +775,14 @@ class StockPredictor:
             for name, proba in predictions_proba.items():
                 result_df[f'{name}_预测概率'] = proba
             
-            print(f"集成预测完成，共预测 {len(result_df)} 条记录")
-            print(f"看多信号: {result_df['预测结果'].sum()} 条")
-            print(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
+            logger.debug(f"集成预测完成，共预测 {len(result_df)} 条记录")
+            logger.debug(f"看多信号: {result_df['预测结果'].sum()} 条")
+            logger.debug(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
             
             return result_df
             
         except Exception as e:
-            print(f"集成预测过程中出错: {e}")
+            logger.debug(f"集成预测过程中出错: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -779,19 +797,19 @@ class StockPredictor:
         Returns:
         dict: 包含所有预测结果的字典
         """
-        print("并行使用所有模型进行预测...")
+        logger.debug("并行使用所有模型进行预测...")
         
         results = {}
         
         # 单独模型预测
         for model_name in self.models.keys():
-            print(f"\n使用 {model_name} 模型进行预测...")
+            logger.debug(f"\n使用 {model_name} 模型进行预测...")
             predictions = self.predict_dataframe(df, model_name)
             if predictions is not None:
                 results[model_name] = predictions
         
         # 集成模型预测
-        print("\n使用集成模型进行预测...")
+        logger.debug("\n使用集成模型进行预测...")
         ensemble_methods = ['average', 'weighted', 'voting']
         for method in ensemble_methods:
             ensemble_predictions = self.predict_ensemble(df, method)
@@ -820,10 +838,10 @@ class StockPredictor:
             }
             
             joblib.dump(ensemble_package, save_path)
-            print(f"集成模型已成功保存到: {save_path}")
+            logger.debug(f"集成模型已成功保存到: {save_path}")
             return True
         except Exception as e:
-            print(f"保存集成模型时出错: {e}")
+            logger.debug(f"保存集成模型时出错: {e}")
             return False
 
     def load_ensemble_model(self, model_path):
@@ -838,7 +856,7 @@ class StockPredictor:
         """
         try:
             if not os.path.exists(model_path):
-                print(f"错误: 模型文件 {model_path} 不存在")
+                logger.debug(f"错误: 模型文件 {model_path} 不存在")
                 return False
             
             ensemble_package = joblib.load(model_path)
@@ -847,10 +865,10 @@ class StockPredictor:
             self.feature_names = ensemble_package['feature_names']
             self.scaler = ensemble_package['scaler']
             
-            print(f"集成模型已成功加载，包含模型: {ensemble_package['model_types']}")
+            logger.debug(f"集成模型已成功加载，包含模型: {ensemble_package['model_types']}")
             return True
         except Exception as e:
-            print(f"加载集成模型时出错: {e}")
+            logger.debug(f"加载集成模型时出错: {e}")
             return False
 
     def save_predictions_to_excel(self, df, filename, model_name='XGBoost'):
@@ -869,13 +887,13 @@ class StockPredictor:
             try:
                 # 保存到Excel文件
                 predictions.to_excel(filename, index=False)
-                print(f"预测结果已保存到: {filename}")
+                logger.debug(f"预测结果已保存到: {filename}")
                 return predictions
             except Exception as e:
-                print(f"保存文件时出错: {e}")
+                logger.debug(f"保存文件时出错: {e}")
                 return predictions
         else:
-            print("预测失败，无法保存结果")
+            logger.debug("预测失败，无法保存结果")
             return None
 
 
@@ -885,7 +903,7 @@ def model_train():
 
     # 加载数据
     df = pd.read_excel("temp/0801-0923.xlsx")
-    print(len(df))
+    logger.debug(len(df))
 
     # 数据预处理
     df_processed = predictor.load_and_preprocess(df)
@@ -927,7 +945,7 @@ def main():
     # df = pd.read_excel(f"temp/{start}-{end}.xlsx")
 
     # df.to_excel(df, "")
-    print(len(df))
+    logger.debug(len(df))
 
     # 数据预处理
     df_processed = predictor.load_and_preprocess(df)
@@ -949,9 +967,9 @@ def main():
 
     # 显示最佳模型详细报告
     best_model_name = evaluation_df['AUC-ROC'].idxmax()
-    print(f"\n=== 最佳模型详细报告 ({best_model_name}) ===")
+    logger.debug(f"\n=== 最佳模型详细报告 ({best_model_name}) ===")
     best_report = predictor.models[best_model_name]['classification_report']
-    print(classification_report(predictor.results['y_test'],
+    logger.debug(classification_report(predictor.results['y_test'],
                                 predictor.models[best_model_name]['y_pred_optimal']))
 
     return predictor
@@ -962,13 +980,13 @@ def load_model_and_predict():
     predictor = StockPredictor()
 
     # 加载已保存的模型
-    print("加载XGBoost模型...")
+    logger.debug("加载XGBoost模型...")
     xgboost_loaded = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
     
-    print("加载LightGBM模型...")
+    logger.debug("加载LightGBM模型...")
     lightgbm_loaded = predictor.load_trained_model('saved_models/lightgbm_stock_model.pkl')
     
-    print("加载RandomForest模型...")
+    logger.debug("加载RandomForest模型...")
     rf_loaded = predictor.load_trained_model('saved_models/randomforest_stock_model.pkl')
 
     loaded_models = []
@@ -979,7 +997,7 @@ def load_model_and_predict():
     if rf_loaded:
         loaded_models.append('RandomForest')
     
-    print(f"成功加载的模型: {loaded_models}")
+    logger.debug(f"成功加载的模型: {loaded_models}")
 
     if loaded_models:
         start = "0801"
@@ -988,10 +1006,10 @@ def load_model_and_predict():
         new_df = get_dir_files_data_value("1000", start_md=start, end_mmdd=end)
 
         # 1. 单独模型预测
-        print("\n=== 单独模型预测 ===")
+        logger.debug("\n=== 单独模型预测 ===")
         single_predictions = {}
         for model_name in loaded_models:
-            print(f"\n使用 {model_name} 模型进行预测...")
+            logger.debug(f"\n使用 {model_name} 模型进行预测...")
             prediction = predictor.predict_dataframe(new_df, model_name)
             if prediction is not None:
                 # 只保留 预测结果为1的行
@@ -1000,7 +1018,7 @@ def load_model_and_predict():
 
         # 2. 集成模型预测（仅在有多个模型时）
         if len(loaded_models) > 1:
-            print("\n=== 集成模型预测 ===")
+            logger.debug("\n=== 集成模型预测 ===")
             ensemble_predictions = {}
             
             # 平均集成
@@ -1020,24 +1038,24 @@ def load_model_and_predict():
             
             # 显示集成预测结果
             for method, pred in ensemble_predictions.items():
-                print(f"\n{method} 集成方法预测结果:")
+                logger.debug(f"\n{method} 集成方法预测结果:")
                 if pred is not None:
-                    print(pred[pred['预测结果'] == 1][
+                    logger.debug(pred[pred['预测结果'] == 1][
                         ['日期', '代码', '名称', 'blockname', '次日涨幅', '次日最高涨幅', '预测概率', '预测结果', '交易信号']
                     ].head(10))
         else:
-            print("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
+            logger.debug("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
 
         # 保存所有预测结果
-        print("\n=== 保存预测结果 ===")
+        logger.debug("\n=== 保存预测结果 ===")
         # 保存单独模型预测结果
         for model_name, pred in single_predictions.items():
             filename = f"temp/{start}-{end}{model_name.lower()}_predictions.xlsx"
             try:
                 pred.to_excel(filename, index=False)
-                print(f"{model_name} 预测结果已保存到: {filename}")
+                logger.debug(f"{model_name} 预测结果已保存到: {filename}")
             except Exception as e:
-                print(f"保存 {model_name} 预测结果时出错: {e}")
+                logger.debug(f"保存 {model_name} 预测结果时出错: {e}")
         
         # 如果有集成预测结果，保存集成结果
         if len(loaded_models) > 1:
@@ -1046,16 +1064,16 @@ def load_model_and_predict():
                 filename = f"temp/{start}-{end}{method}_predictions.xlsx"
                 try:
                     pred.to_excel(filename, index=False)
-                    print(f"{method} 集成方法预测结果已保存到: {filename}")
+                    logger.debug(f"{method} 集成方法预测结果已保存到: {filename}")
                 except Exception as e:
-                    print(f"保存 {method} 集成方法预测结果时出错: {e}")
+                    logger.debug(f"保存 {method} 集成方法预测结果时出错: {e}")
         else:
-            print("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
+            logger.debug("\n=== 注意: 仅加载了一个模型，跳过集成预测 ===")
             pass
 
         return single_predictions
     else:
-        print("模型加载失败")
+        logger.debug("模型加载失败")
         return None
 
 # 所有数据建立一个新模型，来比较效果
@@ -1065,7 +1083,7 @@ def all_data_model():
     # 假设df是您的数据框，包含1980条记录
     df = get_prediction_files_data("../data/predictions/","0801","0923")
     # df.to_excel(df, "")
-    print(len(df))
+    logger.debug(len(df))
 
     # 数据预处理
     df_processed = predictor.load_and_preprocess(df)
@@ -1087,9 +1105,9 @@ def all_data_model():
 
     # 显示最佳模型详细报告
     best_model_name = evaluation_df['AUC-ROC'].idxmax()
-    print(f"\n=== 最佳模型详细报告 ({best_model_name}) ===")
+    logger.debug(f"\n=== 最佳模型详细报告 ({best_model_name}) ===")
     best_report = predictor.models[best_model_name]['classification_report']
-    print(classification_report(predictor.results['y_test'],
+    logger.debug(classification_report(predictor.results['y_test'],
                                 predictor.models[best_model_name]['y_pred_optimal']))
 
     return predictor
@@ -1102,29 +1120,34 @@ def load_model_and_predict_from_dataframe(new_df):
     # 加载已保存的模型
     model_name = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
 
-    if model_name:
+    if model_name and len(new_df) > 0:
         # 加载需要预测的数据
         # new_df =get_dir_files_data_value("1000",start_md="0925",end_mmdd="0926")
+        df_result = select_stock_with_block_and_date(new_df)
+        logger.debug(len(df_result))
+        logger.debug(df_result)
+        if isinstance(df_result, dict) and 'df_max_up' in df_result:
+            strong_leaders_df = df_result['df_max_up']
+            if not strong_leaders_df.empty:
+                # 进行预测
+                predictions = predictor.predict_dataframe(strong_leaders_df, 'XGBoost')
 
-        # 进行预测
-        predictions = predictor.predict_dataframe(new_df, 'XGBoost')
+                if predictions is not None:
+                    # 保存预测结果
+                    predictions.to_excel(f"temp/new_predictions_{model_name.lower()}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx", index=False)
+                    logger.debug("新数据预测完成并已保存")
 
-        if predictions is not None:
-            # 保存预测结果
-            predictions.to_excel("temp/new_predictions.xlsx", index=False)
-            print("新数据预测完成并已保存")
+                    # 显示部分预测结果
+                    logger.debug("\n前10条预测结果:")
+                    # 打印 预测结果为1的记录 ,'次日最高涨幅'
+                    logger.debug(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
+                    # 打印 次日涨幅 的和  次日最高涨幅的和
+                    logger.debug(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
+                    logger.debug(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
 
-            # 显示部分预测结果
-            print("\n前10条预测结果:")
-            # 打印 预测结果为1的记录 ,'次日最高涨幅'
-            print(predictions[predictions['预测结果'] == 1][['日期', '代码', '名称', '当日涨幅','blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
-            # 打印 次日涨幅 的和  次日最高涨幅的和
-            print(predictions[predictions['预测结果'] == 1]['次日涨幅'].sum())
-            print(predictions[predictions['预测结果'] == 1]['次日最高涨幅'].sum())
-
-        return predictions
+                return predictions
     else:
-        print("模型加载失败")
+        logger.debug("模型加载失败")
         return None
 
 
@@ -1134,7 +1157,7 @@ if __name__ == "__main__":
 
     # 训练模型
     # predictor = model_train()
-    # print("训练完成")
+    # logger.debug("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
     # 加载模型并进行预测
     # load_model_and_predict()
@@ -1144,11 +1167,11 @@ if __name__ == "__main__":
 
 # 单独预测一个文件
 #     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
-    predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
+#     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
+    predictions_file = "../data/predictions/1000/09291043_1047.xlsx"
     df = pd.read_excel(predictions_file)
 
     df['time'] = 1000
     df['blockname'] = df['概念']
+
     load_model_and_predict_from_dataframe(df)
-
-

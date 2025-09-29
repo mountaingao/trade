@@ -52,7 +52,8 @@ def show_alert(new_content, mp3_path,time=15000):
     root = tk.Tk()
     root.title("提醒")  # 设置窗口标题
     root.attributes('-topmost', True)  # 确保窗口始终在最前面
-    # 显示消息内容
+    # 显示消息内容  设定窗口大小为640x400
+    message = new_content
     message = new_content
     label = tk.Label(root, text=message, wraplength=620, justify="left", padx=20,  # 内部水平填充
                      pady=20,  # 内部垂直填充
@@ -61,7 +62,7 @@ def show_alert(new_content, mp3_path,time=15000):
                      font=("Arial", 10))  # 设置字体大小
                      # fg="red",  # 设置字体颜色
                      # bg="white")  # 设置背景颜色
-    label.pack(expand=True, padx=20, pady=20)
+    label.pack(expand=True, padx=30, pady=20)
     # messagebox.showinfo("提醒", f"文件内容已更新！\n\n新增内容：\n{new_content}")
     # playsound("alarm.mp3")
 

@@ -71,6 +71,9 @@ class StockDataAnalyzer:
         stats['收盘利润总和'] = self.combined_df['收盘利润'].sum()
         stats['最高利润总和'] = self.combined_df['最高利润'].sum()
 
+        stats['收盘涨幅总和'] = self.combined_df['次日涨幅'].sum()
+        stats['最高涨幅总和'] = self.combined_df['次日最高涨幅'].sum()
+
         # 当日涨幅<19.97时的统计
         filtered_df_low = self.combined_df[self.combined_df['当日涨幅'] < 19.97]
         stats['当日涨幅<19.97记录数'] = len(filtered_df_low)
@@ -530,6 +533,8 @@ def main():
                     st.metric("总记录数", f"{stats['总记录数']:,}")
                     st.metric("收盘利润总和", f"{stats['收盘利润总和']:,.2f}")
                     st.metric("最高利润总和", f"{stats['最高利润总和']:,.2f}")
+                    st.metric("收盘涨幅总和", f"{stats['收盘涨幅总和']:,.2f}")
+                    st.metric("最高涨幅总和", f"{stats['最高涨幅总和']:,.2f}")
                 with col2:
                     st.metric("涨幅<19.97记录数", f"{stats['当日涨幅<19.97记录数']:,}")
                     st.metric("涨幅<19.97收盘利润", f"{stats['当日涨幅<19.97收盘利润总和']:,.2f}")

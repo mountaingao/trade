@@ -938,6 +938,11 @@ def get_time_directory_from_block_name(blockname):
     now = datetime.datetime.strptime(blockname, "%m%d%H%M").time()
     return get_time_directory( now)
 
+def get_time_directory_from_file_path(file_path):
+    folder_name = os.path.basename(os.path.dirname(file_path))
+    # 转换为数字
+    folder_name = int(folder_name)
+    return folder_name
 
 def predict_block_data_from_block_name(blockname):
     date = get_time_directory_from_block_name(blockname)
@@ -1002,15 +1007,17 @@ def cal_predict_data_selected(predictions_file):
     # get_selected_from_type(df_filtered, '量比')
     # get_selected_from_type(df, '当日资金流入', '概念')
 
-    selected_stocks = select_from_block_data(df)
-    print(selected_stocks)
-    selected_stocks['time'] = 1000
-    # selected_stocks['blockname'] = selected_stocks['概念']
-    load_model_and_predict_from_dataframe(selected_stocks)
+    # selected_stocks = select_from_block_data(df)
+
+    # print(selected_stocks)
+    # 从 文件路径 predictions_file 中获取最后的目录名
+    hour = get_time_directory_from_file_path(predictions_file)
+    df['time'] = hour
+    selected_stocks = load_model_and_predict_from_dataframe(df)
 
     if selected_stocks is not None:
         # 参考 输出弹出界面
-        # print(selected_stocks)
+        print(selected_stocks)
         alert_info(selected_stocks)
 
 def alert_info(selected_stocks):
@@ -1179,13 +1186,20 @@ def format_selected_stocks_for_alert(selected_stocks):
         change_width = 8
         flow_width = 10
         q_width = 8
-
+        ai_width = 4
+        ai_amp_width = 8
+        overlap_width = 4
+        concept_width = 10
         # 添加表格头部
-        header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'资金流入':<{flow_width}} {'Q值':<{q_width}}"
+        prob_width = 8
+        result_width = 8
+        signal_width = 8
+
+        header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'资金流入':<{flow_width}} {'Q值':<{q_width}}{'AI':<{ai_width}} {'AI幅度':<{ai_amp_width}} {'重合':<{overlap_width}} {'概念':<{concept_width}} {'预测概率':<{prob_width}} {'交易信号':<{signal_width}}{'预测结果':<{result_width}} "
         content_lines.append(header)
 
         # 添加分隔线
-        separator = "-" * (code_width + name_width + change_width + flow_width + q_width + 10)  # 4个空格分隔符
+        separator = "-" * (code_width + name_width + change_width + flow_width + q_width + ai_width + ai_amp_width + overlap_width + concept_width + prob_width + result_width + signal_width + 10)  # 4个空格分隔符
         content_lines.append(separator)
 
         # 循环展示数据
@@ -1205,7 +1219,18 @@ def format_selected_stocks_for_alert(selected_stocks):
             q = f"{q_val:.2f}" if pd.notna(q_val) else "N/A"
             q = q[:q_width]
 
-            line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}}"
+            ai_pred = str(row.get('AI预测', ''))[:ai_width]
+            ai_amp_val = row.get('AI幅度', '')
+            ai_amp = f"{ai_amp_val:.2f}" if pd.notna(ai_amp_val) else "N/A"
+            ai_amp = ai_amp[:ai_amp_width]
+
+            overlap = str(row.get('重合', ''))[:overlap_width]
+            concept = str(row.get('概念', ''))[:concept_width]
+            prob = str(row.get('预测概率', ''))[:prob_width]
+            result = str(row.get('预测结果', ''))[:result_width]
+            signal = str(row.get('交易信号', ''))[:signal_width]
+
+            line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}} {ai_pred:<{ai_width}} {ai_amp:<{ai_amp_width}} {overlap:<{overlap_width}} {concept:<{concept_width}} {prob:<{prob_width}} {signal:<{signal_width}} {result:<{result_width}} "
             content_lines.append(line)
 
         return "\n".join(content_lines)
@@ -1325,8 +1350,8 @@ def select_from_block_data(df):
     print(f"强势板块龙头 数据量: {len(df_max_up)}")
     # 排序 按 Q 和 当日资金流入排序，每个概念只保留3个
     df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
-    df_max_up = df_max_up.groupby('概念').head(6)
-    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    df_max_up = df_max_up.groupby('概念').head(5)
+    print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
     selected_stocks['df_max_up'] = df_max_up
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
     df_max_down = df_max[
@@ -1339,7 +1364,7 @@ def select_from_block_data(df):
         ]
     if len(df_max_down) > 0:
         print(f"龙头板块调整 数据量: {len(df_max_down)}")
-        # print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+        print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
         selected_stocks['df_max_down'] = df_max_down
     return selected_stocks
     exit()
