@@ -976,7 +976,7 @@ def main():
     return predictor
 
 
-def load_model_and_predict():
+def load_model_and_predict(start = "0801", end = "0923"):
     # 初始化预测器
     predictor = StockPredictor()
 
@@ -1001,8 +1001,7 @@ def load_model_and_predict():
     logger.debug(f"成功加载的模型: {loaded_models}")
 
     if loaded_models:
-        start = "0801"
-        end = "0923"
+
         # 加载需要预测的数据
         new_df = get_dir_files_data_value("1000", start_md=start, end_mmdd=end)
 
@@ -1157,18 +1156,20 @@ if __name__ == "__main__":
     # predictor = main()
 
     # 训练模型
-    # predictor = model_train()
+    predictor = model_train()
     # logger.debug("训练完成")
     # predictor.run_optimized_predictor(df, predictor.results)
-    # 加载模型并进行预测
-    # load_model_and_predict()
+    # 得到当日的所有的预测数据
+    date = datetime.datetime.now().strftime("%m%d")
+    load_model_and_predict(start=date, end=date)
+    exit()
 
     # 所有数据的分析
     # all_data_model()
 
-# 单独预测一个文件
-#     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
-#     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
+    # 单独预测一个文件
+    #     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
+    #     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
     predictions_file = "../data/predictions/1000/09290941_0942.xlsx"
     df = pd.read_excel(predictions_file)
 
@@ -1177,3 +1178,6 @@ if __name__ == "__main__":
 
     result= load_model_and_predict_from_dataframe(df)
     print( result)
+
+    # 加载模型并进行预测
+    load_model_and_predict()
