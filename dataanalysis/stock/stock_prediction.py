@@ -1113,6 +1113,55 @@ def all_data_model():
     return predictor
 
 
+def load_model_and_predict_from_date(date):
+    # 初始化预测器
+    predictor = StockPredictor()
+
+    # 加载已保存的模型
+    model_name = predictor.load_trained_model('saved_models/xgboost_stock_model.pkl')
+
+    if model_name:
+        folder_name = ["1000", "1200", "1400", "1600"]
+        result = pd.DataFrame()
+        for folder in folder_name:
+            new_df = get_dir_files_data_value(folder, start_md=date, end_mmdd=date)
+            if len(new_df) > 0:
+                # 进行预测
+                predictions = predictor.predict_dataframe(new_df, 'XGBoost')
+                result = pd.concat([result, predictions])
+
+        # 检查结果是否为空
+        if not result.empty:
+            # 保存预测结果
+            result.to_excel(f"temp/new_predictions_{model_name.lower()}_{date}.xlsx", index=False)
+            logger.debug("新数据预测完成并已保存")
+
+            # 显示部分预测结果
+            logger.debug("\n预测结果:")
+            # 打印预测结果为1的记录
+            positive_predictions = result[result['预测结果'] == 1]
+            if not positive_predictions.empty:
+                # 检查需要的列是否存在
+                required_columns = ['日期', '代码', '名称', '当日涨幅', 'blockname', '预测概率', '预测结果', '交易信号']
+                available_columns = [col for col in required_columns if col in positive_predictions.columns]
+                logger.debug(positive_predictions[available_columns].head(10))
+                
+                # 安全地打印次日涨幅相关信息（如果列存在）
+                if '次日涨幅' in positive_predictions.columns:
+                    logger.debug(f"次日涨幅总和: {positive_predictions['次日涨幅'].sum()}")
+                if '次日最高涨幅' in positive_predictions.columns:
+                    logger.debug(f"次日最高涨幅总和: {positive_predictions['次日最高涨幅'].sum()}")
+            else:
+                logger.debug("没有预测为看多的股票")
+        else:
+            logger.debug("没有获取到任何数据")
+
+        return result
+    else:
+        logger.debug("模型加载失败")
+        return None
+
+
 def load_model_and_predict_from_dataframe(new_df):
     # 初始化预测器
     predictor = StockPredictor()
@@ -1154,30 +1203,32 @@ def load_model_and_predict_from_dataframe(new_df):
 if __name__ == "__main__":
     # 分析数据
     # predictor = main()
-
-    # 训练模型
-    predictor = model_train()
-    # logger.debug("训练完成")
-    # predictor.run_optimized_predictor(df, predictor.results)
-    # 得到当日的所有的预测数据
-    date = datetime.datetime.now().strftime("%m%d")
-    load_model_and_predict(start=date, end=date)
-    exit()
-
-    # 所有数据的分析
-    # all_data_model()
-
-    # 单独预测一个文件
-    #     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
-    #     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
-    predictions_file = "../data/predictions/1000/09290941_0942.xlsx"
-    df = pd.read_excel(predictions_file)
-
-    df['time'] = 1000
-    df['blockname'] = df['概念']
-
-    result= load_model_and_predict_from_dataframe(df)
-    print( result)
+    #
+    # # 训练模型
+    # predictor = model_train()
+    # # logger.debug("训练完成")
+    # # predictor.run_optimized_predictor(df, predictor.results)
+    # # 得到当日的所有的预测数据
+    # date = datetime.datetime.now().strftime("%m%d")
+    # load_model_and_predict(start=date, end=date)
+    # exit()
+    #
+    # # 所有数据的分析
+    # # all_data_model()
+    #
+    # # 单独预测一个文件
+    # #     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
+    # #     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
+    # predictions_file = "../data/predictions/1000/09290941_0942.xlsx"
+    # df = pd.read_excel(predictions_file)
+    #
+    # df['time'] = 1000
+    # df['blockname'] = df['概念']
+    #
+    # result= load_model_and_predict_from_dataframe(df)
+    # print( result)
 
     # 加载模型并进行预测
-    load_model_and_predict()
+    date = datetime.datetime.now().strftime("%m%d")
+    result = load_model_and_predict_from_date(date)
+    print( result)

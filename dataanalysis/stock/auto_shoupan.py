@@ -1362,7 +1362,7 @@ def select_from_block_data(df):
         ]
     if len(df_max_down) > 0:
         print(f"龙头板块调整 数据量: {len(df_max_down)}")
-        print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+        # print(df_max_down.tail(10)[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
         selected_stocks['df_max_down'] = df_max_down
     return selected_stocks
     exit()
