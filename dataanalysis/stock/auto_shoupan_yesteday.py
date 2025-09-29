@@ -7,7 +7,7 @@ import pandas as pd
 import auto_shoupan
 def get_previous_trading_day(date):
     previous_date = date - timedelta(days=1)
-    while not is_workday(previous_date) or is_holiday(previous_date):
+    while not is_workday(previous_date) or is_holiday(previous_date) or previous_date.weekday() == 5 or previous_date.weekday() == 6:
         previous_date -= timedelta(days=1)
     return previous_date
 

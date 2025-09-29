@@ -387,13 +387,13 @@ def select_stock_with_block_and_date(df):
 
 
     selected_stocks = {}
-    print(df.tail(10))
+    # print(df.tail(10))
 
     group_by = '概念'
     # 按日期、group_by字段统计数量，筛选出数量大于2的组合
     df_grouped = df_local.groupby(['日期', group_by]).size().reset_index(name='count')
     df_filtered_groups = df_grouped[df_grouped['count'] > 2]
-    # print(df_filtered_groups.tail(10))
+    print(df_filtered_groups.tail(10))
     selected_stocks['group'] = df_filtered_groups.sort_values(by=['日期', 'count'], ascending=[True, False])
 
 
@@ -414,7 +414,7 @@ def select_stock_with_block_and_date(df):
     df_sorted = df_max.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
     # 按概念分组并分别打印
     for concept, group in df_sorted.groupby('概念'):
-        print(f"\n概念: {concept}")
+        # print(f"\n概念: {concept}")
         group_reset = group[['代码','名称','当日涨幅', '量比','Q','Q_1','Q3','当日资金流入', '次日最高涨幅','次日涨幅', '概念']].reset_index(drop=True)
         group_reset.insert(0, '序号', range(1, len(group_reset) + 1))
         # print(group_reset)

@@ -28,11 +28,12 @@ import datetime
 
 # 设置日志
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # 创建控制台处理器
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
+console_handler.setLevel(logging.INFO)
 
 # 创建格式器
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -632,8 +633,8 @@ class StockPredictor:
             return None
 
         logger.debug(f"使用 {model_name} 模型进行预测...")
-        print(df.columns)
-        print(df[['代码', '名称','当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']])
+        # print(df.columns)
+        # print(df[['代码', '名称','当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']])
     # try:
         # 对数据进行预处理和特征工程
         df_processed = self._create_features(df)
@@ -1168,10 +1169,11 @@ if __name__ == "__main__":
 # 单独预测一个文件
 #     predictions_file = "../data/predictions/1600/09241501_1515.xlsx"
 #     predictions_file = "../data/predictions/1600/09251526_1528.xlsx"
-    predictions_file = "../data/predictions/1000/09291043_1047.xlsx"
+    predictions_file = "../data/predictions/1000/09290941_0942.xlsx"
     df = pd.read_excel(predictions_file)
 
     df['time'] = 1000
     df['blockname'] = df['概念']
 
-    load_model_and_predict_from_dataframe(df)
+    result= load_model_and_predict_from_dataframe(df)
+    print( result)

@@ -115,7 +115,7 @@ class StockDataStorage:
         cursor = conn.cursor()
         # df_data = df[['代码', '名称', '日期', '细分行业', '概念', '状态']]
 
-        print(df.columns)
+        # print(df.columns)
         # 转换字段名
         df.rename(columns={'代码': 'code', '名称': 'name', '日期': 'date', '细分行业': 'industry', '概念': 'blockname', '状态': 'status'}, inplace=True)
 
@@ -127,10 +127,9 @@ class StockDataStorage:
         # 确保 code 字段是字符串类型
         df['code'] = df['code'].astype(str)
         for _, row in df.iterrows():
-            print(row)
-            print(row['code'])
+            # print(row)
             code = str(row['code'])
-            print(code)
+            # print(code)
 
         # 检查是否已存在该代码的记录
             cursor.execute("SELECT id FROM stockblock WHERE code = ?", (code,))
@@ -254,7 +253,7 @@ def update_stock_block_status():
     df = prepare_ths_data("0717","0920")
     # df_data = df[['代码', '名称', '日期', '细分行业', '概念', '状态']]
 
-    print(df.columns)
+    # print(df.columns)
     # 转换字段名
     df.rename(columns={'代码': 'code', '    名称': 'name',  '细分行业': 'industry', '备注': 'blockname'}, inplace=True)
     df['status'] = 0
@@ -265,9 +264,9 @@ def update_stock_block_status():
     df['date'] = datetime.datetime.now(beijing_tz).strftime('%Y-%m-%d')
     df['code'] = df['code'].str.replace('SH', '').str.replace('SZ', '')
 
-    print(df.columns)
+    # print(df.columns)
     df = df[['code', 'name', 'date', 'industry', 'blockname', 'status']]
-    print(df.head(100))
+    # print(df.head(100))
     # exit()
     storage.batch_import_from_dataframe(df)
     # print(storage.query_stock_block())

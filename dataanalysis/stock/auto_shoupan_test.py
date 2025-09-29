@@ -191,11 +191,16 @@ if __name__ == '__main__':
     # 推测目录下的数据
     # start_cal_predict_data_selected("../data/predictions/")
     # start_cal_predict_data_selected("../data/predictions/1000/09170940_0942.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1000/09190945_0948.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1200/09191239_1242.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1200/09231132_1134.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1400/09231409_1411.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1600/09231503_1505.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1400/09241351_1353.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1200/09251133_1135.xlsx")
     # start_cal_predict_data_selected("../data/predictions/1000/09250948_0950.xlsx")
-    start_cal_predict_data_selected("../data/predictions/1000/09291043_1047.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1000/09260949_0950.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1200/09261140_1144.xlsx")
+    start_cal_predict_data_selected("../data/predictions/1400/09261436_1437.xlsx")
+    # start_cal_predict_data_selected("../data/predictions/1000/09290941_0942.xlsx")
 

@@ -264,7 +264,7 @@ def checking_model_data(input_file,model):
     print(f"验证结果已保存至: {output_file}")
 
 def predictions_model_data_file(input_file,model,output_dir):
-    print(input_file)
+    # print(input_file)
     # 预测 准备数据
     df_calculate = pd.read_excel(input_file)
     features = [

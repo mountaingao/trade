@@ -263,7 +263,7 @@ def select_tdx_block_list():
     # 2、执行选股步骤，填写导出文件目录07111646
     ctrl_t = pyautogui.hotkey('ctrl', 't')
     print("请选择指标...")
-    print(tdx_positions)
+    # print(tdx_positions)
     wait_for_keypress()
 
     time.sleep(0.5)
@@ -791,7 +791,7 @@ def update_stock_block_status(df):
     # 创建存储实例
     storage = StockDataStorage()
     # codes = storage.query_by_codes(df['代码'].tolist())
-    print(df.columns)
+    # print(df.columns)
     df_data = df[['代码', '名称', '日期', '细分行业', '概念']]
     df_data['状态'] = 0
 
@@ -835,7 +835,7 @@ def merge_block_data(blockname):
     # 替换 -- 为空
 
     data = pd.merge(tdx_data, ths_data[['净额', '净流入', '净量', '概念']], left_index=True, right_index=True)
-    print( data.head(10))
+    # print( data.head(10))
     # 在data最前面增加两个字段：序号	日期
     data.insert(0, '序号', range(1, len(data) + 1))
     data.insert(1, '日期', pd.Timestamp.now().strftime("%Y-%m-%d"))
@@ -958,7 +958,7 @@ def predict_block_data(blockname,date='250812'):
         'reg_model': f"../models/{date}_model_reg.json",
         'clf_model': f"../models/{date}_model_clf.json"}
 
-    print( model)
+    # print( model)
     #预测文件中的数据
     # 按照时间确定目录名
     time_dir = get_time_directory()  # 获取时间目录
@@ -978,11 +978,9 @@ def predict_block_data(blockname,date='250812'):
 
     # print(data[data['重合'] == '1'] | data[data['AI预测'] == 1] | data[data['预测'] == 1])
 
-    print(data[data['重合'] == '1'])
-
-    print(data[data['预测'] == '1'])
-
-    print(data[data['AI预测'] == 1])
+    # print(data[data['重合'] == '1'])
+    # print(data[data['预测'] == '1'])
+    # print(data[data['AI预测'] == 1])
 
     # 保存文件
     data.to_excel(predictions_file, index=False)
@@ -1017,7 +1015,7 @@ def cal_predict_data_selected(predictions_file):
 
     if selected_stocks is not None:
         # 参考 输出弹出界面
-        print(selected_stocks)
+        # print(selected_stocks)
         alert_info(selected_stocks)
 
 def alert_info(selected_stocks):
@@ -1027,7 +1025,7 @@ def alert_info(selected_stocks):
     # 将 selected_stocks 转换为字符串格式用于显示
     alert_content = format_selected_stocks_for_alert(selected_stocks)
     print(alert_content)
-
+    #
     # 调用 show_alert 函数显示提醒
     show_alert(alert_content, '../../mp3/alert.mp3',25000)
 
@@ -1035,7 +1033,7 @@ def format_selected_stocks_for_alert(selected_stocks):
     """
     将选中的股票数据格式化为适合显示的文本
     """
-    print(f"selected_stocks type: {type(selected_stocks)}")
+    # print(f"selected_stocks type: {type(selected_stocks)}")
 
     if isinstance(selected_stocks, dict):
         # 处理字典类型的数据（包含多个DataFrame）
@@ -1260,7 +1258,7 @@ def get_selected_from_type(df, type='Q',group_by='细分行业'):
 
     df_local =  df_filtered.loc[df_filtered.groupby(['日期', group_by])[type].idxmax()]
     # print(f"各行业{type}量比龙头：")
-    print(df_local[['代码','名称','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
+    # print(df_local[['代码','名称','当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
 
     df_value = df_local[(df_local['Q'] >= 2.5) & (df_local['当日资金流入'] >= -0.2)]
     print(f"满足{type}+{group_by}条件的如下：")
