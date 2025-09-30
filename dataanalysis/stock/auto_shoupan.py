@@ -1015,7 +1015,9 @@ def cal_predict_data_selected(predictions_file):
 
     if selected_stocks is not None:
         # 参考 输出弹出界面
-        # print(selected_stocks)
+
+        selected_stocks = selected_stocks.sort_values(by='预测概率', ascending=False)
+        print(selected_stocks[['代码','名称', 'time','当日涨幅','Q','当日资金流入', 'AI预测', 'AI幅度', '重合','预测概率', '预测结果', '交易信号', '次日涨幅','次日最高涨幅', '概念']].to_string())
         alert_info(selected_stocks)
 
 def alert_info(selected_stocks):
@@ -1193,7 +1195,7 @@ def format_selected_stocks_for_alert(selected_stocks):
         result_width = 8
         signal_width = 8
 
-        header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'资金流入':<{flow_width}} {'Q值':<{q_width}}{'AI':<{ai_width}} {'AI幅度':<{ai_amp_width}} {'重合':<{overlap_width}} {'概念':<{concept_width}} {'预测概率':<{prob_width}} {'交易信号':<{signal_width}}{'预测结果':<{result_width}} "
+        header = f"{'代码':<{code_width}} {'名称':<{name_width}} {'涨幅':<{change_width}} {'资金流入':<{flow_width}} {'Q值':<{q_width}}{'AI':<{ai_width}} {'AI幅度':<{ai_amp_width}} {'重合':<{overlap_width}} {'预测概率':<{prob_width}} {'交易信号':<{signal_width}}{'预测结果':<{result_width}} {'概念':<{concept_width}}  "
         content_lines.append(header)
 
         # 添加分隔线
@@ -1228,7 +1230,7 @@ def format_selected_stocks_for_alert(selected_stocks):
             result = str(row.get('预测结果', ''))[:result_width]
             signal = str(row.get('交易信号', ''))[:signal_width]
 
-            line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}} {ai_pred:<{ai_width}} {ai_amp:<{ai_amp_width}} {overlap:<{overlap_width}} {concept:<{concept_width}} {prob:<{prob_width}} {signal:<{signal_width}} {result:<{result_width}} "
+            line = f"{code:<{code_width}} {name:<{name_width}} {change:<{change_width}} {flow:<{flow_width}} {q:<{q_width}} {ai_pred:<{ai_width}} {ai_amp:<{ai_amp_width}} {overlap:<{overlap_width}} {prob:<{prob_width}} {signal:<{signal_width}} {result:<{result_width}} {concept:<{concept_width}} "
             content_lines.append(line)
 
         return "\n".join(content_lines)
@@ -1262,7 +1264,7 @@ def get_selected_from_type(df, type='Q',group_by='细分行业'):
 
     df_value = df_local[(df_local['Q'] >= 2.5) & (df_local['当日资金流入'] >= -0.2)]
     print(f"满足{type}+{group_by}条件的如下：")
-    print(df_value[['代码','名称', '当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '概念']])
+    print(df_value[['代码','名称', '当日涨幅', '细分行业','Q','当日资金流入', 'AI预测', 'AI幅度', '重合','次日涨幅','次日最高涨幅', '概念']].to_string())
 
 
 

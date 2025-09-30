@@ -635,44 +635,44 @@ class StockPredictor:
         logger.debug(f"使用 {model_name} 模型进行预测...")
         # print(df.columns)
         # print(df[['代码', '名称','当日涨幅', '量比', '总金额', '信号天数', 'Q', '净额', '净流入', '当日资金流入','time']])
-    # try:
-        # 对数据进行预处理和特征工程
-        df_processed = self._create_features(df)
+        try:
+            # 对数据进行预处理和特征工程
+            df_processed = self._create_features(df)
 
-        # 选择训练时使用的特征
-        X_new = df_processed[self.feature_names]
+            # 选择训练时使用的特征
+            X_new = df_processed[self.feature_names]
 
-        # 获取模型和阈值
-        model = self.models[model_name]['model']
-        threshold = self.models[model_name]['optimal_threshold']
+            # 获取模型和阈值
+            model = self.models[model_name]['model']
+            threshold = self.models[model_name]['optimal_threshold']
 
-        # 进行预测
-        if model_name in ['XGBoost', 'LightGBM']:
-            y_proba = model.predict_proba(X_new)[:, 1]
-        else:
-            # 对于需要标准化的模型
-            X_new_scaled = self.scaler.transform(X_new)
-            y_proba = model.predict_proba(X_new_scaled)[:, 1]
+            # 进行预测
+            if model_name in ['XGBoost', 'LightGBM']:
+                y_proba = model.predict_proba(X_new)[:, 1]
+            else:
+                # 对于需要标准化的模型
+                X_new_scaled = self.scaler.transform(X_new)
+                y_proba = model.predict_proba(X_new_scaled)[:, 1]
 
-        # 根据最优阈值进行分类
-        y_pred = (y_proba >= threshold).astype(int)
+            # 根据最优阈值进行分类
+            y_pred = (y_proba >= threshold).astype(int)
 
-        # 创建结果DataFrame
-        result_df = df.copy()
-        result_df['预测概率'] = y_proba
-        result_df['预测结果'] = y_pred
-        result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
+            # 创建结果DataFrame
+            result_df = df.copy()
+            result_df['预测概率'] = y_proba
+            result_df['预测结果'] = y_pred
+            result_df['交易信号'] = result_df['预测结果'].map({1: '看多', 0: '观望'})
 
-        logger.debug(f"预测完成，共预测 {len(result_df)} 条记录")
-        logger.debug(f"看多信号: {result_df['预测结果'].sum()} 条")
-        logger.debug(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
-        logger.debug(result_df[['日期', '代码', '名称', 'blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
+            logger.debug(f"预测完成，共预测 {len(result_df)} 条记录")
+            logger.debug(f"看多信号: {result_df['预测结果'].sum()} 条")
+            logger.debug(f"观望信号: {len(result_df) - result_df['预测结果'].sum()} 条")
+            logger.debug(result_df[['日期', '代码', '名称', 'blockname','次日涨幅','次日最高涨幅','预测概率', '预测结果', '交易信号']])
 
-        return result_df
+            return result_df
 
-    # except Exception as e:
-    #     logger.debug(f"预测过程中出错: {e}")
-    #     return None
+        except Exception as e:
+            logger.debug(f"预测过程中出错: {e}")
+            return None
 
     def predict_ensemble(self, df, method='average'):
         """
@@ -1230,5 +1230,11 @@ if __name__ == "__main__":
 
     # 加载模型并进行预测
     date = datetime.datetime.now().strftime("%m%d")
+    date = '0916'
     result = load_model_and_predict_from_date(date)
-    print( result)
+    print(result.sort_values(by='预测概率', ascending=False)[['代码','名称', 'time','当日涨幅','Q','当日资金流入', 'AI预测', 'AI幅度', '重合','预测概率', '预测结果', '交易信号', '次日涨幅','次日最高涨幅', '概念']].to_string())
+    # 按代码统计次数，并倒序，显示代码、名称、次数
+    print(result.groupby(['代码','名称']).size().sort_values(ascending=False))
+
+
+

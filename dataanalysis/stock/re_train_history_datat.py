@@ -434,7 +434,7 @@ def select_stock_with_block_and_date(df):
     df_max_up = df_max_up.sort_values(by=['概念','Q', '当日资金流入'], ascending=[False, False, False])
     if len(df_max_up) > 0:
         df_max_up = df_max_up.groupby('概念').head(groups*3)
-    # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入', 'AI预测', 'AI幅度', '重合', '次日最高涨幅','次日涨幅']])
+    print(df_max_up[['代码','名称','当日涨幅','Q','当日资金流入', 'AI预测', 'AI幅度', '重合','次日涨幅', '次日最高涨幅', '概念']].to_string())
     selected_stocks['df_max_up'] = df_max_up
     # print(df_max_up[['代码','名称','当日涨幅', '概念','Q','当日资金流入',  '次日最高涨幅','次日涨幅']])
     df_max_down = df_max[
@@ -1541,7 +1541,7 @@ def get_dir_files_data_value(dir_path="1000", start_md=None, end_mmdd=None):
                     if not strong_leaders_df.empty:
                         # 添加文件名信息
                         strong_leaders_df['filename'] = os.path.basename(file).split('_')[0]
-                        print(strong_leaders_df)
+                        # print(strong_leaders_df)
                         # 合并到结果中
                         result = pd.concat([result, strong_leaders_df], ignore_index=True)
                         print(f'处理文件：{file}')
